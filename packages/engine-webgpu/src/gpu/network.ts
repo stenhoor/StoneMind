@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -41,7 +41,10 @@ export interface GpuNetworkOptions {
    * at batches 8–64 in every variant (docs/spikes/results/2026-11-b18-webgpu-gemm-v2.md).
    */
   gemm?: 'v1' | 'v2';
-  /** GEMM v2's shape (default `GEMM_DEFAULT`). arith 'f16' needs the device feature `shader-f16`. */
+  /**
+   * GEMM v2's shape. Default: `defaultGemmConfig` for the adapter's vendor (measured per device). arith 'f16' and
+   * 'f16x2' need the device feature `shader-f16`.
+   */
   gemmConfig?: GemmConfig;
   /**
    * The Winograd input and output transforms (default 'v1'). 'v2' stages each board through workgroup memory
@@ -160,6 +163,10 @@ export class GpuNetwork {
   #elem: Elem = 'f32';
   #gemm: 'v1' | 'v2' = 'v2';
   #gemmConfig: GemmConfig = GEMM_DEFAULT;
+  /** The GEMM v2 shape the plan uses (the option, or the device's default). */
+  get gemmConfig(): GemmConfig {
+    return this.#gemmConfig;
+  }
   #winoTransforms: 'v1' | 'v2' = 'v1';
   #winograd = true;
   #timestamps = false;
@@ -189,7 +196,7 @@ export class GpuNetwork {
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
     net.#gemm = options.gemm ?? 'v2';
-    net.#gemmConfig = options.gemmConfig ?? GEMM_DEFAULT;
+    net.#gemmConfig = options.gemmConfig ?? defaultGemmConfig(engine.adapterInfo.vendor, engine.features.has('shader-f16'));
     net.#winoTransforms = options.winoTransforms ?? 'v1';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");

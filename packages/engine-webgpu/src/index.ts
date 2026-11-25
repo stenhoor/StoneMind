@@ -21,7 +21,7 @@ export { parseRules, type Rules } from './rules/rules.js';
 export { encodePositionV7, buildHistory, type EncodedPositionV7, type PositionSpec } from './features/v7.js';
 export { requestEngineDevice, getGpu, WebGpuUnavailableError, OPTIONAL_FEATURES, type EngineDevice, type OptionalFeature } from './gpu/device.js';
 export { GpuNetwork, type GpuNetworkOptions, type GpuProfile } from './gpu/network.js';
-export { ACT, ACTIVATION_PROBE, GEMM_DEFAULT, type Elem, type GemmConfig } from './gpu/kernels.js';
+export { ACT, ACTIVATION_PROBE, GEMM_DEFAULT, defaultGemmConfig, type Elem, type GemmConfig } from './gpu/kernels.js';
 export type * from './gpu/webgpu.js';
 export { applyScale8 } from './model/scale8.js';
 export { toFloat16Bits, fromFloat16Bits, toFloat16Array } from './gpu/f16.js';

@@ -296,6 +296,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   if (params.get('lose') && JSON.stringify(variant).includes(params.get('lose'))) engine.device.destroy();
   step('  evaluating the positions');
   report.dispatches = net.dispatchCount;
+  report.gemmConfig = net.gemmConfig;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
 
