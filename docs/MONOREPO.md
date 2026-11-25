@@ -33,7 +33,7 @@ StoneMind/
 │   ├── storage/             @stonemind/storage
 │   ├── ontology/            @stonemind/ontology
 │   └── provider-sdk/        @stonemind/provider-sdk
-├── apps/                    Deployable applications (none yet, see "Planned")
+├── apps/                    Deployable applications (none yet): web → stonemind.app, site → stonemind.org
 ├── tsconfig.base.json       Shared compiler settings (each sub-project extends it)
 └── package.json             npm workspaces root; orchestration scripts only
 ```
@@ -75,7 +75,8 @@ Expected dependencies are listed so they can be checked when each is created.
 
 | Planned sub-project | Path | Purpose | Expected dependencies | Milestone |
 |---|---|---|---|---|
-| `@stonemind/web` | `apps/web` | Browser-first application (primary deployable) | domain, ontology, provider-sdk, storage, engines | M1 |
+| `@stonemind/web` | `apps/web` | Browser-first application, deployed to **stonemind.app** | domain, ontology, provider-sdk, storage, engines | M1 |
+| `@stonemind/site` | `apps/site` | Project website, deployed to **stonemind.org**: research, specifications, docs, community | none (may render content from `docs/`) | M0–M1 |
 | `@stonemind/sgf` | `packages/sgf` | SGF parsing/serialisation | none | M1 |
 | `@stonemind/storage-smaltworks` | `packages/storage-smaltworks` | Smaltworks + OPFS implementation of storage ports | storage, Smaltworks | M1 |
 | `@stonemind/provider-katago` | `packages/provider-katago` | KataGo analysis provider | provider-sdk, domain, sgf | M1 |
@@ -84,6 +85,19 @@ Expected dependencies are listed so they can be checked when each is created.
 | `@stonemind/recommendation-engine` | `packages/recommendation-engine` | Goal-aware recommendations | domain, ontology, player-graph | M3 |
 | `@stonemind/style-engine` | `packages/style-engine` | Style Graph inference | domain, ontology | M4 |
 | AI providers (`provider-ollama`, `provider-anthropic`, ...) | `packages/provider-*` | Bring Your Own AI | provider-sdk | as needed |
+
+---
+
+# Deployment Targets
+
+| Domain | Serves | Sub-project |
+|---|---|---|
+| `stonemind.app` | The application. It gets its own origin because OPFS storage is scoped per origin: player data lives under `stonemind.app` and is never shared with the website. | `apps/web` |
+| `stonemind.org` | The main website: research, specifications, documentation, community. | `apps/site` |
+
+Keep the app on its own origin. Moving it to a different domain or subdomain later would
+leave existing players' OPFS data behind at the old origin, so that change would need a
+migration and export path first.
 
 ---
 

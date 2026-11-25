@@ -11,6 +11,9 @@ It is local-first and browser-first. The player owns their data. It works with
 any AI provider, uses resources the player already owns, prefers open formats (SGF, Markdown,
 EPUB, JSON, CSV), and integrates with existing tools (KataGo, OGS, Sabaki, KaTrain) rather than replacing them.
 
+- **stonemind.app**: the application (planned)
+- **stonemind.org**: research, docs and the project website (planned)
+
 Status: **Milestone 0, Project Foundation.** The specifications are drafts and the code is an initial scaffold.
 
 ## Documentation
