@@ -1,33 +1,65 @@
 /**
- * WGSL kernels for the network, fp32. Tensors are [batch][channel][y][x], with the board's points contiguous.
+ * WGSL kernels for the network. Tensors are [batch][channel][y][x], with the board's points contiguous.
  *
- * These are the first, correctness-first kernels: an implicit-GEMM convolution tiled in workgroup memory, and simple
- * element-wise, pooling and matrix-vector kernels. Winograd F(4×4,3×3), fused epilogues and fp16 come after them,
- * checked against these and against the reference forward pass.
+ * The kernels that touch large tensors are generators: each storage buffer's element type is a parameter (`f32` or
+ * `f16`). Values are converted to f32 as they are loaded and back to the buffer's type as they are stored, so all
+ * arithmetic is f32 and fp16 only changes storage and memory traffic. The same generated code serves both, with the
+ * conversions becoming identities in the f32 build.
  *
  * Every kernel reads the batch size from `dyn.n`, so one set of bind groups serves every batch size up to the plan's.
  */
 
+/** A storage buffer's element type. */
+export type Elem = 'f32' | 'f16';
+
+/** WGSL's `enable f16;` when any of the types is f16 (it needs the device feature `shader-f16`). */
+const enableFor = (...types: Elem[]) => (types.includes('f16') ? 'enable f16;\n' : '');
+
 /** Activation codes, shared with the plan builder. */
-export const ACT = { identity: 0, relu: 1, mish: 2, silu: 3 } as const;
+export const ACT = { identity: 0, relu: 1, mish: 2, silu: 3, mish_scale8: 4 } as const;
 
 const ACTIVATE = /* wgsl */ `
+// mish(x) = x · tanh(softplus(x)). Computed as x · n / (n + 2) with n = eˣ(eˣ + 2), which equals tanh(log(1 + eˣ))
+// exactly (tanh y = (e²ʸ − 1)/(e²ʸ + 1) with eʸ = 1 + eˣ). It needs only exp, which WGSL specifies with relative
+// error; log(1 + eˣ) loses most of its precision for negative x in f32, and WGSL has no log1p.
+// For x ≥ 20 both KataGo and this return x (tanh(softplus(x)) is 1 in f32 well before 20).
+fn mish_(x: f32) -> f32 {
+  if (x >= 20.0) { return x; }
+  let e = exp(x);
+  let n = e * (e + 2.0);
+  return x * n / (n + 2.0);
+}
+
 fn activate(x: f32, act: u32) -> f32 {
   switch act {
     case 1u: { return max(x, 0.0); }
-    case 2u: {
-      // KataGo's mish: x * tanh(softplus(x)), with softplus = log1p(exp(min(x, 20))) + max(x, 20) - 20.
-      // tanh is evaluated on min(sp, 20): tanh(20) is 1 in f32, and large arguments overflow on some drivers.
-      let sp = log(1.0 + exp(min(x, 20.0))) + max(x, 20.0) - 20.0;
-      return x * tanh(min(sp, 20.0));
-    }
+    case 2u: { return mish_(x); }
     case 3u: { return x / (exp(-x) + 1.0); }
+    case 4u: {
+      // KataGo's mish_scale8 (OpenCL ACTIVATION == 12): x < 20/8 ? x · tanh(log1p(exp(8x))) : x, i.e. mish(8x)/8.
+      if (x >= 2.5) { return x; }
+      let e = exp(8.0 * x);
+      let n = e * (e + 2.0);
+      return x * n / (n + 2.0);
+    }
     default: { return x; }
   }
 }
 `;
 
 const DYN = /* wgsl */ `struct Dyn { n: u32 }`;
+
+/** Evaluates `activate` on each input, for checking it against KataGo's formulas (the GPU check uses it). */
+export const ACTIVATION_PROBE = /* wgsl */ `
+${ACTIVATE}
+@group(0) @binding(0) var<uniform> act: vec4<u32>;
+@group(0) @binding(1) var<storage, read> xs: array<f32>;
+@group(0) @binding(2) var<storage, read_write> ys: array<f32>;
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+  if (gid.x < arrayLength(&xs)) { ys[gid.x] = activate(xs[gid.x], act.x); }
+}
+`;
 
 /** Convolution tile sizes: 64 output channels × 64 board points per workgroup, 16 of the reduction at a time. */
 export const CONV_TILE_M = 64;
@@ -38,7 +70,7 @@ export const CONV_TILE_N = 64;
  * Zero padding. flags bit 0: add to the output instead of overwriting it (the residual add); bit 1: add a per-(batch,
  * output channel) bias, `nbias[b][oc]`.
  */
-export const CONV = /* wgsl */ `
+export const CONV = (inT: Elem, wT: Elem, outT: Elem) => /* wgsl */ `${enableFor(inT, wT, outT)}
 ${DYN}
 struct Params {
   inC: u32, outC: u32, kh: u32, kw: u32,
@@ -47,9 +79,9 @@ struct Params {
 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> inp: array<f32>;
-@group(0) @binding(3) var<storage, read> w: array<f32>;
-@group(0) @binding(4) var<storage, read_write> outp: array<f32>;
+@group(0) @binding(2) var<storage, read> inp: array<${inT}>;
+@group(0) @binding(3) var<storage, read> w: array<${wT}>;
+@group(0) @binding(4) var<storage, read_write> outp: array<${outT}>;
 @group(0) @binding(5) var<storage, read> nbias: array<f32>;
 
 const TM = 64u;
@@ -81,7 +113,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
       // Weights, [K][outC].
       let m = m0 + col;
       var a = 0.0;
-      if (k < P.K && m < P.outC) { a = w[k * P.outC + m]; }
+      if (k < P.K && m < P.outC) { a = f32(w[k * P.outC + m]); }
       As[idx] = a;
       // Inputs, gathered for this reduction index.
       let p = n0 + col;
@@ -96,7 +128,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
         let yy = y + (i32(r / P.kw) - ry) * i32(P.dilY);
         let xx = x + (i32(r % P.kw) - rx) * i32(P.dilX);
         if (yy >= 0 && yy < i32(P.ySize) && xx >= 0 && xx < i32(P.xSize)) {
-          v = inp[(b * P.inC + ic) * area + u32(yy) * P.xSize + u32(xx)];
+          v = f32(inp[(b * P.inC + ic) * area + u32(yy) * P.xSize + u32(xx)]);
         }
       }
       Bs[idx] = v;
@@ -124,8 +156,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
       let o = (b * P.outC + m) * area + p % area;
       var v = acc[i * 4u + j];
       if ((P.flags & 2u) != 0u) { v += nbias[b * P.outC + m]; }
-      if ((P.flags & 1u) != 0u) { v += outp[o]; }
-      outp[o] = v;
+      if ((P.flags & 1u) != 0u) { v += f32(outp[o]); }
+      outp[o] = ${outT}(v);
     }
   }
 }
@@ -136,15 +168,15 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
  * per-(batch, channel) bias, `pre[b][c]` (the global-pooling bias, added before the batch norm as KataGo does).
  * `sb` holds the merged scales, then the merged biases. The mask is channel 0 of the network's input.
  */
-export const BN_ACT = /* wgsl */ `
+export const BN_ACT = (inT: Elem, outT: Elem) => /* wgsl */ `${enableFor(inT, outT)}
 ${DYN}
 ${ACTIVATE}
 struct Params { C: u32, area: u32, flags: u32, act: u32, maskStride: u32, _pad0: u32, _pad1: u32, _pad2: u32 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> inp: array<f32>;
+@group(0) @binding(2) var<storage, read> inp: array<${inT}>;
 @group(0) @binding(3) var<storage, read> sb: array<f32>;
-@group(0) @binding(4) var<storage, read_write> outp: array<f32>;
+@group(0) @binding(4) var<storage, read_write> outp: array<${outT}>;
 @group(0) @binding(5) var<storage, read> pre: array<f32>;
 @group(0) @binding(6) var<storage, read> mask: array<f32>;
 
@@ -156,10 +188,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(num_workgroups) nwg: vec3
   let b = idx / perBatch;
   let c = (idx / P.area) % P.C;
   let pos = idx % P.area;
-  var x = inp[idx];
+  var x = f32(inp[idx]);
   if ((P.flags & 1u) != 0u) { x += pre[b * P.C + c]; }
   let y = activate(x * sb[c] + sb[P.C + c], P.act);
-  outp[idx] = select(0.0, y, mask[b * P.maskStride + pos] == 1.0);
+  outp[idx] = ${outT}(select(0.0, y, mask[b * P.maskStride + pos] == 1.0));
 }
 `;
 
@@ -168,12 +200,12 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(num_workgroups) nwg: vec3
  * n counts the on-board points and the third is the max over them (mode 0) or the mean · ((√n − 14)²/100 − 0.1) the
  * value head uses (mode 1). Inputs are already masked to 0 off the board.
  */
-export const GPOOL = /* wgsl */ `
+export const GPOOL = (inT: Elem) => /* wgsl */ `${enableFor(inT)}
 ${DYN}
 struct Params { C: u32, area: u32, mode: u32, maskStride: u32 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> inp: array<f32>;
+@group(0) @binding(2) var<storage, read> inp: array<${inT}>;
 @group(0) @binding(3) var<storage, read_write> outp: array<f32>;
 @group(0) @binding(4) var<storage, read> mask: array<f32>;
 
@@ -190,7 +222,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var m = -1.0;
   var count = 0.0;
   for (var i = li; i < P.area; i += 64u) {
-    let x = inp[(b * P.C + c) * P.area + i];
+    let x = f32(inp[(b * P.C + c) * P.area + i]);
     let k = mask[b * P.maskStride + i];
     s += x;
     m = max(m, x + (k - 1.0));
@@ -317,7 +349,7 @@ export function winogradWeights(weights: Float32Array, inChannels: number, outCh
  * flags bit 0: apply BN_ACT's batch norm, activation and mask to each input value first (fusing the preceding layer);
  * bit 1: with it, first add `pre[b][c]`. Padding stays 0, as it would be after a separate BN_ACT.
  */
-export const WINO_IN = /* wgsl */ `
+export const WINO_IN = (inT: Elem, vT: Elem) => /* wgsl */ `${enableFor(inT, vT)}
 ${DYN}
 ${ACTIVATE}
 struct Params {
@@ -327,8 +359,8 @@ struct Params {
 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> inp: array<f32>;
-@group(0) @binding(3) var<storage, read_write> V: array<f32>;
+@group(0) @binding(2) var<storage, read> inp: array<${inT}>;
+@group(0) @binding(3) var<storage, read_write> V: array<${vT}>;
 @group(0) @binding(4) var<storage, read> sb: array<f32>;
 @group(0) @binding(5) var<storage, read> pre: array<f32>;
 @group(0) @binding(6) var<storage, read> mask: array<f32>;
@@ -360,7 +392,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       var v = 0.0;
       if (y >= 0 && y < i32(P.ySize) && x >= 0 && x < i32(P.xSize)) {
         let pos = u32(y) * P.xSize + u32(x);
-        v = inp[base + pos];
+        v = f32(inp[base + pos]);
         if (fused) { v = select(0.0, activate((v + preBias) * scale + shift, P.act), mask[b * P.maskStride + pos] == 1.0); }
       }
       d[i * 6 + j] = v;
@@ -368,19 +400,19 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
   var o: array<f32, 36>;
 ${sandwich(BT, 'd', 6, 't', 'o')}
-  for (var e = 0u; e < 36u; e++) { V[(e * P.C + c) * P.tileStride + t] = o[e]; }
+  for (var e = 0u; e < 36u; e++) { V[(e * P.C + c) * P.tileStride + t] = ${vT}(o[e]); }
 }
 `;
 
 /** 36 GEMMs, one per Winograd element: M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t]. Tiled like CONV. */
-export const WINO_GEMM = /* wgsl */ `
+export const WINO_GEMM = (uT: Elem, vT: Elem, mT: Elem) => /* wgsl */ `${enableFor(uT, vT, mT)}
 ${DYN}
 struct Params { inC: u32, outC: u32, tilesPerBoard: u32, tileStride: u32 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> U: array<f32>;
-@group(0) @binding(3) var<storage, read> V: array<f32>;
-@group(0) @binding(4) var<storage, read_write> M: array<f32>;
+@group(0) @binding(2) var<storage, read> U: array<${uT}>;
+@group(0) @binding(3) var<storage, read> V: array<${vT}>;
+@group(0) @binding(4) var<storage, read_write> M: array<${mT}>;
 
 const TM = 64u;
 const TN = 64u;
@@ -405,10 +437,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
       let k = k0 + idx / 64u;
       let col = idx % 64u;
       var a = 0.0;
-      if (k < P.inC && m0 + col < P.outC) { a = U[uBase + k * P.outC + m0 + col]; }
+      if (k < P.inC && m0 + col < P.outC) { a = f32(U[uBase + k * P.outC + m0 + col]); }
       As[idx] = a;
       var v = 0.0;
-      if (k < P.inC && n0 + col < N) { v = V[vBase + k * P.tileStride + n0 + col]; }
+      if (k < P.inC && n0 + col < N) { v = f32(V[vBase + k * P.tileStride + n0 + col]); }
       Bs[idx] = v;
     }
     workgroupBarrier();
@@ -428,7 +460,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
     if (m >= P.outC) { continue; }
     for (var j = 0u; j < 4u; j++) {
       let t = n0 + j * 16u + l.x;
-      if (t < N) { M[(e * P.outC + m) * P.tileStride + t] = acc[i * 4u + j]; }
+      if (t < N) { M[(e * P.outC + m) * P.tileStride + t] = ${mT}(acc[i * 4u + j]); }
     }
   }
 }
@@ -438,13 +470,13 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
  * Output transform: one thread per (tile, output channel), Y = Aᵀ m A, written to the board with CONV's flags
  * (bit 0 accumulate, bit 1 per-(batch, channel) bias).
  */
-export const WINO_OUT = /* wgsl */ `
+export const WINO_OUT = (mT: Elem, outT: Elem) => /* wgsl */ `${enableFor(mT, outT)}
 ${DYN}
 struct Params { outC: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, flags: u32, _pad0: u32 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> M: array<f32>;
-@group(0) @binding(3) var<storage, read_write> outp: array<f32>;
+@group(0) @binding(2) var<storage, read> M: array<${mT}>;
+@group(0) @binding(3) var<storage, read_write> outp: array<${outT}>;
 @group(0) @binding(4) var<storage, read> nbias: array<f32>;
 
 @compute @workgroup_size(64)
@@ -453,7 +485,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let c = gid.y;
   if (t >= dyn.n * P.tilesPerBoard || c >= P.outC) { return; }
   var m: array<f32, 36>;
-  for (var e = 0u; e < 36u; e++) { m[e] = M[(e * P.outC + c) * P.tileStride + t]; }
+  for (var e = 0u; e < 36u; e++) { m[e] = f32(M[(e * P.outC + c) * P.tileStride + t]); }
   var y: array<f32, 16>;
 ${sandwich(AT, 'm', 6, 't', 'y')}
   let b = t / P.tilesPerBoard;
@@ -470,8 +502,8 @@ ${sandwich(AT, 'm', 6, 't', 'y')}
       if (yy < P.ySize && xx < P.xSize) {
         let o = base + yy * P.xSize + xx;
         var v = y[i * 4u + j] + bias;
-        if ((P.flags & 1u) != 0u) { v += outp[o]; }
-        outp[o] = v;
+        if ((P.flags & 1u) != 0u) { v += f32(outp[o]); }
+        outp[o] = ${outT}(v);
       }
     }
   }

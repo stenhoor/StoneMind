@@ -7,9 +7,11 @@
  * KataGo does with its fixed-size network buffers.
  */
 import type { Activation, BatchNormLayer, Block, ConvLayer, MatMulLayer, MatBiasLayer, ModelDesc } from '../model/types.js';
+import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights } from './kernels.js';
+import { toFloat16Array } from './f16.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -22,6 +24,24 @@ export interface GpuNetworkOptions {
   winograd?: boolean;
   /** With Winograd, apply a preceding batch norm and activation inside the input transform (default true). */
   fuse?: boolean;
+  /**
+   * Storage precision of activations and convolution weights (default 'f32'). 'f16' needs the device feature
+   * `shader-f16`; arithmetic stays f32 either way.
+   */
+  precision?: 'f32' | 'f16';
+  /**
+   * Run KataGo's scale8 transform on the model first (`model/scale8.ts`), as KataGo's OpenCL backend does, keeping
+   * activations inside fp16's range. Default: on for 'f16', off for 'f32'. Results are returned unscaled either way.
+   */
+  scale8?: boolean;
+}
+
+/** An op as the plan builder records it, before its shader is compiled. */
+interface OpSpec {
+  kind: string;
+  code: string;
+  buffers: GPUBuffer[];
+  workgroups: (n: number) => [number, number] | [number, number, number];
 }
 
 /** Timings from {@link GpuNetwork.profile}. GPU times come from timestamp queries, in nanoseconds as the browser reports them. */
@@ -115,7 +135,13 @@ export class GpuNetwork {
   #global!: GPUBuffer;
   #staging!: GPUBuffer;
   #stagingFloats = 0;
-  #pipelines!: Record<'conv' | 'bnAct' | 'gpool' | 'matvec' | 'winoIn' | 'winoGemm' | 'winoOut', GPUComputePipeline>;
+  readonly #specs: OpSpec[] = [];
+  readonly #elems = new Map<GPUBuffer, Elem>();
+  /** The model the plan runs: `model`, or its scale8 transform. */
+  #desc!: ModelDesc;
+  /** What raw outputs are multiplied by on readback: 8 with scale8, else 1. */
+  #outputFactor = 1;
+  #elem: Elem = 'f32';
   #winograd = true;
   #timestamps = false;
   readonly #kinds = new Map<GPUComputePipeline, string>();
@@ -143,6 +169,11 @@ export class GpuNetwork {
     const net = new GpuNetwork(engine.device, model, options.xSize ?? 19, options.ySize ?? 19, options.maxBatch ?? 1);
     net.#winograd = options.winograd ?? true;
     net.#timestamps = engine.features.has('timestamp-query');
+    net.#elem = options.precision ?? 'f32';
+    if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
+    const scale8 = options.scale8 ?? net.#elem === 'f16';
+    net.#desc = scale8 ? applyScale8(model) : model;
+    net.#outputFactor = scale8 ? 8 : 1;
     net.#fuse = options.fuse ?? true;
     const { device } = net;
     device.pushErrorScope('validation');
@@ -159,16 +190,27 @@ export class GpuNetwork {
 
   // ------------------------------------------------------------------ building
 
-  #buffer(floats: number, usage = STORAGE): GPUBuffer {
-    const b = this.device.createBuffer({ size: Math.max(16, Math.ceil((floats * 4) / 16) * 16), usage });
+  #buffer(count: number, usage = STORAGE, elem: Elem = 'f32'): GPUBuffer {
+    const bytes = count * (elem === 'f16' ? 2 : 4);
+    const b = this.device.createBuffer({ size: Math.max(16, Math.ceil(bytes / 16) * 16), usage });
     this.#owned.push(b);
+    this.#elems.set(b, elem);
     return b;
   }
 
-  #upload(data: Float32Array): GPUBuffer {
-    const b = this.#buffer(data.length, BufferUsage.STORAGE | BufferUsage.COPY_DST);
-    this.device.queue.writeBuffer(b, 0, data);
+  /** A large tensor, in the plan's storage precision. */
+  #tensor(count: number): GPUBuffer {
+    return this.#buffer(count, STORAGE, this.#elem);
+  }
+
+  #upload(data: Float32Array, elem: Elem = 'f32'): GPUBuffer {
+    const b = this.#buffer(data.length, BufferUsage.STORAGE | BufferUsage.COPY_DST, elem);
+    this.device.queue.writeBuffer(b, 0, elem === 'f16' ? toFloat16Array(data) : data);
     return b;
+  }
+
+  #elemOf(buffer: GPUBuffer): Elem {
+    return this.#elems.get(buffer) ?? 'f32';
   }
 
   #uniform(values: readonly number[]): GPUBuffer {
@@ -186,15 +228,32 @@ export class GpuNetwork {
     });
   }
 
+  /** Compile every distinct shader the plan uses, then bind each op. */
+  async #compile(): Promise<void> {
+    const { device } = this;
+    const pipelines = new Map<string, Promise<GPUComputePipeline>>();
+    for (const spec of this.#specs) {
+      if (!pipelines.has(spec.code)) {
+        const module = device.createShaderModule({ code: spec.code });
+        pipelines.set(
+          spec.code,
+          device.createComputePipelineAsync({ layout: 'auto', compute: { module, entryPoint: 'main' } }).catch(async (e: unknown) => {
+            const info = await module.getCompilationInfo();
+            const messages = info.messages.map((m) => `${m.type} at ${m.lineNum}:${m.linePos}: ${m.message}`).join('; ');
+            throw new Error(`${spec.kind} shader failed to compile: ${messages || String(e)}`);
+          }),
+        );
+      }
+    }
+    for (const spec of this.#specs) {
+      const pipeline = await pipelines.get(spec.code)!;
+      this.#kinds.set(pipeline, spec.kind);
+      this.#ops.push({ pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups });
+    }
+  }
+
   async #build(): Promise<void> {
-    const { device, model } = this;
-    const compile = async (code: string) =>
-      device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code }), entryPoint: 'main' } });
-    const [conv, bnAct, gpool, matvec, winoIn, winoGemm, winoOut] = await Promise.all(
-      [CONV, BN_ACT, GPOOL, MATVEC, WINO_IN, WINO_GEMM, WINO_OUT].map(compile),
-    );
-    this.#pipelines = { conv: conv!, bnAct: bnAct!, gpool: gpool!, matvec: matvec!, winoIn: winoIn!, winoGemm: winoGemm!, winoOut: winoOut! };
-    for (const [kind, pipeline] of Object.entries(this.#pipelines)) this.#kinds.set(pipeline, kind);
+    const model = this.#desc;
 
     const B = this.maxBatch;
     const area = this.#area;
@@ -205,13 +264,13 @@ export class GpuNetwork {
     this.#global = this.#buffer(B * model.numInputGlobalChannels);
 
     const t = model.trunk;
-    const trunk = this.#buffer(B * t.trunkNumChannels * area);
-    const inner = Array.from({ length: nestingDepth(t.blocks) }, () => this.#buffer(B * C * area));
+    const trunk = this.#tensor(B * t.trunkNumChannels * area);
+    const inner = Array.from({ length: nestingDepth(t.blocks) }, () => this.#tensor(B * C * area));
     const s = {
-      a: this.#buffer(B * C * area),
-      m: this.#buffer(B * C * area),
-      b: this.#buffer(B * C * area),
-      g: this.#buffer(B * C * area),
+      a: this.#tensor(B * C * area),
+      m: this.#tensor(B * C * area),
+      b: this.#tensor(B * C * area),
+      g: this.#tensor(B * C * area),
       pooled: this.#buffer(B * 3 * C),
       vec: this.#buffer(B * C),
       vec2: this.#buffer(B * C),
@@ -220,7 +279,7 @@ export class GpuNetwork {
       const tilesX = Math.ceil(this.xSize / 4);
       const tilesPerBoard = tilesX * Math.ceil(this.ySize / 4);
       const tileStride = B * tilesPerBoard;
-      this.#wino = { V: this.#buffer(36 * C * tileStride), M: this.#buffer(36 * C * tileStride), tilesX, tilesPerBoard, tileStride };
+      this.#wino = { V: this.#tensor(36 * C * tileStride), M: this.#tensor(36 * C * tileStride), tilesX, tilesPerBoard, tileStride };
     }
 
     // Trunk.
@@ -311,6 +370,7 @@ export class GpuNetwork {
     }
     this.#stagingFloats = offset;
     this.#staging = this.#buffer(offset, BufferUsage.MAP_READ | BufferUsage.COPY_DST);
+    await this.#compile();
   }
 
   #conv(layer: ConvLayer, input: GPUBuffer, output: GPUBuffer, opts: { accumulate?: boolean; nbias?: GPUBuffer } = {}): void {
@@ -325,12 +385,12 @@ export class GpuNetwork {
       layer.dilationY, layer.dilationX, this.xSize, this.ySize,
       K, flags, 0, 0,
     ]);
-    const weights = this.#upload(convWeightsKxOc(layer));
-    const pipeline = this.#pipelines.conv;
+    const weights = this.#upload(convWeightsKxOc(layer), this.#elem);
     const area = this.#area;
-    this.#ops.push({
-      pipeline,
-      bindGroup: this.#bind(pipeline, [params, this.#dyn, input, weights, output, opts.nbias ?? this.#dummy]),
+    this.#specs.push({
+      kind: 'conv',
+      code: CONV(this.#elemOf(input), this.#elem, this.#elemOf(output)),
+      buffers: [params, this.#dyn, input, weights, output, opts.nbias ?? this.#dummy],
       workgroups: (n) => [Math.ceil((n * area) / CONV_TILE_N), Math.ceil(layer.outChannels / CONV_TILE_M)],
     });
   }
@@ -374,32 +434,35 @@ export class GpuNetwork {
   ): void {
     const { V, M, tilesX, tilesPerBoard, tileStride } = this.#wino!;
     const { inChannels: ic, outChannels: oc } = layer;
-    const { winoIn, winoGemm, winoOut } = this.#pipelines;
     const inFlags = fused ? 1 | (fused.pre ? 2 : 0) : 0;
     const act = fused ? ACT[fused.activation] : 0;
-    this.#ops.push({
-      pipeline: winoIn,
-      bindGroup: this.#bind(winoIn, [
-        this.#uniform([ic, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, inFlags, act, this.model.numInputChannels * this.#area, 0, 0, 0]),
+    this.#specs.push({
+      kind: 'winoIn',
+      code: WINO_IN(this.#elemOf(input), this.#elemOf(V)),
+      buffers: [
+        this.#uniform([ic, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, inFlags, act, this.#desc.numInputChannels * this.#area, 0, 0, 0]),
         this.#dyn, input, V,
         fused ? this.#upload(mergedScaleBias(fused.bn)) : this.#dummy,
         fused?.pre ?? this.#dummy,
         this.#input,
-      ]),
+      ],
       workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
-    this.#ops.push({
-      pipeline: winoGemm,
-      bindGroup: this.#bind(winoGemm, [this.#uniform([ic, oc, tilesPerBoard, tileStride]), this.#dyn, this.#upload(winogradWeights(layer.weights, ic, oc)), V, M]),
+    const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
+    this.#specs.push({
+      kind: 'winoGemm',
+      code: WINO_GEMM(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),
+      buffers: [this.#uniform([ic, oc, tilesPerBoard, tileStride]), this.#dyn, U, V, M],
       workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), Math.ceil(oc / 64), 36],
     });
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
-    this.#ops.push({
-      pipeline: winoOut,
-      bindGroup: this.#bind(winoOut, [
+    this.#specs.push({
+      kind: 'winoOut',
+      code: WINO_OUT(this.#elemOf(M), this.#elemOf(output)),
+      buffers: [
         this.#uniform([oc, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, flags, 0]),
         this.#dyn, M, output, opts.nbias ?? this.#dummy,
-      ]),
+      ],
       workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), oc],
     });
   }
@@ -407,23 +470,23 @@ export class GpuNetwork {
   #bnAct(bn: BatchNormLayer, activation: Activation, input: GPUBuffer, output: GPUBuffer, pre?: GPUBuffer): void {
     const C = bn.numChannels;
     const area = this.#area;
-    const params = this.#uniform([C, area, pre ? 1 : 0, ACT[activation], this.model.numInputChannels * area, 0, 0, 0]);
+    const params = this.#uniform([C, area, pre ? 1 : 0, ACT[activation], this.#desc.numInputChannels * area, 0, 0, 0]);
     const sb = mergedScaleBias(bn);
-    const pipeline = this.#pipelines.bnAct;
-    this.#ops.push({
-      pipeline,
-      bindGroup: this.#bind(pipeline, [params, this.#dyn, input, this.#upload(sb), output, pre ?? this.#dummy, this.#input]),
+    this.#specs.push({
+      kind: 'bnAct',
+      code: BN_ACT(this.#elemOf(input), this.#elemOf(output)),
+      buffers: [params, this.#dyn, input, this.#upload(sb), output, pre ?? this.#dummy, this.#input],
       workgroups: (n) => splitGroups(Math.ceil((n * C * area) / 256)),
     });
   }
 
   #gpool(input: GPUBuffer, channels: number, output: GPUBuffer, mode: 0 | 1): void {
     const area = this.#area;
-    const params = this.#uniform([channels, area, mode, this.model.numInputChannels * area]);
-    const pipeline = this.#pipelines.gpool;
-    this.#ops.push({
-      pipeline,
-      bindGroup: this.#bind(pipeline, [params, this.#dyn, input, output, this.#input]),
+    const params = this.#uniform([channels, area, mode, this.#desc.numInputChannels * area]);
+    this.#specs.push({
+      kind: 'gpool',
+      code: GPOOL(this.#elemOf(input)),
+      buffers: [params, this.#dyn, input, output, this.#input],
       workgroups: (n) => [channels, n],
     });
   }
@@ -439,10 +502,10 @@ export class GpuNetwork {
     activation: Activation = 'identity',
   ): void {
     const params = this.#uniform([layer.inChannels, layer.outChannels, inStride, outStride, outOffset, bias ? 1 : 0, ACT[activation], 0]);
-    const pipeline = this.#pipelines.matvec;
-    this.#ops.push({
-      pipeline,
-      bindGroup: this.#bind(pipeline, [params, this.#dyn, input, this.#upload(layer.weights), output, bias ? this.#upload(bias.weights) : this.#dummy]),
+    this.#specs.push({
+      kind: 'matvec',
+      code: MATVEC,
+      buffers: [params, this.#dyn, input, this.#upload(layer.weights), output, bias ? this.#upload(bias.weights) : this.#dummy],
       workgroups: (n) => [Math.ceil(layer.outChannels / 64), n],
     });
   }
@@ -561,6 +624,8 @@ export class GpuNetwork {
     await this.#staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4);
     const data = new Float32Array(this.#staging.getMappedRange(0, this.#stagingFloats * 4).slice(0));
     this.#staging.unmap();
+    // Undo scale8: every raw output came out 1/8 as large. Multiplying by 8 is exact in f32.
+    if (this.#outputFactor !== 1) for (let i = 0; i < data.length; i++) data[i]! *= this.#outputFactor;
     let timestamps: BigUint64Array | undefined;
     if (query) {
       await query.read.mapAsync(MapMode.READ);

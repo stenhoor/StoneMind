@@ -1,6 +1,6 @@
 // The GPU check page's logic. Query parameters: model (URL of the .bin.gz), golden (URL of its golden outputs).
 import {
-  loadModel, encodePositionV7, parseGtp, forward, postProcess, requestEngineDevice, GpuNetwork,
+  loadModel, encodePositionV7, parseGtp, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
 } from '../../dist/index.js';
 
 // The same tolerances as test/goldens.test.mjs.
@@ -57,16 +57,134 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     return { position, size, encoded };
   });
 
+  report.activations = await checkActivations(engine.device);
   report.variants = [];
-  for (const variant of [{ winograd: true, fuse: true }, { winograd: true, fuse: false }, { winograd: false }]) {
+  const variants = [
+    { winograd: true, fuse: true },
+    { winograd: true, fuse: false },
+    { winograd: false },
+    // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
+    { winograd: true, fuse: true, scale8: true },
+  ];
+  if (engine.features.has('shader-f16')) variants.push({ winograd: true, fuse: true, precision: 'f16' }, { winograd: true, fuse: false, precision: 'f16' });
+  else report.f16 = 'not checked: the device has no shader-f16';
+  for (const variant of variants) {
     report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
   }
   report.goldensCompared = Boolean(golden);
-  report.ok = Boolean(golden) && report.variants.every((v) => v.ok);
+  report.ok = Boolean(golden) && report.activations.ok && report.variants.every((v) => v.ok);
   return report;
 }
 
 /** Check one network variant (GpuNetwork options) on every case; optionally benchmark it. */
+/**
+ * The WGSL `activate` function against KataGo's formulas, computed in double precision: mish as in the Eigen
+ * backend, mish_scale8 as in the OpenCL kernels (ACTIVATION == 12). Inputs cover -30..30, with a fine grid near 0
+ * and around mish_scale8's switch at 2.5. Tolerance: 1e-5 · max(1, |y|), well above f32 rounding and well below what
+ * the goldens test could notice.
+ */
+async function checkActivations(device) {
+  const formulas = {
+    identity: (x) => x,
+    relu: (x) => Math.max(x, 0),
+    mish: (x) => x * Math.tanh(Math.log1p(Math.exp(Math.min(x, 20))) + Math.max(x, 20) - 20),
+    silu: (x) => x / (1 + Math.exp(-x)),
+    mish_scale8: (x) => (x < 2.5 ? x * Math.tanh(Math.log1p(Math.exp(8 * x))) : x),
+  };
+  const xs = [];
+  for (let x = -30; x <= 30; x += 0.25) xs.push(x);
+  for (let x = -3; x <= 3; x += 1 / 128) xs.push(x);
+  for (let x = 2.49; x <= 2.51; x += 0.0005) xs.push(x);
+  const input = new Float32Array(xs);
+  const module = device.createShaderModule({ code: ACTIVATION_PROBE });
+  const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module, entryPoint: 'main' } });
+  const STORAGE = 0x80, COPY_DST = 0x08, COPY_SRC = 0x04, UNIFORM = 0x40, MAP_READ = 0x01;
+  const xsBuf = device.createBuffer({ size: input.byteLength, usage: STORAGE | COPY_DST });
+  const ysBuf = device.createBuffer({ size: input.byteLength, usage: STORAGE | COPY_SRC });
+  const readBuf = device.createBuffer({ size: input.byteLength, usage: MAP_READ | COPY_DST });
+  const actBuf = device.createBuffer({ size: 16, usage: UNIFORM | COPY_DST });
+  device.queue.writeBuffer(xsBuf, 0, input);
+  const result = { ok: true, maxError: {} };
+  for (const [name, f] of Object.entries(formulas)) {
+    device.queue.writeBuffer(actBuf, 0, new Uint32Array([ACT[name], 0, 0, 0]));
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [actBuf, xsBuf, ysBuf].map((buffer, binding) => ({ binding, resource: { buffer } })),
+    }));
+    pass.dispatchWorkgroups(Math.ceil(input.length / 64));
+    pass.end();
+    encoder.copyBufferToBuffer(ysBuf, 0, readBuf, 0, input.byteLength);
+    device.queue.submit([encoder.finish()]);
+    await readBuf.mapAsync(1);
+    const ys = new Float32Array(readBuf.getMappedRange().slice(0));
+    readBuf.unmap();
+    let worst = 0;
+    let at = 0;
+    for (let i = 0; i < input.length; i++) {
+      const want = f(input[i]);
+      const err = Math.abs(ys[i] - want) / Math.max(1, Math.abs(want));
+      if (err > worst) { worst = err; at = i; }
+    }
+    result.maxError[name] = worst;
+    result.worstAt ??= {};
+    result.worstAt[name] = { x: input[at], gpu: ys[at], want: f(input[at]) };
+    if (!(worst <= 1e-5)) result.ok = false;
+  }
+  for (const b of [xsBuf, ysBuf, readBuf, actBuf]) b.destroy();
+  return result;
+}
+
+/**
+ * KataGo's GPU error statistics (`GpuErrorStats` in cpp/tests/testnnevalcanary.cpp, KataGo 1.18) of our outputs
+ * against the goldens, at symmetry 0, and KataGo's limits for an fp16 configuration against an fp32 reference
+ * (`runBackendErrorTest`: checkStats99(2.0, 1.00, 2.50, 0.0020) and checkStatsMax(5.0, 3.00, 6.00, 0.0040)).
+ * The goldens have no no-result probability (taken as 1 − win − loss), score stdev or short-term error outputs, so the
+ * three metrics built on those last two are not checked.
+ */
+function katagoErrorStats(evaluated) {
+  const stats = { winrateError: [], leadError: [], scoreMeanError: [], topPolicyDiff: [], policyKLDiv: [], ownershipError: [] };
+  for (const { got, want, size } of evaluated) {
+    const area = size * size;
+    const baseNoResult = 1 - want.whiteWin - want.whiteLoss;
+    stats.winrateError.push(
+      Math.abs(0.5 * (want.whiteWin - want.whiteLoss) - 0.5 * (got.whiteWinProb - got.whiteLossProb)) + Math.abs(baseNoResult - got.whiteNoResultProb),
+    );
+    stats.leadError.push(Math.abs(want.whiteLead - got.whiteLead));
+    stats.scoreMeanError.push(Math.abs(want.whiteScoreSelfplay - got.whiteScoreMean));
+    const base = [...want.policy.slice(0, area).map((p) => (p === null ? -1 : p)), want.policyPass];
+    const other = Array.from(got.policy);
+    let top = 0;
+    for (let i = 0; i < base.length; i++) if (base[i] > base[top]) top = i;
+    stats.topPolicyDiff.push(Math.abs(base[top] - other[top]));
+    let kl = 0;
+    for (let i = 0; i < base.length; i++) if (base[i] > 1e-30) kl += base[i] * (Math.log(base[i]) - Math.log(other[i]));
+    stats.policyKLDiv.push(kl);
+    for (let i = 0; i < area; i++) stats.ownershipError.push(Math.abs(want.whiteOwnership[i] - got.whiteOwnership[i]));
+  }
+  const sorted = Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, [...v].sort((a, b) => a - b)]));
+  const p99 = (v) => v[Math.floor(((v.length - 1) * 99) / 100)];
+  const max = (v) => v[v.length - 1];
+  const at = (pick) => Object.fromEntries(Object.entries(sorted).map(([k, v]) => [k, pick(v)]));
+  const q99 = at(p99);
+  const qMax = at(max);
+  // KataGo's checks, as written: winrate, top-policy and ownership are compared in percent.
+  const check = (q, wr, score, tpd, pkld, ownershipMult) => ({
+    winrateError: 100 * q.winrateError / wr,
+    leadError: q.leadError / score,
+    scoreMeanError: q.scoreMeanError / score,
+    topPolicyDiff: 100 * q.topPolicyDiff / tpd,
+    policyKLDiv: q.policyKLDiv / pkld,
+    ownershipError: 100 * q.ownershipError / (wr * ownershipMult),
+  });
+  const ratio99 = check(q99, 2.0, 1.0, 2.5, 0.002, 1.75);
+  const ratioMax = check(qMax, 5.0, 3.0, 6.0, 0.004, 4.0);
+  const worst = Math.max(...Object.values(ratio99), ...Object.values(ratioMax));
+  return { percentile99: q99, max: qMax, fp16LimitRatio99: ratio99, fp16LimitRatioMax: ratioMax, worstFp16LimitRatio: worst, fp16LimitsPass: worst <= 1 };
+}
+
 async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }) {
   const report = { variant };
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
@@ -76,6 +194,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
 
   report.positions = [];
   let ok = true;
+  const evaluated = [];
   cases.forEach(({ position, size, encoded }, i) => {
     const gpu = batched[i];
     const row = { id: position.id };
@@ -94,13 +213,20 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
     if (want) {
       const nextPlayer = encoded.nextPlayer;
       const got = postProcess(model, gpu, { nextPlayer, legal: encoded.legal, koRuleSimple: encoded.koRuleSimple, scoringTerritory: encoded.scoringTerritory });
+      evaluated.push({ got, want, size });
       const fails = compareGolden(got, want, size);
       row.matchesKataGo = fails.length === 0;
-      if (fails.length) { row.failures = fails.slice(0, 5); ok = false; }
+      if (fails.length) row.failures = fails.slice(0, 5);
+      // fp16 is judged by KataGo's own fp16 limits (below), not by the strict fp32 tolerances.
+      if (fails.length && variant.precision !== 'f16') ok = false;
     }
     report.positions.push(row);
   });
   report.batchOfOneMatchesBatched = maxAbsDiff(single[0].ownership, batched[0].ownership) === 0 && maxAbsDiff(single[0].policy[0], batched[0].policy[0]) === 0;
+  if (evaluated.length) {
+    report.katagoErrorStats = katagoErrorStats(evaluated);
+    if (variant.precision === 'f16' && !report.katagoErrorStats.fp16LimitsPass) ok = false;
+  }
   report.ok = ok;
 
   if (bench) {
