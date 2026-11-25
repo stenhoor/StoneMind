@@ -32,6 +32,11 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     KataGo's **scale8** transform first (`src/model/scale8.ts`, ported from `ModelDesc::applyScale8ToReduceActivations`):
     activations run at 1/8 scale with `mish_scale8`, and raw outputs are multiplied back by 8 on readback, so results
     are unscaled either way. `scale8: true` also works in f32.
+  - **GEMM v2** (`gemm: 'v2'`, default `'v1'` until it is measured faster): one generic batched matrix multiply
+    (`GEMM_V2`) for the Winograd GEMMs and for 1×1 convolutions, which become a plain GEMM per batch position instead
+    of going through the implicit-GEMM convolution. 64 × 128 tiles, 4 × 8 outputs per thread, and a fully unrolled
+    inner product with scalar accumulators, so no index there is a run-time value apart from each thread's offsets
+    into workgroup memory (WebKit clamps every non-constant array index: `Source/WebGPU/WGSL/BoundsCheck.cpp`).
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
     `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
@@ -79,7 +84,7 @@ It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with 
 KataGo version, the backend and the network's SHA-256.
 
 **The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
-WebGPU network on the golden positions in one batch (each variant: Winograd fused, Winograd unfused, implicit GEMM, fp32 with scale8, and fp16 fused and unfused where the device has `shader-f16`), compares every output with the reference forward pass, and
+WebGPU network on the golden positions in one batch (each variant: Winograd fused and unfused, implicit GEMM, fp32 with scale8, GEMM v2 fused and unfused, and fp16 fused and unfused with each GEMM where the device has `shader-f16`; `--variants <text>` or `?variants=` runs only those whose JSON contains the text), compares every output with the reference forward pass, and
 compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. `--bench`
 adds evaluations per second by batch size.
 
