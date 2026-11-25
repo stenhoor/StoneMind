@@ -43,6 +43,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   report.features = [...engine.features];
   const model = await loadModel(new Uint8Array(await (await fetch(modelUrl)).arrayBuffer()));
   report.model = model.name;
+
   const positions = (await getJson('../goldens/positions.json')).positions;
   const golden = await fetch(goldenUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
@@ -53,7 +54,19 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     return { position, size, encoded };
   });
 
-  const net = await GpuNetwork.create(engine, model, { maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
+  report.variants = [];
+  for (const winograd of [true, false]) {
+    report.variants.push(await checkVariant({ engine, model, cases, golden, winograd, bench, batches, runs }));
+  }
+  report.goldensCompared = Boolean(golden);
+  report.ok = Boolean(golden) && report.variants.every((v) => v.ok);
+  return report;
+}
+
+/** Check one network variant (Winograd on or off) on every case; optionally benchmark it. */
+async function checkVariant({ engine, model, cases, golden, winograd, bench, batches, runs }) {
+  const report = { winograd };
+  const net = await GpuNetwork.create(engine, model, { winograd, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
   report.dispatches = net.dispatchCount;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
@@ -82,8 +95,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     report.positions.push(row);
   });
   report.batchOfOneMatchesBatched = maxAbsDiff(single[0].ownership, batched[0].ownership) === 0 && maxAbsDiff(single[0].policy[0], batched[0].policy[0]) === 0;
-  report.goldensCompared = Boolean(golden);
-  report.ok = ok && Boolean(golden);
+  report.ok = ok;
 
   if (bench) {
     report.bench = [];

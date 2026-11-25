@@ -9,7 +9,7 @@
 import type { Activation, BatchNormLayer, Block, ConvLayer, MatMulLayer, MatBiasLayer, ModelDesc } from '../model/types.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GPOOL, MATVEC } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -18,12 +18,14 @@ export interface GpuNetworkOptions {
   ySize?: number;
   /** The largest batch the plan accepts (default 1). */
   maxBatch?: number;
+  /** Run 3×3 convolutions with Winograd F(4×4,3×3) (default true); false uses the implicit GEMM for every size. */
+  winograd?: boolean;
 }
 
 interface Op {
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
-  workgroups: (n: number) => [number, number];
+  workgroups: (n: number) => [number, number] | [number, number, number];
 }
 
 interface OutputRegion {
@@ -92,7 +94,9 @@ export class GpuNetwork {
   #global!: GPUBuffer;
   #staging!: GPUBuffer;
   #stagingFloats = 0;
-  #pipelines!: { conv: GPUComputePipeline; bnAct: GPUComputePipeline; gpool: GPUComputePipeline; matvec: GPUComputePipeline };
+  #pipelines!: Record<'conv' | 'bnAct' | 'gpool' | 'matvec' | 'winoIn' | 'winoGemm' | 'winoOut', GPUComputePipeline>;
+  #winograd = true;
+  #wino?: { V: GPUBuffer; M: GPUBuffer; tilesX: number; tilesPerBoard: number; tileStride: number };
   #dummy!: GPUBuffer;
   #busy: Promise<unknown> = Promise.resolve();
   #destroyed = false;
@@ -113,6 +117,7 @@ export class GpuNetwork {
   static async create(engine: EngineDevice, model: ModelDesc, options: GpuNetworkOptions = {}): Promise<GpuNetwork> {
     if (model.trunk.sgfMetadataEncoder) throw new Error('models with an SGF metadata encoder are not supported yet');
     const net = new GpuNetwork(engine.device, model, options.xSize ?? 19, options.ySize ?? 19, options.maxBatch ?? 1);
+    net.#winograd = options.winograd ?? true;
     const { device } = net;
     device.pushErrorScope('validation');
     device.pushErrorScope('out-of-memory');
@@ -159,8 +164,10 @@ export class GpuNetwork {
     const { device, model } = this;
     const compile = async (code: string) =>
       device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code }), entryPoint: 'main' } });
-    const [conv, bnAct, gpool, matvec] = await Promise.all([compile(CONV), compile(BN_ACT), compile(GPOOL), compile(MATVEC)]);
-    this.#pipelines = { conv, bnAct, gpool, matvec };
+    const [conv, bnAct, gpool, matvec, winoIn, winoGemm, winoOut] = await Promise.all(
+      [CONV, BN_ACT, GPOOL, MATVEC, WINO_IN, WINO_GEMM, WINO_OUT].map(compile),
+    );
+    this.#pipelines = { conv: conv!, bnAct: bnAct!, gpool: gpool!, matvec: matvec!, winoIn: winoIn!, winoGemm: winoGemm!, winoOut: winoOut! };
 
     const B = this.maxBatch;
     const area = this.#area;
@@ -182,6 +189,12 @@ export class GpuNetwork {
       vec: this.#buffer(B * C),
       vec2: this.#buffer(B * C),
     };
+    if (this.#winograd) {
+      const tilesX = Math.ceil(this.xSize / 4);
+      const tilesPerBoard = tilesX * Math.ceil(this.ySize / 4);
+      const tileStride = B * tilesPerBoard;
+      this.#wino = { V: this.#buffer(36 * C * tileStride), M: this.#buffer(36 * C * tileStride), tilesX, tilesPerBoard, tileStride };
+    }
 
     // Trunk.
     this.#matvec(t.initialMatMul, this.#global, model.numInputGlobalChannels, s.vec, t.trunkNumChannels, 0);
@@ -271,6 +284,10 @@ export class GpuNetwork {
   }
 
   #conv(layer: ConvLayer, input: GPUBuffer, output: GPUBuffer, opts: { accumulate?: boolean; nbias?: GPUBuffer } = {}): void {
+    if (this.#wino && layer.convYSize === 3 && layer.convXSize === 3 && layer.dilationY === 1 && layer.dilationX === 1) {
+      this.#winogradConv(layer, input, output, opts);
+      return;
+    }
     const K = layer.inChannels * layer.convYSize * layer.convXSize;
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     const params = this.#uniform([
@@ -285,6 +302,31 @@ export class GpuNetwork {
       pipeline,
       bindGroup: this.#bind(pipeline, [params, this.#dyn, input, weights, output, opts.nbias ?? this.#dummy]),
       workgroups: (n) => [Math.ceil((n * area) / CONV_TILE_N), Math.ceil(layer.outChannels / CONV_TILE_M)],
+    });
+  }
+
+  #winogradConv(layer: ConvLayer, input: GPUBuffer, output: GPUBuffer, opts: { accumulate?: boolean; nbias?: GPUBuffer }): void {
+    const { V, M, tilesX, tilesPerBoard, tileStride } = this.#wino!;
+    const { inChannels: ic, outChannels: oc } = layer;
+    const { winoIn, winoGemm, winoOut } = this.#pipelines;
+    this.#ops.push({
+      pipeline: winoIn,
+      bindGroup: this.#bind(winoIn, [this.#uniform([ic, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, 0, 0]), this.#dyn, input, V]),
+      workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
+    });
+    this.#ops.push({
+      pipeline: winoGemm,
+      bindGroup: this.#bind(winoGemm, [this.#uniform([ic, oc, tilesPerBoard, tileStride]), this.#dyn, this.#upload(winogradWeights(layer.weights, ic, oc)), V, M]),
+      workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), Math.ceil(oc / 64), 36],
+    });
+    const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
+    this.#ops.push({
+      pipeline: winoOut,
+      bindGroup: this.#bind(winoOut, [
+        this.#uniform([oc, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, flags, 0]),
+        this.#dyn, M, output, opts.nbias ?? this.#dummy,
+      ]),
+      workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), oc],
     });
   }
 
@@ -384,8 +426,8 @@ export class GpuNetwork {
     for (const op of this.#ops) {
       pass.setPipeline(op.pipeline);
       pass.setBindGroup(0, op.bindGroup);
-      const [x, y] = op.workgroups(n);
-      pass.dispatchWorkgroups(x, y);
+      const [x, y, z = 1] = op.workgroups(n);
+      pass.dispatchWorkgroups(x, y, z);
     }
     pass.end();
     for (const out of this.#outputs) encoder.copyBufferToBuffer(out.buffer, 0, this.#staging, out.stagingOffset * 4, n * out.perBatch * 4);
