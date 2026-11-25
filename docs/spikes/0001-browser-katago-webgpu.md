@@ -50,7 +50,8 @@ I read the source of every project below, not just its README. All numbers are t
 - **Input features** (`nninputs.cpp`) need full rules, ladder search, Benson pass-alive detection and 8 symmetries.
 - **fp16.** KataGo's fp16 handling for convnets rescales Mish activations by 8 (`scale8`). A naive fp16 cast fails, as it did in yagoo.
 - **Local engine.** The Analysis Engine speaks newline-delimited JSON over stdin/stdout. It streams partial results (`reportDuringSearchEvery`) and accepts `terminate`. KataGo has no network server, so a browser needs a small local bridge.
-- **Licence.** KataGo's code is MIT, and porting it needs the copyright notice. Anything derived from CLBlast is Apache-2.0. The weights' licence is **unverified**: katagotraining.org was unreachable from the research session.
+- **Code licence.** KataGo's code is MIT ("Copyright 2025 David J Wu ('lightvector') and/or other authors"), and porting it needs the copyright and permission notice. Libraries under `cpp/external` (CLBlast, cutlass and others) and `cpp/core/sha2.cpp` carry their own licences: anything derived from CLBlast is Apache-2.0.
+- **Network licences.** These are covered in [Network licences](#network-licences) below; the text was supplied by the owner from katagotraining.org.
 
 ---
 
@@ -70,7 +71,7 @@ I read the source of every project below, not just its README. All numbers are t
 
   Matching native KataGo is not a goal, but native is measured as a reference.
 - ✅ **Native baseline:** KataGo with CUDA or TensorRT on the owner's Linux machine. It provides speed numbers, accuracy goldens (`kata-raw-nn`, analysis JSON) and the ONNX export for the onnxruntime-web baseline (`katago dumponnx`).
-- ✅ **Weights:** the player supplies the `.bin.gz`, or the page downloads it directly from katagotraining.org if CORS allows. Nothing is redistributed until the weights' licence is checked.
+- ✅ **Weights:** the player supplies the `.bin.gz`, or the page downloads it directly from katagotraining.org if CORS allows. Hosting the kata1 and g170 networks ourselves is allowed (see [Network licences](#network-licences)), so the bench page may offer a hosted b18 too.
 - ✅ **Local KataGo:** one engine contract (the Analysis Engine JSON) shared by both engines, plus a tiny local bridge. The spike tests the bridge from an https page against the native engine.
 - ✅ **Home:** new independent sub-projects in StoneMind, in their own PRs, marked experimental. The benchmark page is published on GitHub Pages so it can be run on any machine with only a browser (a Mac included).
 - ✅ **Test rigs:** Linux + NVIDIA (primary), Windows + NVIDIA (reboot), and a Mac through the browser only, when available.
@@ -136,7 +137,19 @@ New packages follow the smaltworks standards from the start: `node --test`, plai
 ## Needs the owner's approval
 
 - **Benchmark-only outside code.** onnxruntime-web (MIT) and TF.js (Apache-2.0), loaded only by `apps/engine-bench` and never by the product, to measure the alternatives fairly.
-- **The weights' licence** must be checked on katagotraining.org before any network file is hosted.
+
+## Network licences
+
+The owner supplied the licence text from katagotraining.org on 2026-11-25.
+
+| Networks | Licence | Hosting by StoneMind |
+|---|---|---|
+| Official **kata1** networks and checkpoints, and the "KataGo"-labelled extra networks (such as the Human SL network) | KataGo Neural Network License: MIT-style, "Copyright 2026 David J Wu ("lightvector")" | Allowed. The copyright and permission notice ships with every copy. Both spike networks (b18c384nbt, tf2-b10c384) are kata1. |
+| **g170** networks (imported from earlier runs) | CC0, effectively public domain | Allowed. |
+| **zhizi** networks (for example kata1-zhizi-b28c512nbt-muonfd2) | MIT-style, "Copyright (c) 2026 hzyhhzy & zhizigo.com" | Allowed, with their notice rather than KataGo's. |
+| Extra networks from named outside contributors, not labelled "KataGo" | Released to be downloaded and used freely, but with no explicit terms | **Not hosted.** A player may load one themselves. |
+
+When StoneMind hosts a network, it stores the matching licence text beside the file and names the licence in the network picker.
 
 ## Risks
 
