@@ -14,6 +14,24 @@ const modelUrl = params.get('model') ?? '../fixtures/g170-b6c96-s175395328-d2678
 const referenceDefault = (file) => (params.get('reference') !== null ? params.get('reference') === '1' : !params.has('model') && !file);
 
 const getJson = async (url) => (await fetch(url)).json();
+
+/** Steps reached so far in this run, shown on the page and kept in the report, so a failure shows where it stopped. */
+const steps = [];
+function step(message) {
+  steps.push(`${new Date().toISOString().slice(11, 23)} ${message}`);
+  const el = document.getElementById('steps');
+  if (el) el.textContent = steps.join('\n');
+}
+
+/** Everything an error carries, as text: some errors (DOMExceptions, GPU errors) have an empty stack. */
+function describeError(e) {
+  if (e === null || typeof e !== 'object') return `thrown value: ${String(e)}`;
+  const lines = [`${e.name ?? e.constructor?.name ?? 'Error'}: ${e.message ?? ''}`];
+  if (e.reason) lines.push(`reason: ${e.reason}`);
+  if (e.cause) lines.push(`cause: ${describeError(e.cause)}`);
+  if (e.stack) lines.push(String(e.stack));
+  return lines.join('\n');
+}
 let useReference = referenceDefault(null);
 
 function maxAbsDiff(a, b) {
@@ -51,11 +69,16 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     userAgent: navigator.userAgent,
     date: new Date().toISOString(),
   };
+  steps.length = 0;
+  step('requesting a WebGPU device');
   const engine = await requestEngineDevice();
+  step(`device: ${JSON.stringify(engine.adapterInfo)}, features ${[...engine.features].join(', ') || 'none'}`);
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
   const bytes = file ? await file.arrayBuffer() : await (await fetch(modelUrl)).arrayBuffer();
+  step(`loading the model (${bytes.byteLength} bytes)`);
   const model = await loadModel(new Uint8Array(bytes));
+  step(`model ${model.name}`);
   report.model = model.name;
 
   const positions = (await getJson('../goldens/positions.json')).positions;
@@ -70,7 +93,9 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     return { position, size, encoded };
   });
 
+  step('checking activations');
   report.activations = await checkActivations(engine.device);
+  step(`activations ok: ${report.activations.ok}`);
   report.variants = [];
   const variants = [
     { winograd: true, fuse: true },
@@ -82,6 +107,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   if (engine.features.has('shader-f16')) variants.push({ winograd: true, fuse: true, precision: 'f16' }, { winograd: true, fuse: false, precision: 'f16' });
   else report.f16 = 'not checked: the device has no shader-f16';
   for (const variant of variants) {
+    step(`variant ${JSON.stringify(variant)}`);
     report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
   }
   report.goldensCompared = Boolean(golden);
@@ -110,7 +136,11 @@ async function checkActivations(device) {
   for (let x = 2.49; x <= 2.51; x += 0.0005) xs.push(x);
   const input = new Float32Array(xs);
   const module = device.createShaderModule({ code: ACTIVATION_PROBE });
-  const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module, entryPoint: 'main' } });
+  const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module, entryPoint: 'main' } }).catch(async (e) => {
+    const info = await module.getCompilationInfo();
+    const messages = info.messages.map((m) => `${m.type} at ${m.lineNum}:${m.linePos}: ${m.message}`).join('; ');
+    throw new Error(`the activation probe shader failed to compile: ${messages || describeError(e)}`);
+  });
   const STORAGE = 0x80, COPY_DST = 0x08, COPY_SRC = 0x04, UNIFORM = 0x40, MAP_READ = 0x01;
   const xsBuf = device.createBuffer({ size: input.byteLength, usage: STORAGE | COPY_DST });
   const ysBuf = device.createBuffer({ size: input.byteLength, usage: STORAGE | COPY_SRC });
@@ -200,7 +230,9 @@ function katagoErrorStats(evaluated) {
 
 async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }) {
   const report = { variant };
+  step('  building the network');
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
+  step('  evaluating the positions');
   report.dispatches = net.dispatchCount;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
@@ -243,6 +275,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   report.ok = ok;
 
   if (bench) {
+    step('  benchmarking');
     report.bench = [];
     const input = cases.find((c) => c.size === 19).encoded.input;
     for (const n of batches) {
@@ -258,6 +291,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
       const median = times[times.length >> 1];
       report.bench.push({ batch: n, medianMs: +median.toFixed(2), evalsPerSecond: +((n * 1000) / median).toFixed(1) });
     }
+    step('  profiling');
     if (net.canProfile) report.profile = await profileNetwork(net, input, batches.filter((n) => [1, 16, 64].includes(n)), runs);
     else report.profile = 'the device has no timestamp-query';
   }
@@ -327,6 +361,7 @@ function summarise(r) {
 }
 
 const show = (r) => {
+  r.steps = [...steps];
   lastReport = r;
   summary.textContent = summarise(r);
   out.textContent = JSON.stringify(r, null, 2);
@@ -342,7 +377,13 @@ const run = (bench) => () => {
   out.textContent = '';
   download.hidden = true;
   const file = picker.files?.[0] ?? null;
-  runCheck({ bench, file }).then(show, (e) => { summary.textContent = 'Failed.'; out.textContent = String(e?.stack ?? e); });
+  runCheck({ bench, file }).then(show, (e) => {
+    const error = describeError(e);
+    summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+    out.textContent = '';
+    lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+    download.hidden = false;
+  });
 };
 document.getElementById('check').addEventListener('click', run(false));
 document.getElementById('bench').addEventListener('click', run(true));
