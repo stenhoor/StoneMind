@@ -3,7 +3,9 @@
 //
 //   npm run build -w @stonemind/engine-webgpu
 //   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench [--batches 1,8,64]] [--model <net.bin.gz> [--golden <goldens.json>]]
-//   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...]   # serve the page; open it in any browser
+//   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...] [--out report.json]
+//     Serves the page to open in any browser. Each run's report is posted back and saved to --out
+//     (default gpu-check-report.json in the current directory).
 //
 // With --model, the slow TypeScript reference comparison is skipped unless --reference is given; the goldens decide.
 //
@@ -11,7 +13,7 @@
 // once with `npx playwright install chromium`, or point STONEMIND_CHROMIUM at a Chromium executable). Extra Chromium
 // flags can be passed with --chromium-args "...". Without --model it uses the test network (npm run fixtures).
 import { createServer } from 'node:http';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,8 +30,20 @@ const golden = option('--golden') ? resolve(option('--golden')) : undefined;
 for (const f of [model, golden]) if (f && !existsSync(f)) throw new Error(`no such file: ${f}`);
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.map': 'application/json' };
+const out = resolve(option('--out') ?? 'gpu-check-report.json');
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+  if (req.method === 'POST' && path === '/report') {
+    let body = '';
+    req.on('data', (d) => (body += d));
+    req.on('end', () => {
+      const report = JSON.parse(body);
+      writeFileSync(out, JSON.stringify(report, null, 2) + '\n');
+      console.log(`Saved the report to ${out} (ok: ${report.ok}).`);
+      res.writeHead(204).end();
+    });
+    return;
+  }
   let file;
   if (path === '/model.bin.gz') file = model;
   else if (path === '/golden.json') file = golden;
@@ -54,7 +68,7 @@ const url = `http://127.0.0.1:${server.address().port}/test/gpu/index.html${quer
 
 if (flag('--serve')) {
   console.log(`Serving the GPU check page at ${url}`);
-  console.log('Open it in a browser with WebGPU, then press a button. Ctrl+C stops the server.');
+  console.log(`Open it in a browser with WebGPU, then press a button. Reports are saved to ${out}. Ctrl+C stops the server.`);
 } else {
   const { chromium } = await import('playwright');
   const extra = option('--chromium-args')?.split(' ').filter(Boolean) ?? [];
