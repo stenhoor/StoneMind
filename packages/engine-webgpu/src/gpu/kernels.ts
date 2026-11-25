@@ -246,3 +246,209 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   outp[b * P.outStride + P.outOffset + oc] = activate(s, P.act);
 }
 `;
+
+// ------------------------------------------------------------------ Winograd F(4×4, 3×3)
+//
+// A 3×3 convolution on 4×4 output tiles: Y = Aᵀ [ (G g Gᵀ) ⊙ (Bᵀ d B) ] A, with d the 6×6 input tile (padding 1).
+// The matrices are Lavin & Gray's ("Fast Algorithms for Convolutional Neural Networks", 2015), interpolation points
+// 0, ±1, ±2, ∞; KataGo's OpenCL backend uses the same algorithm. The weight transform G g Gᵀ is done once, on the CPU.
+// Transformed tensors are [36][channel][tile], tile = b · tilesPerBoard + ty · tilesX + tx, with a fixed tile stride
+// (the plan's largest batch) so the layout doesn't depend on the batch size.
+
+const BT = [
+  [4, 0, -5, 0, 1, 0],
+  [0, -4, -4, 1, 1, 0],
+  [0, 4, -4, -1, 1, 0],
+  [0, -2, -1, 2, 1, 0],
+  [0, 2, -1, -2, 1, 0],
+  [0, 4, 0, -5, 0, 1],
+];
+const G = [
+  [1 / 4, 0, 0],
+  [-1 / 6, -1 / 6, -1 / 6],
+  [-1 / 6, 1 / 6, -1 / 6],
+  [1 / 24, 1 / 12, 1 / 6],
+  [1 / 24, -1 / 12, 1 / 6],
+  [0, 0, 1],
+];
+const AT = [
+  [1, 1, 1, 1, 1, 0],
+  [0, 1, -1, 2, -2, 0],
+  [0, 1, 1, 4, 4, 0],
+  [0, 1, -1, 8, -8, 1],
+];
+
+/** WGSL for out = M · in · Mᵀ with constant M (rows × 6 or rows × 3), fully unrolled, skipping zero terms. */
+function sandwich(m: number[][], inName: string, inCols: number, tmpName: string, outName: string): string {
+  const term = (coef: number, expr: string) => (coef === 1 ? expr : coef === -1 ? `-${expr}` : `${coef.toFixed(9)} * ${expr}`);
+  const sum = (terms: string[]) => (terms.length ? terms.join(' + ').replace(/\+ -/g, '- ') : '0.0');
+  const rows = m.length;
+  let s = '';
+  // tmp[i][j] = Σ_k m[i][k] · in[k][j]
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < inCols; j++)
+      s += `  let ${tmpName}${i}_${j} = ${sum(m[i]!.flatMap((c, k) => (c === 0 ? [] : [term(c, `${inName}[${k * inCols + j}]`)])))};\n`;
+  // out[i][j] = Σ_k tmp[i][k] · m[j][k]
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < rows; j++)
+      s += `  ${outName}[${i * rows + j}] = ${sum(m[j]!.flatMap((c, k) => (c === 0 ? [] : [term(c, `${tmpName}${i}_${k}`)])))};\n`;
+  return s;
+}
+
+/** The weight transform, on the CPU in float64: weights [oc][ic][3][3] → U [36][ic][oc]. */
+export function winogradWeights(weights: Float32Array, inChannels: number, outChannels: number): Float32Array {
+  const U = new Float32Array(36 * inChannels * outChannels);
+  for (let oc = 0; oc < outChannels; oc++) {
+    for (let ic = 0; ic < inChannels; ic++) {
+      const g = weights.subarray((oc * inChannels + ic) * 9, (oc * inChannels + ic) * 9 + 9);
+      const t: number[][] = G.map((row) => [0, 1, 2].map((j) => row[0]! * g[j]! + row[1]! * g[3 + j]! + row[2]! * g[6 + j]!));
+      for (let i = 0; i < 6; i++)
+        for (let j = 0; j < 6; j++) {
+          const v = t[i]![0]! * G[j]![0]! + t[i]![1]! * G[j]![1]! + t[i]![2]! * G[j]![2]!;
+          U[((i * 6 + j) * inChannels + ic) * outChannels + oc] = v;
+        }
+    }
+  }
+  return U;
+}
+
+/** Input transform: one thread per (tile, channel). V[e][c][t] = (Bᵀ d B)[e]. */
+export const WINO_IN = /* wgsl */ `
+${DYN}
+struct Params { C: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, _pad0: u32, _pad1: u32 }
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> inp: array<f32>;
+@group(0) @binding(3) var<storage, read_write> V: array<f32>;
+
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let t = gid.x;
+  let c = gid.y;
+  if (t >= dyn.n * P.tilesPerBoard || c >= P.C) { return; }
+  let b = t / P.tilesPerBoard;
+  let r = t % P.tilesPerBoard;
+  let y0 = i32(r / P.tilesX) * 4 - 1;
+  let x0 = i32(r % P.tilesX) * 4 - 1;
+  let base = (b * P.C + c) * P.xSize * P.ySize;
+  var d: array<f32, 36>;
+  for (var i = 0; i < 6; i++) {
+    for (var j = 0; j < 6; j++) {
+      let y = y0 + i;
+      let x = x0 + j;
+      var v = 0.0;
+      if (y >= 0 && y < i32(P.ySize) && x >= 0 && x < i32(P.xSize)) { v = inp[base + u32(y) * P.xSize + u32(x)]; }
+      d[i * 6 + j] = v;
+    }
+  }
+  var o: array<f32, 36>;
+${sandwich(BT, 'd', 6, 't', 'o')}
+  for (var e = 0u; e < 36u; e++) { V[(e * P.C + c) * P.tileStride + t] = o[e]; }
+}
+`;
+
+/** 36 GEMMs, one per Winograd element: M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t]. Tiled like CONV. */
+export const WINO_GEMM = /* wgsl */ `
+${DYN}
+struct Params { inC: u32, outC: u32, tilesPerBoard: u32, tileStride: u32 }
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> U: array<f32>;
+@group(0) @binding(3) var<storage, read> V: array<f32>;
+@group(0) @binding(4) var<storage, read_write> M: array<f32>;
+
+const TM = 64u;
+const TN = 64u;
+const TK = 16u;
+var<workgroup> As: array<f32, 1024>;
+var<workgroup> Bs: array<f32, 1024>;
+
+@compute @workgroup_size(16, 16)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
+  let N = dyn.n * P.tilesPerBoard;
+  let e = wg.z;
+  let m0 = wg.y * TM;
+  let n0 = wg.x * TN;
+  let tid = l.y * 16u + l.x;
+  let uBase = e * P.inC * P.outC;
+  let vBase = e * P.inC * P.tileStride;
+  var acc: array<f32, 16>;
+  for (var i = 0u; i < 16u; i++) { acc[i] = 0.0; }
+  for (var k0 = 0u; k0 < P.inC; k0 += TK) {
+    for (var i = 0u; i < 4u; i++) {
+      let idx = tid + i * 256u;
+      let k = k0 + idx / 64u;
+      let col = idx % 64u;
+      var a = 0.0;
+      if (k < P.inC && m0 + col < P.outC) { a = U[uBase + k * P.outC + m0 + col]; }
+      As[idx] = a;
+      var v = 0.0;
+      if (k < P.inC && n0 + col < N) { v = V[vBase + k * P.tileStride + n0 + col]; }
+      Bs[idx] = v;
+    }
+    workgroupBarrier();
+    for (var kk = 0u; kk < TK; kk++) {
+      var av: array<f32, 4>;
+      var bv: array<f32, 4>;
+      for (var i = 0u; i < 4u; i++) { av[i] = As[kk * TM + i * 16u + l.y]; }
+      for (var j = 0u; j < 4u; j++) { bv[j] = Bs[kk * TN + j * 16u + l.x]; }
+      for (var i = 0u; i < 4u; i++) {
+        for (var j = 0u; j < 4u; j++) { acc[i * 4u + j] += av[i] * bv[j]; }
+      }
+    }
+    workgroupBarrier();
+  }
+  for (var i = 0u; i < 4u; i++) {
+    let m = m0 + i * 16u + l.y;
+    if (m >= P.outC) { continue; }
+    for (var j = 0u; j < 4u; j++) {
+      let t = n0 + j * 16u + l.x;
+      if (t < N) { M[(e * P.outC + m) * P.tileStride + t] = acc[i * 4u + j]; }
+    }
+  }
+}
+`;
+
+/**
+ * Output transform: one thread per (tile, output channel), Y = Aᵀ m A, written to the board with CONV's flags
+ * (bit 0 accumulate, bit 1 per-(batch, channel) bias).
+ */
+export const WINO_OUT = /* wgsl */ `
+${DYN}
+struct Params { outC: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, flags: u32, _pad0: u32 }
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> M: array<f32>;
+@group(0) @binding(3) var<storage, read_write> outp: array<f32>;
+@group(0) @binding(4) var<storage, read> nbias: array<f32>;
+
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let t = gid.x;
+  let c = gid.y;
+  if (t >= dyn.n * P.tilesPerBoard || c >= P.outC) { return; }
+  var m: array<f32, 36>;
+  for (var e = 0u; e < 36u; e++) { m[e] = M[(e * P.outC + c) * P.tileStride + t]; }
+  var y: array<f32, 16>;
+${sandwich(AT, 'm', 6, 't', 'y')}
+  let b = t / P.tilesPerBoard;
+  let r = t % P.tilesPerBoard;
+  let y0 = (r / P.tilesX) * 4u;
+  let x0 = (r % P.tilesX) * 4u;
+  var bias = 0.0;
+  if ((P.flags & 2u) != 0u) { bias = nbias[b * P.outC + c]; }
+  let base = (b * P.outC + c) * P.xSize * P.ySize;
+  for (var i = 0u; i < 4u; i++) {
+    for (var j = 0u; j < 4u; j++) {
+      let yy = y0 + i;
+      let xx = x0 + j;
+      if (yy < P.ySize && xx < P.xSize) {
+        let o = base + yy * P.xSize + xx;
+        var v = y[i * 4u + j] + bias;
+        if ((P.flags & 1u) != 0u) { v += outp[o]; }
+        outp[o] = v;
+      }
+    }
+  }
+}
+`;
