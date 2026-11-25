@@ -218,7 +218,15 @@ export function encodeSimplePosition(pos: SimplePosition): EncodedPosition {
   }
 
   // Globals.
-  const selfKomiRaw = pos.nextPlayer === 'W' ? pos.komi : -pos.komi;
+  // Under territory scoring KataGo "chills" one point per stone and per non-pass move (BoardHistory, KataGo 1.18):
+  // White's bonus is +1 for each Black stone or move and -1 for each White one. Simple positions have no captures,
+  // so the initial-capture correction is 0, and both simple rule sets have no handicap bonus.
+  let whiteBonus = 0;
+  if (rules.scoringTerritory) {
+    for (const [player] of [...(pos.initialStones ?? []), ...moves]) whiteBonus += player === 'B' ? 1 : -1;
+  }
+  const whiteKomi = pos.komi + whiteBonus;
+  const selfKomiRaw = pos.nextPlayer === 'W' ? whiteKomi : -whiteKomi;
   const clip = area + 20;
   const selfKomi = Math.max(-clip, Math.min(clip, selfKomiRaw));
   global[5] = selfKomi / 20;

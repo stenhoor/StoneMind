@@ -18,6 +18,20 @@ count, win/loss, score, lead, and every policy and ownership value match KataGo'
 (`cpp/tests/results/runNNOnTinyBoardTest.txt` at commit d91ea85) to the printed precision. A second test checks all 8
 symmetries exactly against mirrored boards.
 
+`test/goldens.test.mjs` compares the reference network with outputs captured from native KataGo 1.18.2 (CPU/Eigen
+build, fp32) on the positions in `test/goldens/positions.json`, under all 8 symmetries: win/loss, lead, score, every
+policy and ownership value. Positions the simple encoder can't express (captures, ko, ladders, one-colour regions)
+are skipped by name until phase 3.
+
+**Capturing goldens** for another network (for example b18c384nbt on a machine with KataGo):
+
+```bash
+node packages/engine-webgpu/scripts/capture-goldens.mjs --katago <katago> --config <gtp config> --model <net.bin.gz>
+```
+
+It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with FP16 turned off, and records the
+KataGo version and the network's SHA-256.
+
 The test network (CC0, a g170-run net) is downloaded by `npm run fixtures` from KataGo's repository at that commit and
 checked by SHA-256. It is not committed.
 

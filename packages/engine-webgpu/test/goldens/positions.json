@@ -1,0 +1,27 @@
+{
+  "$comment": "Positions for native-KataGo golden outputs (spike 0001). Moves are GTP coordinates, played in order; the player to move is the one after the last move (Black on an empty board). 'covers' says which input features each position exercises.",
+  "positions": [
+    { "id": "empty-19", "boardSize": 19, "rules": "tromp-taylor", "komi": 7.5, "moves": [], "covers": "empty board, komi wave" },
+    { "id": "opening-19", "boardSize": 19, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","Q16"],["W","D4"],["B","Q4"],["W","D16"]], "covers": "history planes" },
+    { "id": "opening-19-japanese", "boardSize": 19, "rules": "japanese", "komi": 6.5,
+      "moves": [["B","Q16"],["W","D4"],["B","Q4"],["W","D16"],["B","R14"]], "covers": "territory scoring, simple ko, seki tax globals" },
+    { "id": "fight-19", "boardSize": 19, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","Q16"],["W","D4"],["B","Q3"],["W","D16"],["B","C3"],["W","D3"],["B","C4"],["W","D5"],["B","C5"],["W","D6"]],
+      "covers": "low-liberty groups, ladder search" },
+    { "id": "ladder-19", "boardSize": 19, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","C4"],["W","C3"],["B","D3"],["W","Q16"],["B","Q4"]], "covers": "a two-liberty stone near the corner: ladder planes" },
+    { "id": "capture-9", "boardSize": 9, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","A2"],["W","A1"],["B","B1"]], "covers": "a capture" },
+    { "id": "ko-9", "boardSize": 9, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","A2"],["W","C3"],["B","B3"],["W","D2"],["B","B1"],["W","C1"],["B","G7"],["W","B2"],["B","C2"]],
+      "covers": "a ko capture: the ko-ban plane (White to move)" },
+    { "id": "area-9", "boardSize": 9, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","A3"],["W","J9"],["B","B3"],["W","J8"],["B","C3"],["W","J7"],["B","C2"],["W","J6"],["B","C1"]],
+      "covers": "an empty region bordered by Black only: area planes under area scoring" },
+    { "id": "opening-13", "boardSize": 13, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","K10"],["W","D4"],["B","K4"]], "covers": "13x13 board" },
+    { "id": "opening-9-japanese", "boardSize": 9, "rules": "japanese", "komi": 6.5,
+      "moves": [["B","E5"],["W","G4"]], "covers": "9x9, territory scoring" }
+  ]
+}
