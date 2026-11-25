@@ -529,7 +529,8 @@ export interface GemmConfig {
   rm: 4 | 8;
   rn: 4 | 8;
   tk: 8 | 16;
-  arith: Elem;
+  /** 'f16' and 'f16x2' need shader-f16. 'f16x2' works on pairs of output columns as vec2<f16>. */
+  arith: 'f32' | 'f16' | 'f16x2';
 }
 
 /** The default: 4 × 8 per thread, chunks of 16, f32 arithmetic (as measured in issue #33). */
@@ -544,23 +545,35 @@ export const gemmTile = (c: GemmConfig) => ({ tm: 16 * c.rm, tn: 16 * c.rn });
  * bit 1: add `nbias[z · nbiasStride + m]` (per batch position and output channel, for 1×1 convolutions).
  */
 export const GEMM_V2 = (aT: Elem, bT: Elem, cT: Elem, config: GemmConfig = GEMM_DEFAULT) => {
-  const { rm, rn, tk: TK, arith: W } = config;
+  const { rm, rn, tk: TK, arith } = config;
   const { tm: TM, tn: TN } = gemmTile(config);
-  const half = W === 'f16';
+  /** The element type of workgroup memory and of the multiply-adds. */
+  const W: Elem = arith === 'f32' ? 'f32' : 'f16';
   let decl = '';
   for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) decl += `  var c${i}_${j} = 0.0;\n`;
   let inner = '';
-  if (half) for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `    var h${i}_${j} = f16(0.0);\n`;
-  const acc = half ? 'h' : 'c';
+  if (arith === 'f16') for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `    var h${i}_${j} = f16(0.0);\n`;
+  // f16x2: one vec2<f16> accumulator per pair of columns (j = 2p, 2p + 1).
+  if (arith === 'f16x2') for (let i = 0; i < rm; i++) for (let p = 0; p < rn / 2; p++) inner += `    var h${i}_${p} = vec2<f16>(0.0);\n`;
   // One block per reduction step, so only that step's operands are live at a time.
   for (let kk = 0; kk < TK; kk++) {
     inner += '    {\n';
     for (let i = 0; i < rm; i++) inner += `      let a${i} = As[${kk * TM + i * 16}u + ty];\n`;
     for (let j = 0; j < rn; j++) inner += `      let b${j} = Bs[${kk * TN + j * 16}u + tx];\n`;
-    for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `      ${acc}${i}_${j} = fma(a${i}, b${j}, ${acc}${i}_${j});\n`;
+    if (arith === 'f16x2') {
+      for (let p = 0; p < rn / 2; p++) inner += `      let bp${p} = vec2<f16>(b${2 * p}, b${2 * p + 1});\n`;
+      for (let i = 0; i < rm; i++) for (let p = 0; p < rn / 2; p++) inner += `      h${i}_${p} = fma(vec2<f16>(a${i}), bp${p}, h${i}_${p});\n`;
+    } else {
+      const acc = arith === 'f16' ? 'h' : 'c';
+      for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `      ${acc}${i}_${j} = fma(a${i}, b${j}, ${acc}${i}_${j});\n`;
+    }
     inner += '    }\n';
   }
-  if (half) for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `    c${i}_${j} += f32(h${i}_${j});\n`;
+  if (arith === 'f16') for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `    c${i}_${j} += f32(h${i}_${j});\n`;
+  if (arith === 'f16x2') {
+    for (let i = 0; i < rm; i++)
+      for (let p = 0; p < rn / 2; p++) inner += `    c${i}_${2 * p} += f32(h${i}_${p}.x);\n    c${i}_${2 * p + 1} += f32(h${i}_${p}.y);\n`;
+  }
   let store = '';
   for (let i = 0; i < rm; i++) {
     store += `  { let m = m0 + ty + ${i * 16}u;\n    if (m < P.M) {\n`;

@@ -38,8 +38,8 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     inner product with scalar accumulators, so no index there is a run-time value apart from each thread's offsets
     into workgroup memory (WebKit clamps every non-constant array index: `Source/WebGPU/WGSL/BoundsCheck.cpp`).
     `gemmConfig` sets its shape: rows and columns per thread (`rm`, `rn`: 4 or 8), the reduction chunk (`tk`: 8 or
-    16) and the arithmetic (`arith`: `f32`, or `f16` where the device has `shader-f16`, with each chunk summed in f16
-    and added into f32 accumulators). The default (`GEMM_DEFAULT`) is 4 × 8, chunks of 16, f32.
+    16) and the arithmetic (`arith`: `f32`; or, where the device has `shader-f16`, `f16` or `f16x2`, the latter on pairs
+    of output columns as `vec2<f16>`; both sum each chunk in f16 and add it into f32 accumulators). The default (`GEMM_DEFAULT`) is 4 × 8, chunks of 16, f32.
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
     `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't

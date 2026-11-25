@@ -130,7 +130,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     // correctness and benchmarked at batches 16 and 64. No profile, to keep the run short.
     variants.length = 0;
     const precision = engine.features.has('shader-f16') ? 'f16' : 'f32';
-    for (const arith of precision === 'f16' ? ['f32', 'f16'] : ['f32']) {
+    for (const arith of precision === 'f16' ? ['f32', 'f16', 'f16x2'] : ['f32']) {
       for (const rm of [4, 8]) for (const rn of [4, 8]) for (const tk of [8, 16]) {
         variants.push({ winograd: true, fuse: true, gemm: 'v2', precision, gemmConfig: { rm, rn, tk, arith } });
       }
