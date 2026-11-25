@@ -19,3 +19,6 @@ export { calculateArea } from './rules/area.js';
 export { GameHistory, UnsupportedPositionError, IllegalMoveError } from './rules/history.js';
 export { parseRules, type Rules } from './rules/rules.js';
 export { encodePositionV7, buildHistory, type EncodedPositionV7, type PositionSpec } from './features/v7.js';
+export { requestEngineDevice, getGpu, WebGpuUnavailableError, OPTIONAL_FEATURES, type EngineDevice, type OptionalFeature } from './gpu/device.js';
+export { GpuNetwork, type GpuNetworkOptions } from './gpu/network.js';
+export type * from './gpu/webgpu.js';

@@ -1,6 +1,6 @@
 # @stonemind/engine-webgpu
 
-The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser-katago-webgpu.md). **Phases 2 and 3:**
+The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser-katago-webgpu.md). **Phases 2 to 4** (phase 4 in progress):
 
 - **Model loader** (`src/model/`): parses official KataGo `.bin.gz` / `.txt.gz` files (model versions 8–17;
   convolutional nets), using the platform `DecompressionStream`. It follows the reading order of KataGo's `desc.cpp`.
@@ -15,6 +15,16 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
 - **V7 input encoder** (`src/features/v7.ts`): `encodePositionV7` builds KataGo's 22 spatial planes and 19 globals from
   a position (setup stones and moves), following `NNInputs::fillRowV7`. The earlier simple encoder
   (`src/features/simple.ts`), for positions with no captures, ko, ladders or one-colour regions, is still exported.
+- **WebGPU network** (`src/gpu/`), fp32, first version:
+  - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.
+  - `GpuNetwork.create(engine, model, { maxBatch })` uploads the weights and builds a plan for a 19×19 board (smaller
+    boards sit in its top-left corner, masked, as in KataGo).
+  - `evaluate(inputs)` runs a batch with one submit and one readback, and returns the same `RawOutputs` as the
+    reference forward pass.
+  - Kernels: a tiled implicit-GEMM convolution, batch norm with activation and mask, global pooling and small
+    matrix-vector products. Winograd F(4×4,3×3), fused epilogues and fp16 come next, checked against these.
+  - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
+    include WebGPU yet.
 
 ## Verification
 
@@ -42,12 +52,29 @@ node packages/engine-webgpu/scripts/capture-goldens.mjs --katago <katago> --conf
 It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with FP16 turned off, and records the
 KataGo version and the network's SHA-256.
 
+**The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
+WebGPU network on the golden positions in one batch, compares every output with the reference forward pass, and
+compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. `--bench`
+adds evaluations per second by batch size.
+
+```bash
+npm run build -w @stonemind/engine-webgpu
+npm run gpu-check -w @stonemind/engine-webgpu                         # headless Chromium, via Playwright
+node packages/engine-webgpu/scripts/gpu-check.mjs --serve --model <net.bin.gz> --golden <goldens.json>
+```
+
+With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU. Headless runs use
+Playwright, a devDependency of this package (approved for this on 2026-11-25); install its browser once with
+`npx playwright install chromium`, or set `STONEMIND_CHROMIUM` to a Chromium executable. CI runs the check on every
+pull request (`npm run gpu-check`). Without a GPU, Chromium's software adapter (SwiftShader) runs it: correct, but far
+too slow to say anything about speed.
+
 The test network (CC0, a g170-run net) is downloaded by `npm run fixtures` from KataGo's repository at that commit and
 checked by SHA-256. It is not committed.
 
 ## Depends on
 
-None.
+No StoneMind packages. Dev only: Playwright (Apache-2.0), for the headless GPU check.
 
 ## Used by
 
@@ -63,4 +90,5 @@ npm run check      # typecheck, build, fetch the test network, node --test
 
 - Written fresh in TypeScript. KataGo's code (MIT, © David J Wu) is the reference for the file format and the maths,
   as the comments in each file say.
-- Not yet checked against b18c384nbt. That needs goldens from a native KataGo, which is the next step.
+- The b18c384nbt goldens are committed, but the check against them runs only on a machine that has the model
+  (`STONEMIND_B18_MODEL`, or `--model` and `--golden` for the GPU check).

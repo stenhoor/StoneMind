@@ -1,6 +1,6 @@
 # Spike 0001: KataGo in the browser on TypeScript + WebGPU
 
-Status: **In progress.** Phase 1 merged (https://github.com/stenhoor/StoneMind/pull/5); phase 2 in review.
+Status: **In progress.** Phases 1–3 merged (https://github.com/stenhoor/StoneMind/pull/5, https://github.com/stenhoor/StoneMind/pull/8, https://github.com/stenhoor/StoneMind/pull/12). Phase 4 started: the fp32 WebGPU network matches the reference and native KataGo (b6 test net, SwiftShader); performance work and benchmarks are next.
 
 Date: 2026-11-25
 
@@ -137,6 +137,7 @@ New packages follow the smaltworks standards from the start: `node --test`, plai
 ## Approved outside code
 
 - ✅ **Benchmark-only (2026-11-25):** onnxruntime-web (MIT) and TF.js (Apache-2.0), loaded only by `apps/engine-bench` and never by the product, to measure the alternatives fairly.
+- ✅ **GPU check in CI (2026-11-25):** Playwright 1.65.0 (Apache-2.0; with playwright-core, about 19 MB unpacked), a devDependency of `@stonemind/engine-webgpu` only, to run the WebGPU network's correctness check in headless Chromium on every pull request. It never ships in the product.
 - ✅ **Bridge pairing (2026-11-25):** starting the bridge prints a link to the bench page with a pairing token in the URL fragment (new each time the bridge starts, valid until it stops). The fragment is never sent to a server.
 
 ## Network licences

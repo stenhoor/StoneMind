@@ -17,3 +17,6 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      # The WebGPU network on the golden positions, in headless Chromium (software adapter: correctness only).
+      - run: npx -w @stonemind/engine-webgpu playwright install --with-deps chromium
+      - run: npm run gpu-check -w @stonemind/engine-webgpu
