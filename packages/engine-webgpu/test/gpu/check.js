@@ -40,7 +40,7 @@ function compareGolden(got, want, size) {
 }
 
 export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 64], runs = 5 } = {}) {
-  const report = { modelUrl, referenceCompared: useReference };
+  const report = { modelUrl, referenceCompared: useReference, userAgent: navigator.userAgent, date: new Date().toISOString() };
   const engine = await requestEngineDevice();
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
@@ -125,7 +125,14 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
 }
 
 const out = document.getElementById('out');
-const show = (r) => { out.textContent = JSON.stringify(r, null, 2); };
+const show = (r) => {
+  out.textContent = JSON.stringify(r, null, 2);
+  // Served by gpu-check.mjs --serve, the report is also saved on disk; elsewhere this POST just fails.
+  fetch('/report', { method: 'POST', body: JSON.stringify(r) }).then(
+    (res) => { if (res.ok) out.textContent = `Report saved by the server.\n\n${out.textContent}`; },
+    () => {},
+  );
+};
 const run = (bench) => () => { out.textContent = 'Running…'; runCheck({ bench }).then(show, (e) => { out.textContent = String(e?.stack ?? e); }); };
 document.getElementById('check').addEventListener('click', run(false));
 document.getElementById('bench').addEventListener('click', run(true));

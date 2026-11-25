@@ -68,7 +68,8 @@ node packages/engine-webgpu/scripts/gpu-check.mjs --serve --model <net.bin.gz> -
 ```
 
 With `--model`, the slow TypeScript reference comparison is skipped unless `--reference` is given; the goldens are
-the correctness check. With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU. Headless runs use
+the correctness check. With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU; each report is
+posted back and saved to `--out` (default `gpu-check-report.json`). Headless runs use
 Playwright, a devDependency of this package (approved for this on 2026-11-25); install its browser once with
 `npx playwright install chromium`, or set `STONEMIND_CHROMIUM` to a Chromium executable. CI runs the check on every
 pull request (`npm run gpu-check`). Without a GPU, Chromium's software adapter (SwiftShader) runs it: correct, but far
