@@ -1,13 +1,14 @@
 // Compare the reference network with golden outputs captured from native KataGo (scripts/capture-goldens.mjs):
 // every position in test/goldens/positions.json, all 8 symmetries.
 //
-// Positions the simple encoder can't express (captures, ko, ladders, one-colour regions) are skipped until the full
-// rules engine exists (spike 0001, phase 3); the skip names them so the gap stays visible.
+// Inputs come from the full V7 encoder (rules engine: captures, ko and superko, ladders, pass-alive area). A network
+// whose model file isn't present locally is skipped by name: b18c384nbt (98 MB) is not downloaded in CI; set
+// STONEMIND_B18_MODEL to its path to run it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { loadModel, encodeSimplePosition, evaluateWithSymmetry, parseGtp, OutsideSimpleDomainError } from '../dist/index.js';
+import { loadModel, encodePositionV7, evaluateWithSymmetry, parseGtp } from '../dist/index.js';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 const positions = JSON.parse(readFileSync(here('./goldens/positions.json'), 'utf8')).positions;
@@ -16,13 +17,18 @@ const positions = JSON.parse(readFileSync(here('./goldens/positions.json'), 'utf
 const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
 
 const NETS = [
-  { golden: './goldens/g170-b6c96-s175395328-d26788732.json', model: './fixtures/g170-b6c96-s175395328-d26788732.bin.gz' },
+  { golden: './goldens/g170-b6c96-s175395328-d26788732.json', model: here('./fixtures/g170-b6c96-s175395328-d26788732.bin.gz') },
+  { golden: './goldens/kata1-b18c384nbt-s9996604416-d4316597426.json', model: process.env.STONEMIND_B18_MODEL ?? '' },
 ];
 
 for (const net of NETS) {
-  if (!existsSync(here(net.golden)) || !existsSync(here(net.model))) continue;
+  if (!existsSync(here(net.golden))) continue;
+  if (!net.model || !existsSync(net.model)) {
+    test(`${net.golden}`, { skip: 'model file not present (set STONEMIND_B18_MODEL for b18c384nbt)' }, () => {});
+    continue;
+  }
   const golden = JSON.parse(readFileSync(here(net.golden), 'utf8'));
-  const model = await loadModel(new Uint8Array(readFileSync(here(net.model))));
+  const model = await loadModel(new Uint8Array(readFileSync(net.model)));
 
   for (const position of positions) {
     const captured = golden.positions.find((p) => p.id === position.id);
@@ -30,14 +36,11 @@ for (const net of NETS) {
     const moves = position.moves.map(([color, loc]) => [color, ...parseGtp(loc, size)]);
     const nextPlayer = moves.length % 2 === 0 ? 'B' : 'W';
 
-    let encoded;
-    try {
-      encoded = encodeSimplePosition({ xSize: size, ySize: size, rules: position.rules, komi: position.komi, moves, nextPlayer });
-    } catch (e) {
-      if (!(e instanceof OutsideSimpleDomainError)) throw e;
-      test(`${model.name}: ${position.id}`, { skip: `needs the full rules engine (phase 3): ${e.message}` }, () => {});
-      continue;
-    }
+    const encoded = encodePositionV7(
+      { xSize: size, ySize: size, rules: position.rules, komi: position.komi, moves },
+      model.preferPassAliveUnderSuicideRules,
+    );
+    assert.equal(encoded.nextPlayer, nextPlayer);
 
     test(`${model.name}: ${position.id} matches native KataGo under all 8 symmetries`, () => {
       assert.ok(captured, `no golden output for ${position.id}`);

@@ -14,3 +14,8 @@ export {
   type EncodedPosition,
   type Placement,
 } from './features/simple.js';
+export { Board, BLACK, WHITE, EMPTY, PASS_LOC, NULL_LOC } from './rules/board.js';
+export { calculateArea } from './rules/area.js';
+export { GameHistory, UnsupportedPositionError, IllegalMoveError } from './rules/history.js';
+export { parseRules, type Rules } from './rules/rules.js';
+export { encodePositionV7, buildHistory, type EncodedPositionV7, type PositionSpec } from './features/v7.js';
