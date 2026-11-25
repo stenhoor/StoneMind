@@ -9,6 +9,7 @@
     "node": ">=20"
   },
   "workspaces": [
+    "packages/brand",
     "packages/domain",
     "packages/storage",
     "packages/ontology",

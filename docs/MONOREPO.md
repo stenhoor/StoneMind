@@ -18,6 +18,9 @@ StoneMind is a monorepo of independent sub-projects.
 - **Dependencies point inward.** Contracts and data (`domain`, `storage`, `provider-sdk`)
   sit at the centre; engines, providers, and apps depend on them, never the reverse.
 - **No cycles.** The dependency graph between sub-projects must stay acyclic.
+- **One product, one brand.** StoneMind is a single product. Sub-projects are independent engineering efforts, not
+  products: none has a brand, mark or colour of its own, and package names never appear in the product's interface.
+  Every sub-project with a user-facing surface takes its brand from `@stonemind/brand`.
 - **Every interdependency is documented** here and in both sub-projects' READMEs
   ("Depends on" / "Used by").
 
@@ -29,6 +32,7 @@ StoneMind is a monorepo of independent sub-projects.
 StoneMind/
 ├── docs/                    Specifications (charter, architecture, data model, ...)
 ├── packages/                Libraries: contracts, data, engines, providers
+│   ├── brand/               @stonemind/brand
 │   ├── domain/              @stonemind/domain
 │   ├── storage/             @stonemind/storage
 │   ├── ontology/            @stonemind/ontology
@@ -47,13 +51,14 @@ from the root builds dependencies before dependents.
 
 | Sub-project | Kind | Deployed as | Depends on | Used by |
 |---|---|---|---|---|
+| `@stonemind/brand` | Brand (CSS, JSON, SVG) | npm package; files copied unchanged by apps | none | none yet (apps/web, apps/site) |
 | `@stonemind/domain` | Library (types) | npm package | none | ontology, provider-sdk |
 | `@stonemind/storage` | Library (ports) | npm package | none | none yet (future Smaltworks adapter, engines) |
 | `@stonemind/ontology` | Library (data + logic) | npm package; `seed.json` is also a standalone data artifact | domain | none yet (future ontology engine, web app) |
 | `@stonemind/provider-sdk` | Library (contracts + registry) | npm package for third-party plugin authors | domain | none yet (future providers, engines, web app) |
 
 ```text
-          @stonemind/domain          @stonemind/storage
+          @stonemind/domain          @stonemind/storage          @stonemind/brand (no dependencies)
             ▲           ▲
             │           │
  @stonemind/ontology   @stonemind/provider-sdk
@@ -64,6 +69,7 @@ from the root builds dependencies before dependents.
 | From → To | What is relied on | Breaking-change impact |
 |---|---|---|
 | ontology → domain | `Concept`, `ConceptRelationship`, `RelationshipType`, `ConceptCategory`, `StyleDimension` | Renaming a relationship type or category invalidates `seed.json` |
+| apps → brand (planned) | `tokens.css` custom properties, `components.css` classes (`sm-*`), logo file names | Renaming a token or class breaks every app; change brand first, then each app, in the same release |
 | provider-sdk → domain | `Game`, `GameAnalysis`, `Observation`, `EvidenceRecord`, `Resource`, `ResourceRelationship` | Third-party providers must be updated; bump provider-sdk major version |
 
 ---
@@ -75,8 +81,8 @@ Expected dependencies are listed so they can be checked when each is created.
 
 | Planned sub-project | Path | Purpose | Expected dependencies | Milestone |
 |---|---|---|---|---|
-| `@stonemind/web` | `apps/web` | Browser-first application, deployed to **stonemind.app** | domain, ontology, provider-sdk, storage, engines | M1 |
-| `@stonemind/site` | `apps/site` | Project website, deployed to **stonemind.org**: research, specifications, docs, community | none (may render content from `docs/`) | M0–M1 |
+| `@stonemind/web` | `apps/web` | Browser-first application, deployed to **stonemind.app** | brand, domain, ontology, provider-sdk, storage, engines | M1 |
+| `@stonemind/site` | `apps/site` | Project website, deployed to **stonemind.org**: research, specifications, docs, community | brand (may render content from `docs/`) | M0–M1 |
 | `@stonemind/sgf` | `packages/sgf` | SGF parsing/serialisation | none | M1 |
 | `@stonemind/storage-smaltworks` | `packages/storage-smaltworks` | Smaltworks + OPFS implementation of storage ports | storage, Smaltworks | M1 |
 | `@stonemind/provider-katago` | `packages/provider-katago` | KataGo analysis provider | provider-sdk, domain, sgf | M1 |

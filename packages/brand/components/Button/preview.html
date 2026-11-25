@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StoneMind Button: primary, secondary, icon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@700;800&display=swap">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../styles/components.css">
+<script>
+  try { const t = localStorage.getItem('stonemind.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
+<style>
+  body { margin: 0; }
+  .stage { min-height: 100vh; box-sizing: border-box; padding: var(--space-8); display: grid; place-items: center; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+</style>
+</head>
+<body class="sm-root">
+<main class="stage sm-table">
+  <div class="sm-glass row">
+    <a class="sm-btn sm-btn--primary" href="#">Practise this shape</a>
+    <a class="sm-btn" href="#">Ask a question</a>
+    <button type="button" class="sm-btn sm-icon-btn" aria-label="Notes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h10l4 4v12H5z"/><path d="M9 12h6M9 16h4"/></svg>
+    </button>
+    <button type="button" class="sm-btn sm-icon-btn sm-round" aria-label="Next move">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</main>
+</body>
+</html>
