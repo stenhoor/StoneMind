@@ -1,0 +1,1092 @@
+{
+  "modelUrl": "/model.bin.gz",
+  "referenceCompared": false,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-25T19:33:33.571Z",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "variants": [
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true
+      },
+      "dispatches": 338,
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 16.9,
+          "evalsPerSecond": 59.2
+        },
+        {
+          "batch": 2,
+          "medianMs": 18.4,
+          "evalsPerSecond": 108.7
+        },
+        {
+          "batch": 4,
+          "medianMs": 19.5,
+          "evalsPerSecond": 205.1
+        },
+        {
+          "batch": 8,
+          "medianMs": 30.2,
+          "evalsPerSecond": 264.9
+        },
+        {
+          "batch": 16,
+          "medianMs": 50.7,
+          "evalsPerSecond": 315.6
+        },
+        {
+          "batch": 32,
+          "medianMs": 91.9,
+          "evalsPerSecond": 348.2
+        },
+        {
+          "batch": 64,
+          "medianMs": 170,
+          "evalsPerSecond": 376.5
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 16.9,
+            "gpuPassMsMedian": 9.568,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 11.403,
+              "wallMs": 22.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 1.376
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 4.391
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 1.114
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.459
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 3.473
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 21,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 75,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 91,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 129,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 145,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 183,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 221,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 237,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 275,
+                  "kind": "conv",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 53.1,
+            "gpuPassMsMedian": 43.385,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 45.285,
+              "wallMs": 52.1,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 5.702
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 20.644
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.243
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.835
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 11.272
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 19,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 21,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 164.9,
+            "gpuPassMsMedian": 157.09,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 161.874,
+              "wallMs": 169.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 18.809
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 75.17
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.809
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 6.226
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 41.812
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.459
+                }
+              },
+              "slowest": [
+                {
+                  "index": 111,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 145,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 181,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 199,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 221,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 235,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 289,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 321,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 1.114
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 1.114
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false
+      },
+      "dispatches": 410,
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 11.4,
+          "evalsPerSecond": 87.7
+        },
+        {
+          "batch": 2,
+          "medianMs": 12.7,
+          "evalsPerSecond": 157.5
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.2,
+          "evalsPerSecond": 232.6
+        },
+        {
+          "batch": 8,
+          "medianMs": 27.4,
+          "evalsPerSecond": 292
+        },
+        {
+          "batch": 16,
+          "medianMs": 48,
+          "evalsPerSecond": 333.3
+        },
+        {
+          "batch": 32,
+          "medianMs": 88.9,
+          "evalsPerSecond": 360
+        },
+        {
+          "batch": 64,
+          "medianMs": 169.3,
+          "evalsPerSecond": 378
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 12.5,
+            "gpuPassMsMedian": 9.241,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 11.272,
+              "wallMs": 15.4,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.983
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 4.26
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.852
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.983
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 3.604
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 25,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 71,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 91,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 137,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 157,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 203,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 223,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 243,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 289,
+                  "kind": "conv",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 48.8,
+            "gpuPassMsMedian": 44.892,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 46.399,
+              "wallMs": 51.8,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.459
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 4.194
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 19.988
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.702
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 4.522
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 11.469
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 23,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 25,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 45,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 178.5,
+            "gpuPassMsMedian": 160.104,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 164.692,
+              "wallMs": 185.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.786
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 15.008
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 74.514
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.678
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 14.549
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 41.026
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 109,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 155,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 241,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 333,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 353,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 1.114
+                },
+                {
+                  "index": 89,
+                  "kind": "conv",
+                  "ms": 1.114
+                },
+                {
+                  "index": 91,
+                  "kind": "conv",
+                  "ms": 1.114
+                },
+                {
+                  "index": 111,
+                  "kind": "conv",
+                  "ms": 1.114
+                },
+                {
+                  "index": 128,
+                  "kind": "winoGemm",
+                  "ms": 1.114
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": false
+      },
+      "dispatches": 254,
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 37.8,
+          "evalsPerSecond": 26.5
+        },
+        {
+          "batch": 2,
+          "medianMs": 40.1,
+          "evalsPerSecond": 49.9
+        },
+        {
+          "batch": 4,
+          "medianMs": 47.9,
+          "evalsPerSecond": 83.5
+        },
+        {
+          "batch": 8,
+          "medianMs": 63,
+          "evalsPerSecond": 127
+        },
+        {
+          "batch": 16,
+          "medianMs": 112.1,
+          "evalsPerSecond": 142.7
+        },
+        {
+          "batch": 32,
+          "medianMs": 210.7,
+          "evalsPerSecond": 151.9
+        },
+        {
+          "batch": 64,
+          "medianMs": 391,
+          "evalsPerSecond": 163.7
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 39.5,
+            "gpuPassMsMedian": 35.717,
+            "perDispatch": {
+              "dispatches": 254,
+              "sumMs": 48.431,
+              "wallMs": 52.9,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.459
+                },
+                "conv": {
+                  "count": 119,
+                  "ms": 46.924
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.918
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 9,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 11,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 19,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 21,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 23,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 29,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 30,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 39,
+                  "kind": "conv",
+                  "ms": 0.59
+                },
+                {
+                  "index": 45,
+                  "kind": "conv",
+                  "ms": 0.59
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 113.4,
+            "gpuPassMsMedian": 110.1,
+            "perDispatch": {
+              "dispatches": 254,
+              "sumMs": 113.246,
+              "wallMs": 117.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "conv": {
+                  "count": 119,
+                  "ms": 108.593
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 3.932
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 7,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 11,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 17,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 19,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 21,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 23,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 39,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 51,
+                  "kind": "conv",
+                  "ms": 1.376
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 413,
+            "gpuPassMsMedian": 406.979,
+            "perDispatch": {
+              "dispatches": 254,
+              "sumMs": 410.845,
+              "wallMs": 417,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "conv": {
+                  "count": 119,
+                  "ms": 395.837
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 14.09
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 45,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 47,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 51,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 61,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 77,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 79,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 87,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 89,
+                  "kind": "conv",
+                  "ms": 4.981
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "goldensCompared": true,
+  "ok": true
+}
