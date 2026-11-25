@@ -134,9 +134,10 @@ New packages follow the smaltworks standards from the start: `node --test`, plai
   - Native KataGo through the bridge, as the reference.
 - **Results** are saved as JSON in the repo, with GPU, driver, browser and OS recorded.
 
-## Needs the owner's approval
+## Approved outside code
 
-- **Benchmark-only outside code.** onnxruntime-web (MIT) and TF.js (Apache-2.0), loaded only by `apps/engine-bench` and never by the product, to measure the alternatives fairly.
+- ✅ **Benchmark-only (2026-11-25):** onnxruntime-web (MIT) and TF.js (Apache-2.0), loaded only by `apps/engine-bench` and never by the product, to measure the alternatives fairly.
+- ✅ **Bridge pairing (2026-11-25):** starting the bridge prints a link to the bench page with a one-time token in the URL fragment. The fragment is never sent to a server.
 
 ## Network licences
 
