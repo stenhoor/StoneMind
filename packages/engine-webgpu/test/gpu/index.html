@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>engine-webgpu GPU check</title>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; margin: 1rem; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>engine-webgpu: GPU check</h1>
+  <p>Runs the WebGPU network on the golden positions and compares it with the reference forward pass and with the
+    outputs captured from native KataGo; optionally measures evaluations per second by batch size. A developer page,
+    served by <code>scripts/gpu-check.mjs</code>.</p>
+  <p><button id="check" type="button">Check correctness</button> <button id="bench" type="button">Check and benchmark</button></p>
+  <pre id="out" aria-live="polite"></pre>
+  <script type="module" src="./check.js"></script>
+</body>
+</html>

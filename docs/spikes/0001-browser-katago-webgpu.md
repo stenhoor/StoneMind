@@ -1,6 +1,6 @@
 # Spike 0001: KataGo in the browser on TypeScript + WebGPU
 
-Status: **In progress.** Phase 1 merged (https://github.com/stenhoor/StoneMind/pull/5); phase 2 in review.
+Status: **In progress.** Phases 1–3 merged (https://github.com/stenhoor/StoneMind/pull/5, https://github.com/stenhoor/StoneMind/pull/8, https://github.com/stenhoor/StoneMind/pull/12). Phase 4 started: the fp32 WebGPU network matches the reference and native KataGo (b6 test net, SwiftShader); performance work and benchmarks are next.
 
 Date: 2026-11-25
 
