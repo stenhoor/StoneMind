@@ -72,6 +72,12 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   steps.length = 0;
   step('requesting a WebGPU device');
   const engine = await requestEngineDevice();
+  // A lost device makes every later GPU call fail; record why, as the browser reports it.
+  let lost = null;
+  engine.device.lost.then((info) => {
+    lost = { reason: info.reason, message: info.message };
+    step(`DEVICE LOST: reason ${info.reason}: ${info.message}`);
+  });
   step(`device: ${JSON.stringify(engine.adapterInfo)}, features ${[...engine.features].join(', ') || 'none'}`);
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
@@ -97,15 +103,16 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   report.activations = await checkActivations(engine.device);
   step(`activations ok: ${report.activations.ok}`);
   report.variants = [];
+  // The implicit GEMM runs last: it is the slowest variant, and losing the device there (as happened once in Safari on
+  // an iPad, while profiling it) should not cost the other variants' results.
   const variants = [
     { winograd: true, fuse: true },
     { winograd: true, fuse: false },
-    { winograd: false },
-    // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
-    { winograd: true, fuse: true, scale8: true },
     // GEMM v2: the unrolled matrix multiply for the Winograd GEMMs and 1×1 convolutions.
     { winograd: true, fuse: true, gemm: 'v2' },
     { winograd: true, fuse: false, gemm: 'v2' },
+    // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
+    { winograd: true, fuse: true, scale8: true },
   ];
   if (engine.features.has('shader-f16')) {
     variants.push(
@@ -115,14 +122,29 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v2' },
     );
   }
-  else report.f16 = 'not checked: the device has no shader-f16';
+  variants.push({ winograd: false });
+  if (!engine.features.has('shader-f16')) report.f16 = 'not checked: the device has no shader-f16';
   // ?variants=<text>: run only the variants whose JSON contains the text (for example "v2"; default: all).
   const only = params.get('variants');
   for (const variant of variants) {
     if (only && !JSON.stringify(variant).includes(only)) continue;
+    if (lost) {
+      report.variants.push({ variant, ok: false, skipped: 'the device was lost earlier in this run' });
+      continue;
+    }
     step(`variant ${JSON.stringify(variant)}`);
-    report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
+    try {
+      report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
+    } catch (e) {
+      // Keep going: record where and why this variant failed, so the other variants' results are not lost.
+      const failedAt = steps.at(-1);
+      currentNet?.destroy();
+      currentNet = null;
+      report.variants.push({ variant, ok: false, failedAt, error: describeError(e) });
+      step(`  FAILED: ${String(e?.message ?? e)}`);
+    }
   }
+  if (lost) report.deviceLost = lost;
   report.goldensCompared = Boolean(golden);
   report.ok = Boolean(golden) && report.activations.ok && report.variants.every((v) => v.ok);
   return report;
@@ -241,10 +263,18 @@ function katagoErrorStats(evaluated) {
   return { percentile99: q99, max: qMax, fp16LimitRatio99: ratio99, fp16LimitRatioMax: ratioMax, worstFp16LimitRatio: worst, fp16LimitsPass: worst <= 1 };
 }
 
+/** The network of the variant being checked, so a failure part-way can still free it. */
+let currentNet = null;
+
 async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }) {
   const report = { variant };
   step('  building the network');
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
+  currentNet = net;
+  // ?fail=<text>: make matching variants fail here, to test that the page records the failure and carries on.
+  if (params.get('fail') && JSON.stringify(variant).includes(params.get('fail'))) throw new Error('forced failure (?fail=)');
+  // ?lose=<text>: destroy the device in matching variants, to test the device-lost handling.
+  if (params.get('lose') && JSON.stringify(variant).includes(params.get('lose'))) engine.device.destroy();
   step('  evaluating the positions');
   report.dispatches = net.dispatchCount;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
@@ -309,6 +339,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
     else report.profile = 'the device has no timestamp-query';
   }
   net.destroy();
+  currentNet = null;
   return report;
 }
 
@@ -366,9 +397,11 @@ function summarise(r) {
   const lines = [`ok: ${r.ok} · model ${r.model} · adapter ${JSON.stringify(r.adapter)} · features ${r.features.join(', ') || 'none'}`];
   if (r.f16) lines.push(`fp16: ${r.f16}`);
   lines.push(`activations ok: ${r.activations?.ok}`);
+  if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
   for (const v of r.variants ?? []) {
     const top = v.bench?.at(-1);
-    lines.push(`${JSON.stringify(v.variant)}: ok ${v.ok}${top ? `, ${top.evalsPerSecond} evals/s at batch ${top.batch}` : ''}`);
+    const why = v.error ? ` (FAILED at "${v.failedAt?.trim()}": ${v.error.split('\n')[0]})` : v.skipped ? ` (skipped: ${v.skipped})` : '';
+    lines.push(`${JSON.stringify(v.variant)}: ok ${v.ok}${top ? `, ${top.evalsPerSecond} evals/s at batch ${top.batch}` : ''}${why}`);
   }
   return lines.join('\n');
 }
