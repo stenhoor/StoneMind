@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@stonemind/brand": "0.0.1",
-    "@stonemind/engine": "0.0.1"
+    "@stonemind/engine": "0.0.1",
+    "@stonemind/engine-webgpu": "0.0.1"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

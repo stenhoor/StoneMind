@@ -1,4 +1,5 @@
-// The GPU check page's logic. Query parameters: model (URL of the .bin.gz), golden (URL of its golden outputs).
+// The GPU check page's logic. The model comes from the file picker, or the `model` query parameter (a URL of the
+// .bin.gz), or else the test network. Goldens: the `golden` parameter, or else ../goldens/<model name>.json.
 import {
   loadModel, encodePositionV7, parseGtp, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
 } from '../../dist/index.js';
@@ -8,12 +9,12 @@ const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
 
 const params = new URLSearchParams(location.search);
 const modelUrl = params.get('model') ?? '../fixtures/g170-b6c96-s175395328-d26788732.bin.gz';
-const goldenUrl = params.get('golden') ?? '../goldens/g170-b6c96-s175395328-d26788732.json';
 // The plain-TypeScript reference is slow on big nets, so it runs by default only for the test network; ?reference=1
 // forces it. Native KataGo's goldens are the correctness check either way.
-const useReference = params.get('reference') !== null ? params.get('reference') === '1' : !params.has('model');
+const referenceDefault = (file) => (params.get('reference') !== null ? params.get('reference') === '1' : !params.has('model') && !file);
 
 const getJson = async (url) => (await fetch(url)).json();
+let useReference = referenceDefault(null);
 
 function maxAbsDiff(a, b) {
   let m = 0;
@@ -39,15 +40,27 @@ function compareGolden(got, want, size) {
   return fails;
 }
 
-export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 64], runs = 5 } = {}) {
-  const report = { modelUrl, referenceCompared: useReference, userAgent: navigator.userAgent, date: new Date().toISOString() };
+/**
+ * Run the check. `file` is a model picked on the page (a File); without it the model is fetched from `modelUrl`.
+ */
+export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 64], runs = 5, file = null } = {}) {
+  useReference = referenceDefault(file);
+  const report = {
+    modelUrl: file ? `file: ${file.name}` : modelUrl,
+    referenceCompared: useReference,
+    userAgent: navigator.userAgent,
+    date: new Date().toISOString(),
+  };
   const engine = await requestEngineDevice();
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
-  const model = await loadModel(new Uint8Array(await (await fetch(modelUrl)).arrayBuffer()));
+  const bytes = file ? await file.arrayBuffer() : await (await fetch(modelUrl)).arrayBuffer();
+  const model = await loadModel(new Uint8Array(bytes));
   report.model = model.name;
 
   const positions = (await getJson('../goldens/positions.json')).positions;
+  const goldenUrl = params.get('golden') ?? `../goldens/${model.name}.json`;
+  report.goldenUrl = goldenUrl;
   const golden = await fetch(goldenUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
   const cases = positions.map((position) => {
@@ -296,15 +309,52 @@ async function profileNetwork(net, input, batches, runs) {
 }
 
 const out = document.getElementById('out');
+const summary = document.getElementById('summary');
+const download = document.getElementById('download');
+const picker = document.getElementById('model');
+let lastReport = null;
+
+/** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
+function summarise(r) {
+  const lines = [`ok: ${r.ok} · model ${r.model} · adapter ${JSON.stringify(r.adapter)} · features ${r.features.join(', ') || 'none'}`];
+  if (r.f16) lines.push(`fp16: ${r.f16}`);
+  lines.push(`activations ok: ${r.activations?.ok}`);
+  for (const v of r.variants ?? []) {
+    const top = v.bench?.at(-1);
+    lines.push(`${JSON.stringify(v.variant)}: ok ${v.ok}${top ? `, ${top.evalsPerSecond} evals/s at batch ${top.batch}` : ''}`);
+  }
+  return lines.join('\n');
+}
+
 const show = (r) => {
+  lastReport = r;
+  summary.textContent = summarise(r);
   out.textContent = JSON.stringify(r, null, 2);
+  download.hidden = false;
   // Served by gpu-check.mjs --serve, the report is also saved on disk; elsewhere this POST just fails.
   fetch('/report', { method: 'POST', body: JSON.stringify(r) }).then(
-    (res) => { if (res.ok) out.textContent = `Report saved by the server.\n\n${out.textContent}`; },
+    (res) => { if (res.ok) summary.textContent = `Report saved by the server.\n${summary.textContent}`; },
     () => {},
   );
 };
-const run = (bench) => () => { out.textContent = 'Running…'; runCheck({ bench }).then(show, (e) => { out.textContent = String(e?.stack ?? e); }); };
+const run = (bench) => () => {
+  summary.textContent = 'Running…';
+  out.textContent = '';
+  download.hidden = true;
+  const file = picker.files?.[0] ?? null;
+  runCheck({ bench, file }).then(show, (e) => { summary.textContent = 'Failed.'; out.textContent = String(e?.stack ?? e); });
+};
 document.getElementById('check').addEventListener('click', run(false));
 document.getElementById('bench').addEventListener('click', run(true));
+download.addEventListener('click', () => {
+  if (!lastReport) return;
+  const blob = new Blob([JSON.stringify(lastReport, null, 2) + '\n'], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `gpu-check-${lastReport.model}-${lastReport.date.replace(/[:.]/g, '-')}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+});
 window.runCheck = runCheck;

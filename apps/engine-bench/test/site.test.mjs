@@ -37,3 +37,30 @@ test('no shipped module imports a bare package other than the engine', () => {
     }
   }
 });
+
+// The GPU check page from packages/engine-webgpu, under gpu-check/.
+const gpuCheck = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'site', 'gpu-check');
+
+test('the GPU check page, its modules and its data are in the site', () => {
+  const page = join(gpuCheck, 'test', 'gpu');
+  const gpuHtml = readFileSync(join(page, 'index.html'), 'utf8');
+  for (const [, ref] of gpuHtml.matchAll(/(?:href|src)="(\.[^"]+)"/g)) assert.ok(existsSync(join(page, ref)), `missing ${ref}`);
+  const check = readFileSync(join(page, 'check.js'), 'utf8');
+  for (const [, spec] of check.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(page, spec)), `check.js imports missing ${spec}`);
+  assert.ok(existsSync(join(gpuCheck, 'test', 'goldens', 'positions.json')));
+  assert.ok(existsSync(join(gpuCheck, 'test', 'goldens', 'kata1-b18c384nbt-s9996604416-d4316597426.json')));
+  assert.ok(!existsSync(join(gpuCheck, 'test', 'goldens', 'kata1-b18c384nbt-s9996604416-d4316597426-cuda.json')));
+});
+
+test('every relative import in the GPU check engine modules resolves to a file', () => {
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
+  const files = walk(join(gpuCheck, 'dist')).filter((f) => f.endsWith('.js'));
+  assert.ok(files.length > 10);
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const [, spec] of source.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+      assert.ok(spec.startsWith('.'), `${file} imports the bare specifier ${spec}`);
+      assert.ok(existsSync(resolve(dirname(file), spec)), `${file} imports missing ${spec}`);
+    }
+  }
+});

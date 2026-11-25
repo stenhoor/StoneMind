@@ -1,5 +1,5 @@
-// Assemble the static site in dist/site: the page, its compiled modules, and verbatim copies of the brand files and
-// the engine package. The page loads plain ES modules through an import map; there is no bundler.
+// Assemble the static site in dist/site: the bench page, its compiled modules, and verbatim copies of the brand files
+// and the engine package; and the WebGPU engine's GPU check page (gpu-check/). The page loads plain ES modules through an import map; there is no bundler.
 import { cpSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +26,33 @@ mkdirSync(join(bench, 'vendor', 'engine'), { recursive: true });
 for (const file of readdirSync(engineDist)) {
   if (file.endsWith('.js')) cpSync(join(engineDist, file), join(bench, 'vendor', 'engine', file));
 }
+
+// The engine's GPU check page (packages/engine-webgpu/test/gpu), with the engine's compiled modules and the goldens it
+// compares against, laid out as in the package so the page's relative paths are unchanged. Open it at
+// gpu-check/test/gpu/ and pick a model file. The owner's CUDA goldens are a record only, so they are left out.
+const webgpu = join(repo, 'packages', 'engine-webgpu');
+const gpuCheck = join(site, 'gpu-check');
+const copyJs = (from, to) => {
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    if (entry.isDirectory()) copyJs(join(from, entry.name), join(to, entry.name));
+    else if (entry.name.endsWith('.js')) {
+      mkdirSync(to, { recursive: true });
+      cpSync(join(from, entry.name), join(to, entry.name));
+    }
+  }
+};
+copyJs(join(webgpu, 'dist'), join(gpuCheck, 'dist'));
+mkdirSync(join(gpuCheck, 'test', 'gpu'), { recursive: true });
+for (const file of ['index.html', 'check.js']) cpSync(join(webgpu, 'test', 'gpu', file), join(gpuCheck, 'test', 'gpu', file));
+mkdirSync(join(gpuCheck, 'test', 'goldens'), { recursive: true });
+for (const file of readdirSync(join(webgpu, 'test', 'goldens'))) {
+  if (file.endsWith('.json') && !file.endsWith('-cuda.json')) cpSync(join(webgpu, 'test', 'goldens', file), join(gpuCheck, 'test', 'goldens', file));
+}
+writeFileSync(
+  join(gpuCheck, 'index.html'),
+  '<!doctype html><meta charset="utf-8"><title>StoneMind GPU check</title>' +
+    '<meta http-equiv="refresh" content="0; url=test/gpu/"><a href="test/gpu/">StoneMind GPU check</a>\n',
+);
 
 // The site root: GitHub Pages serves the repository's site at /StoneMind/, so point it at the bench.
 writeFileSync(
