@@ -514,51 +514,65 @@ ${sandwich(AT, 'm', 6, 't', 'y')}
 //
 // A generic batched matrix multiply, C[z][m][n] = Σ_k A[z][k][m] · B[z][k][n], used for the Winograd GEMMs (z = the
 // 36 elements) and for 1×1 convolutions (z = the position in the batch; A = weights [ic][oc], B = input [ic][point],
-// C = output [oc][point]). Each workgroup of 16 × 16 threads computes a GEMM_TILE_M × GEMM_TILE_N tile of C, each
-// thread a 4 × 8 block, reading GEMM_TILE_K of the reduction at a time through workgroup memory.
+// C = output [oc][point]). Each workgroup of 16 × 16 threads computes a (16·rm) × (16·rn) tile of C, each thread an
+// rm × rn block (rows ty + 16i, columns tx + 16j), reading tk of the reduction at a time through workgroup memory.
 //
 // The inner product is fully unrolled by this generator and the accumulators are scalars, so no index in it is a
 // run-time value except the thread's own offsets into workgroup memory. (WebKit's WGSL compiler clamps every array
 // index that is not a compile-time constant: Source/WebGPU/WGSL/BoundsCheck.cpp.)
+//
+// arith 'f16' (needs shader-f16): workgroup memory and the multiply-adds are f16; each tk-long chunk is summed in f16
+// accumulators, which are then added into f32 accumulators, so rounding error grows with tk, not with the whole K.
 
-export const GEMM_TILE_M = 64;
-export const GEMM_TILE_N = 128;
-const GEMM_TILE_K = 16;
-const GEMM_RM = 4; // rows per thread: m = ty + i·16
-const GEMM_RN = 8; // columns per thread: n = tx + j·16
+/** GEMM v2's shape: rows and columns per thread, the reduction chunk, and the arithmetic type. */
+export interface GemmConfig {
+  rm: 4 | 8;
+  rn: 4 | 8;
+  tk: 8 | 16;
+  arith: Elem;
+}
+
+/** The default: 4 × 8 per thread, chunks of 16, f32 arithmetic (as measured in issue #33). */
+export const GEMM_DEFAULT: GemmConfig = { rm: 4, rn: 8, tk: 16, arith: 'f32' };
+
+/** The tile of C a workgroup computes. */
+export const gemmTile = (c: GemmConfig) => ({ tm: 16 * c.rm, tn: 16 * c.rn });
 
 /**
  * GEMM v2. Params: M, K; N is `nFixed` when non-zero, else dyn.n · nPerBatch; z is the workgroup's z index (the
  * dispatch covers exactly the batches wanted). Strides are in elements. flags bit 0: add to C (the residual add);
  * bit 1: add `nbias[z · nbiasStride + m]` (per batch position and output channel, for 1×1 convolutions).
  */
-export const GEMM_V2 = (aT: Elem, bT: Elem, cT: Elem) => {
-  const TM = GEMM_TILE_M;
-  const TN = GEMM_TILE_N;
-  const TK = GEMM_TILE_K;
+export const GEMM_V2 = (aT: Elem, bT: Elem, cT: Elem, config: GemmConfig = GEMM_DEFAULT) => {
+  const { rm, rn, tk: TK, arith: W } = config;
+  const { tm: TM, tn: TN } = gemmTile(config);
+  const half = W === 'f16';
   let decl = '';
-  for (let i = 0; i < GEMM_RM; i++) for (let j = 0; j < GEMM_RN; j++) decl += `  var c${i}_${j} = 0.0;\n`;
+  for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) decl += `  var c${i}_${j} = 0.0;\n`;
   let inner = '';
-  // One block per reduction step, so only that step's 4 + 8 operands are live at a time.
+  if (half) for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `    var h${i}_${j} = f16(0.0);\n`;
+  const acc = half ? 'h' : 'c';
+  // One block per reduction step, so only that step's operands are live at a time.
   for (let kk = 0; kk < TK; kk++) {
     inner += '    {\n';
-    for (let i = 0; i < GEMM_RM; i++) inner += `      let a${i} = As[${kk * TM + i * 16}u + ty];\n`;
-    for (let j = 0; j < GEMM_RN; j++) inner += `      let b${j} = Bs[${kk * TN + j * 16}u + tx];\n`;
-    for (let i = 0; i < GEMM_RM; i++) for (let j = 0; j < GEMM_RN; j++) inner += `      c${i}_${j} = fma(a${i}, b${j}, c${i}_${j});\n`;
+    for (let i = 0; i < rm; i++) inner += `      let a${i} = As[${kk * TM + i * 16}u + ty];\n`;
+    for (let j = 0; j < rn; j++) inner += `      let b${j} = Bs[${kk * TN + j * 16}u + tx];\n`;
+    for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `      ${acc}${i}_${j} = fma(a${i}, b${j}, ${acc}${i}_${j});\n`;
     inner += '    }\n';
   }
+  if (half) for (let i = 0; i < rm; i++) for (let j = 0; j < rn; j++) inner += `    c${i}_${j} += f32(h${i}_${j});\n`;
   let store = '';
-  for (let i = 0; i < GEMM_RM; i++) {
+  for (let i = 0; i < rm; i++) {
     store += `  { let m = m0 + ty + ${i * 16}u;\n    if (m < P.M) {\n`;
     store += `      var bias = 0.0;\n      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }\n`;
-    for (let j = 0; j < GEMM_RN; j++) {
+    for (let j = 0; j < rn; j++) {
       store += `      { let n = n0 + tx + ${j * 16}u;\n        if (n < N) {\n`;
       store += `          let o = z * P.cBatch + m * P.cRow + n;\n          var v = c${i}_${j} + bias;\n`;
       store += `          if ((P.flags & 1u) != 0u) { v += f32(C[o]); }\n          C[o] = ${cT}(v);\n        }\n      }\n`;
     }
     store += `    }\n  }\n`;
   }
-  return /* wgsl */ `${enableFor(aT, bT, cT)}
+  return /* wgsl */ `${enableFor(aT, bT, cT, W)}
 ${DYN}
 struct Params {
   M: u32, K: u32, nFixed: u32, nPerBatch: u32,
@@ -572,8 +586,8 @@ struct Params {
 @group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
 @group(0) @binding(5) var<storage, read> nbias: array<f32>;
 
-var<workgroup> As: array<f32, ${TK * TM}>; // [TK][TM]
-var<workgroup> Bs: array<f32, ${TK * TN}>; // [TK][TN]
+var<workgroup> As: array<${W}, ${TK * TM}>; // [TK][TM]
+var<workgroup> Bs: array<${W}, ${TK * TN}>; // [TK][TN]
 
 @compute @workgroup_size(16, 16)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
@@ -593,16 +607,16 @@ ${decl}
       let idx = tid + r * 256u;
       let k = k0 + idx / ${TM}u;
       let m = m0 + idx % ${TM}u;
-      var a = 0.0;
-      if (k < P.K && m < P.M) { a = f32(A[aBase + k * P.aRow + m]); }
+      var a = ${W}(0.0);
+      if (k < P.K && m < P.M) { a = ${W}(A[aBase + k * P.aRow + m]); }
       As[idx] = a;
     }
     for (var r = 0u; r < ${(TK * TN) / 256}u; r++) {
       let idx = tid + r * 256u;
       let k = k0 + idx / ${TN}u;
       let n = n0 + idx % ${TN}u;
-      var b = 0.0;
-      if (k < P.K && n < N) { b = f32(B[bBase + k * P.bRow + n]); }
+      var b = ${W}(0.0);
+      if (k < P.K && n < N) { b = ${W}(B[bBase + k * P.bRow + n]); }
       Bs[idx] = b;
     }
     workgroupBarrier();

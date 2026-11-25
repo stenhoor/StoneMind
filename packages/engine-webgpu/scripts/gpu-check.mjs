@@ -2,7 +2,7 @@
 // with native KataGo's outputs; optionally benchmark evaluations per second by batch size.
 //
 //   npm run build -w @stonemind/engine-webgpu
-//   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench [--batches 1,8,64]] [--model <net.bin.gz> [--golden <goldens.json>]]
+//   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench [--batches 1,8,64]] [--tune] [--model <net.bin.gz> [--golden <goldens.json>]]
 //   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...] [--out report.json]
 //     Serves the page to open in any browser. Each run's report is posted back and saved to --out
 //     (default gpu-check-report.json in the current directory).
@@ -79,7 +79,12 @@ if (flag('--serve')) {
   page.on('pageerror', (e) => console.error(`[page] ${e.message}`));
   await page.goto(url);
   const batches = option('--batches')?.split(',').map(Number);
-  const report = await page.evaluate((opts) => window.runCheck(opts), { bench: flag('--bench'), ...(batches ? { batches } : {}) });
+  const tune = flag('--tune');
+  const report = await page.evaluate((opts) => window.runCheck(opts), {
+    bench: flag('--bench') || tune,
+    tune,
+    ...(batches ? { batches } : tune ? { batches: [16, 64] } : {}),
+  });
   console.log(JSON.stringify(report, null, 2));
   await browser.close();
   server.close();

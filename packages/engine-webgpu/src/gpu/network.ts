@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_TILE_M, GEMM_TILE_N, GEMM_V2, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -41,6 +41,8 @@ export interface GpuNetworkOptions {
    * at batches 8–64 in every variant (docs/spikes/results/2026-11-b18-webgpu-gemm-v2.md).
    */
   gemm?: 'v1' | 'v2';
+  /** GEMM v2's shape (default `GEMM_DEFAULT`). arith 'f16' needs the device feature `shader-f16`. */
+  gemmConfig?: GemmConfig;
 }
 
 /** An op as the plan builder records it, before its shader is compiled. */
@@ -152,6 +154,7 @@ export class GpuNetwork {
   #outputFactor = 1;
   #elem: Elem = 'f32';
   #gemm: 'v1' | 'v2' = 'v2';
+  #gemmConfig: GemmConfig = GEMM_DEFAULT;
   #winograd = true;
   #timestamps = false;
   #fuse = true;
@@ -180,6 +183,8 @@ export class GpuNetwork {
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
     net.#gemm = options.gemm ?? 'v2';
+    net.#gemmConfig = options.gemmConfig ?? GEMM_DEFAULT;
+    if (net.#gemmConfig.arith === 'f16' && !engine.features.has('shader-f16')) throw new Error("gemmConfig.arith 'f16' needs the device feature shader-f16");
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
     const scale8 = options.scale8 ?? net.#elem === 'f16';
     net.#desc = scale8 ? applyScale8(model) : model;
@@ -416,12 +421,12 @@ export class GpuNetwork {
     const weights = this.#upload(convWeightsKxOc(layer), this.#elem);
     this.#specs.push({
       kind: 'conv1x1',
-      code: GEMM_V2(this.#elemOf(weights), this.#elemOf(input), this.#elemOf(output)),
+      code: GEMM_V2(this.#elemOf(weights), this.#elemOf(input), this.#elemOf(output), this.#gemmConfig),
       buffers: [
         this.#uniform([oc, ic, area, 0, 0, oc, ic * area, area, oc * area, area, flags, oc]),
         this.#dyn, weights, input, output, opts.nbias ?? this.#dummy,
       ],
-      workgroups: (n) => [Math.ceil(area / GEMM_TILE_N), Math.ceil(oc / GEMM_TILE_M), n],
+      workgroups: (n) => [Math.ceil(area / gemmTile(this.#gemmConfig).tn), Math.ceil(oc / gemmTile(this.#gemmConfig).tm), n],
     });
   }
 
@@ -483,12 +488,12 @@ export class GpuNetwork {
       // M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t], as GEMM v2 with z = e.
       this.#specs.push({
         kind: 'winoGemm',
-        code: GEMM_V2(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),
+        code: GEMM_V2(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M), this.#gemmConfig),
         buffers: [
           this.#uniform([oc, ic, 0, tilesPerBoard, ic * oc, oc, ic * tileStride, tileStride, oc * tileStride, tileStride, 0, 0]),
           this.#dyn, U, V, M, this.#dummy,
         ],
-        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / GEMM_TILE_N), Math.ceil(oc / GEMM_TILE_M), 36],
+        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / gemmTile(this.#gemmConfig).tn), Math.ceil(oc / gemmTile(this.#gemmConfig).tm), 36],
       });
     } else {
       this.#specs.push({
