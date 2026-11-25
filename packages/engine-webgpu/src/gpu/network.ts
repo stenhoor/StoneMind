@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -43,6 +43,11 @@ export interface GpuNetworkOptions {
   gemm?: 'v1' | 'v2';
   /** GEMM v2's shape (default `GEMM_DEFAULT`). arith 'f16' needs the device feature `shader-f16`. */
   gemmConfig?: GemmConfig;
+  /**
+   * The Winograd input and output transforms (default 'v1'). 'v2' stages each board through workgroup memory
+   * (`WINO_IN_V2`, `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point.
+   */
+  winoTransforms?: 'v1' | 'v2';
 }
 
 /** An op as the plan builder records it, before its shader is compiled. */
@@ -155,6 +160,7 @@ export class GpuNetwork {
   #elem: Elem = 'f32';
   #gemm: 'v1' | 'v2' = 'v2';
   #gemmConfig: GemmConfig = GEMM_DEFAULT;
+  #winoTransforms: 'v1' | 'v2' = 'v1';
   #winograd = true;
   #timestamps = false;
   #fuse = true;
@@ -184,6 +190,7 @@ export class GpuNetwork {
     net.#elem = options.precision ?? 'f32';
     net.#gemm = options.gemm ?? 'v2';
     net.#gemmConfig = options.gemmConfig ?? GEMM_DEFAULT;
+    net.#winoTransforms = options.winoTransforms ?? 'v1';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
     const scale8 = options.scale8 ?? net.#elem === 'f16';
@@ -473,7 +480,9 @@ export class GpuNetwork {
     const act = fused ? ACT[fused.activation] : 0;
     this.#specs.push({
       kind: 'winoIn',
-      code: WINO_IN(this.#elemOf(input), this.#elemOf(V)),
+      code: this.#winoTransforms === 'v2'
+        ? WINO_IN_V2(this.#elemOf(input), this.#elemOf(V), this.xSize, this.ySize)
+        : WINO_IN(this.#elemOf(input), this.#elemOf(V)),
       buffers: [
         this.#uniform([ic, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, inFlags, act, this.#desc.numInputChannels * this.#area, 0, 0, 0]),
         this.#dyn, input, V,
@@ -481,7 +490,9 @@ export class GpuNetwork {
         fused?.pre ?? this.#dummy,
         this.#input,
       ],
-      workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
+      workgroups: this.#winoTransforms === 'v2'
+        ? (n) => [Math.ceil(ic / winoTransformChannels('in', this.xSize, this.ySize)), n]
+        : (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
     const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
     if (this.#gemm === 'v2') {
@@ -506,12 +517,16 @@ export class GpuNetwork {
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     this.#specs.push({
       kind: 'winoOut',
-      code: WINO_OUT(this.#elemOf(M), this.#elemOf(output)),
+      code: this.#winoTransforms === 'v2'
+        ? WINO_OUT_V2(this.#elemOf(M), this.#elemOf(output), this.xSize, this.ySize)
+        : WINO_OUT(this.#elemOf(M), this.#elemOf(output)),
       buffers: [
         this.#uniform([oc, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, flags, 0]),
         this.#dyn, M, output, opts.nbias ?? this.#dummy,
       ],
-      workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), oc],
+      workgroups: this.#winoTransforms === 'v2'
+        ? (n) => [Math.ceil(oc / winoTransformChannels('out', this.xSize, this.ySize)), n]
+        : (n) => [Math.ceil((n * tilesPerBoard) / 64), oc],
     });
   }
 

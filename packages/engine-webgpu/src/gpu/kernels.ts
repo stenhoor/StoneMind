@@ -638,3 +638,142 @@ ${inner}    workgroupBarrier();
 ${store}}
 `;
 };
+
+// ------------------------------------------------------------------ Winograd transforms v2
+//
+// The same transforms as WINO_IN / WINO_OUT, staged through workgroup memory. A workgroup handles `cpw` channels of
+// one board position: the input transform first copies the padded board into workgroup memory with adjacent reads
+// (applying a fused batch norm and activation once per point, where v1 recomputes it for every tile that overlaps the
+// point), then each thread builds its tile from there; the output transform has each thread put its 4 × 4 block into
+// workgroup memory, then the workgroup writes the board with adjacent writes (and the residual add). Board sizes are
+// compile-time constants, and every tile index is unrolled.
+
+/** Channels per workgroup for the v2 transforms: as many as fit in 256 threads and 16 KB of workgroup memory. */
+export function winoTransformChannels(kind: 'in' | 'out', xSize: number, ySize: number): number {
+  const tilesX = Math.ceil(xSize / 4);
+  const tilesY = Math.ceil(ySize / 4);
+  const perChannel = kind === 'in' ? (tilesX * 4 + 2) * (tilesY * 4 + 2) : tilesX * 4 * (tilesY * 4);
+  return Math.max(1, Math.min(Math.floor(256 / (tilesX * tilesY)), Math.floor(4096 / perChannel)));
+}
+
+/** WINO_IN with workgroup staging; same bindings and parameters. Dispatch: [ceil(C / cpw), n]. */
+export const WINO_IN_V2 = (inT: Elem, vT: Elem, xSize: number, ySize: number) => {
+  const TX = Math.ceil(xSize / 4);
+  const TPB = TX * Math.ceil(ySize / 4);
+  const PX = TX * 4 + 2;
+  const PY = Math.ceil(ySize / 4) * 4 + 2;
+  const CPW = winoTransformChannels('in', xSize, ySize);
+  const WG = CPW * TPB;
+  let gather = '';
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) gather += `  d[${i * 6 + j}] = S[sbase + ${i * PX + j}u];\n`;
+  let store = '';
+  for (let e = 0; e < 36; e++) store += `  V[(${e}u * P.C + c) * P.tileStride + t] = ${vT}(o[${e}]);\n`;
+  return /* wgsl */ `${enableFor(inT, vT)}
+${DYN}
+${ACTIVATE}
+struct Params {
+  C: u32, xSize: u32, ySize: u32, tilesX: u32,
+  tilesPerBoard: u32, tileStride: u32, flags: u32, act: u32,
+  maskStride: u32, _pad0: u32, _pad1: u32, _pad2: u32,
+}
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> inp: array<${inT}>;
+@group(0) @binding(3) var<storage, read_write> V: array<${vT}>;
+@group(0) @binding(4) var<storage, read> sb: array<f32>;
+@group(0) @binding(5) var<storage, read> pre: array<f32>;
+@group(0) @binding(6) var<storage, read> mask: array<f32>;
+
+var<workgroup> S: array<f32, ${CPW * PY * PX}>; // [cpw][${PY}][${PX}], the board with a 1-point border of zeros
+
+@compute @workgroup_size(${WG})
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let c0 = wg.x * ${CPW}u;
+  let b = wg.y;
+  if (b >= dyn.n) { return; }
+  let fused = (P.flags & 1u) != 0u;
+  for (var idx = li; idx < ${CPW * PY * PX}u; idx += ${WG}u) {
+    let cc = idx / ${PY * PX}u;
+    let rem = idx % ${PY * PX}u;
+    let y = i32(rem / ${PX}u) - 1;
+    let x = i32(rem % ${PX}u) - 1;
+    let c = c0 + cc;
+    var v = 0.0;
+    if (c < P.C && y >= 0 && y < ${ySize} && x >= 0 && x < ${xSize}) {
+      let pos = u32(y) * ${xSize}u + u32(x);
+      v = f32(inp[(b * P.C + c) * ${xSize * ySize}u + pos]);
+      if (fused) {
+        var preBias = 0.0;
+        if ((P.flags & 2u) != 0u) { preBias = pre[b * P.C + c]; }
+        v = select(0.0, activate((v + preBias) * sb[c] + sb[P.C + c], P.act), mask[b * P.maskStride + pos] == 1.0);
+      }
+    }
+    S[idx] = v;
+  }
+  workgroupBarrier();
+  let cc = li / ${TPB}u;
+  let r = li % ${TPB}u;
+  let c = c0 + cc;
+  if (c >= P.C) { return; }
+  let sbase = cc * ${PY * PX}u + (r / ${TX}u) * ${4 * PX}u + (r % ${TX}u) * 4u;
+  var d: array<f32, 36>;
+${gather}  var o: array<f32, 36>;
+${sandwich(BT, 'd', 6, 'u', 'o')}
+  let t = b * ${TPB}u + r;
+${store}}
+`;
+};
+
+/** WINO_OUT with workgroup staging; same bindings and parameters. Dispatch: [ceil(outC / cpw), n]. */
+export const WINO_OUT_V2 = (mT: Elem, outT: Elem, xSize: number, ySize: number) => {
+  const TX = Math.ceil(xSize / 4);
+  const TPB = TX * Math.ceil(ySize / 4);
+  const OX = TX * 4;
+  const OY = Math.ceil(ySize / 4) * 4;
+  const CPW = winoTransformChannels('out', xSize, ySize);
+  const WG = CPW * TPB;
+  let load = '';
+  for (let e = 0; e < 36; e++) load += `    m[${e}] = f32(M[(${e}u * P.outC + c) * P.tileStride + t]);\n`;
+  let put = '';
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) put += `    S[sbase + ${i * OX + j}u] = y[${i * 4 + j}];\n`;
+  return /* wgsl */ `${enableFor(mT, outT)}
+${DYN}
+struct Params { outC: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, flags: u32, _pad0: u32 }
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> M: array<${mT}>;
+@group(0) @binding(3) var<storage, read_write> outp: array<${outT}>;
+@group(0) @binding(4) var<storage, read> nbias: array<f32>;
+
+var<workgroup> S: array<f32, ${CPW * OY * OX}>; // [cpw][${OY}][${OX}], whole tiles
+
+@compute @workgroup_size(${WG})
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let c0 = wg.x * ${CPW}u;
+  let b = wg.y;
+  if (b >= dyn.n) { return; }
+  let cc = li / ${TPB}u;
+  let r = li % ${TPB}u;
+  let c = c0 + cc;
+  if (c < P.outC) {
+    let t = b * ${TPB}u + r;
+    var m: array<f32, 36>;
+${load}    var y: array<f32, 16>;
+${sandwich(AT, 'm', 6, 'u', 'y')}
+    let sbase = cc * ${OY * OX}u + (r / ${TX}u) * ${4 * OX}u + (r % ${TX}u) * 4u;
+${put}  }
+  workgroupBarrier();
+  for (var idx = li; idx < ${CPW * xSize * ySize}u; idx += ${WG}u) {
+    let cc2 = idx / ${xSize * ySize}u;
+    let pos = idx % ${xSize * ySize}u;
+    let c2 = c0 + cc2;
+    if (c2 >= P.outC) { continue; }
+    var v = S[cc2 * ${OY * OX}u + (pos / ${xSize}u) * ${OX}u + pos % ${xSize}u];
+    if ((P.flags & 2u) != 0u) { v += nbias[b * P.outC + c2]; }
+    let o = (b * P.outC + c2) * ${xSize * ySize}u + pos;
+    if ((P.flags & 1u) != 0u) { v += f32(outp[o]); }
+    outp[o] = ${outT}(v);
+  }
+}
+`;
+};

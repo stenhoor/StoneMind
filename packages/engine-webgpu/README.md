@@ -40,6 +40,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     `gemmConfig` sets its shape: rows and columns per thread (`rm`, `rn`: 4 or 8), the reduction chunk (`tk`: 8 or
     16) and the arithmetic (`arith`: `f32`; or, where the device has `shader-f16`, `f16` or `f16x2`, the latter on pairs
     of output columns as `vec2<f16>`; both sum each chunk in f16 and add it into f32 accumulators). The default (`GEMM_DEFAULT`) is 4 × 8, chunks of 16, f32.
+  - **Winograd transforms v2** (`winoTransforms: 'v2'`, default `'v1'` until measured): each workgroup copies a few
+    channels of one board into workgroup memory with adjacent reads, applying a fused batch norm once per point (v1
+    recomputes it for each overlapping tile), and writes the output board back with adjacent writes.
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
     `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't

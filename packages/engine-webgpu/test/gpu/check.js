@@ -112,6 +112,9 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     // GEMM v2: the unrolled matrix multiply for the Winograd GEMMs and 1×1 convolutions.
     { winograd: true, fuse: true, gemm: 'v2' },
     { winograd: true, fuse: false, gemm: 'v2' },
+    // Winograd transforms v2: staged through workgroup memory.
+    { winograd: true, fuse: true, gemm: 'v2', winoTransforms: 'v2' },
+    { winograd: true, fuse: false, gemm: 'v2', winoTransforms: 'v2' },
     // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
     { winograd: true, fuse: true, scale8: true, gemm: 'v2' },
   ];
@@ -121,6 +124,8 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v1' },
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v2' },
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v2' },
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
+      { winograd: true, fuse: false, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
     );
   }
   // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
