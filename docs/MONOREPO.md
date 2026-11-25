@@ -38,6 +38,7 @@ StoneMind/
 │   ├── ontology/            @stonemind/ontology
 │   ├── provider-sdk/        @stonemind/provider-sdk
 │   ├── engine/              @stonemind/engine
+│   ├── engine-webgpu/       @stonemind/engine-webgpu (experimental)
 │   └── katago-bridge/       @stonemind/katago-bridge
 ├── apps/                    Deployable applications
 │   └── engine-bench/        @stonemind/engine-bench (GitHub Pages); planned: web → stonemind.app, site → stonemind.org
@@ -60,6 +61,7 @@ from the root builds dependencies before dependents.
 | `@stonemind/ontology` | Library (data + logic) | npm package; `seed.json` is also a standalone data artifact | domain | none yet (future ontology engine, web app) |
 | `@stonemind/provider-sdk` | Library (contracts + registry) | npm package for third-party plugin authors | domain | none yet (future providers, engines, web app) |
 | `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-bench |
+| `@stonemind/engine-webgpu` | Library (experimental engine) | npm package; loaded in pages without a bundler | none yet (engine, for the contract, in phase 5) | none yet (engine-bench in phase 4) |
 | `@stonemind/katago-bridge` | Local tool (Node CLI) | Run from a checkout on the player's computer | engine | players running native KataGo |
 | `@stonemind/engine-bench` | App (static page) | GitHub Pages: https://stenhoor.github.io/StoneMind/engine-bench/ | engine, brand | none |
 
@@ -93,7 +95,6 @@ Expected dependencies are listed so they can be checked when each is created.
 | `@stonemind/site` | `apps/site` | Project website, deployed to **stonemind.org**: research, specifications, docs, community | brand (may render content from `docs/`) | M0–M1 |
 | `@stonemind/sgf` | `packages/sgf` | SGF parsing/serialisation | none | M1 |
 | `@stonemind/storage-smaltworks` | `packages/storage-smaltworks` | Smaltworks + OPFS implementation of storage ports | storage, Smaltworks | M1 |
-| `@stonemind/engine-webgpu` | `packages/engine-webgpu` | Experimental browser engine: TypeScript search and WGSL network, no WebAssembly ([spike 0001](spikes/0001-browser-katago-webgpu.md)) | engine | M1 |
 | `@stonemind/provider-katago` | `packages/provider-katago` | KataGo analysis provider: puts an `AnalysisEngine` (browser or local) behind the provider SDK, with its data disclosure | provider-sdk, engine, domain, sgf | M1 |
 | `@stonemind/evidence-engine` | `packages/evidence-engine` | Observations → indicators → hypotheses pipeline | domain, ontology | M1–M2 |
 | `@stonemind/player-graph` | `packages/player-graph` | Player Understanding Graph engine | domain, ontology, storage | M2 |

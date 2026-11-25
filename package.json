@@ -15,6 +15,7 @@
     "packages/ontology",
     "packages/provider-sdk",
     "packages/engine",
+    "packages/engine-webgpu",
     "packages/katago-bridge",
     "apps/engine-bench"
   ],
