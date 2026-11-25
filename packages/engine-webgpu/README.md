@@ -59,20 +59,22 @@ adds evaluations per second by batch size.
 
 ```bash
 npm run build -w @stonemind/engine-webgpu
-node packages/engine-webgpu/scripts/gpu-check.mjs                     # headless Chromium, via Playwright
+npm run gpu-check -w @stonemind/engine-webgpu                         # headless Chromium, via Playwright
 node packages/engine-webgpu/scripts/gpu-check.mjs --serve --model <net.bin.gz> --golden <goldens.json>
 ```
 
-With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU. Headless use needs
-a Playwright that Node can import; Playwright is not a project dependency, so the check doesn't run in CI. Without a
-GPU, Chromium's software adapter (SwiftShader) runs it: correct, but far too slow to say anything about speed.
+With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU. Headless runs use
+Playwright, a devDependency of this package (approved for this on 2026-11-25); install its browser once with
+`npx playwright install chromium`, or set `STONEMIND_CHROMIUM` to a Chromium executable. CI runs the check on every
+pull request (`npm run gpu-check`). Without a GPU, Chromium's software adapter (SwiftShader) runs it: correct, but far
+too slow to say anything about speed.
 
 The test network (CC0, a g170-run net) is downloaded by `npm run fixtures` from KataGo's repository at that commit and
 checked by SHA-256. It is not committed.
 
 ## Depends on
 
-None.
+No StoneMind packages. Dev only: Playwright (Apache-2.0), for the headless GPU check.
 
 ## Used by
 

@@ -23,9 +23,11 @@
     "fixtures": "node scripts/fetch-test-model.mjs",
     "test": "npm run build && npm run fixtures && node --test test/*.test.mjs",
     "check": "npm run typecheck && npm run test",
+    "gpu-check": "node scripts/gpu-check.mjs",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "playwright": "1.65.0",
     "typescript": "^5.9.3"
   }
 }

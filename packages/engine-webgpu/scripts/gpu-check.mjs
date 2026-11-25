@@ -5,12 +5,11 @@
 //   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench] [--model <net.bin.gz> [--golden <goldens.json>]]
 //   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...]   # serve the page; open it in any browser
 //
-// Without --serve it drives Chromium through Playwright, which is not a project dependency: it needs a Playwright
-// that Node can import from the current directory (for example one installed outside the repository). Extra Chromium
+// Without --serve it drives headless Chromium through Playwright (a devDependency of this package; install its browser
+// once with `npx playwright install chromium`, or point STONEMIND_CHROMIUM at a Chromium executable). Extra Chromium
 // flags can be passed with --chromium-args "...". Without --model it uses the test network (npm run fixtures).
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -54,10 +53,10 @@ if (flag('--serve')) {
   console.log(`Serving the GPU check page at ${url}`);
   console.log('Open it in a browser with WebGPU, then press a button. Ctrl+C stops the server.');
 } else {
-  const require = createRequire(join(process.cwd(), 'noop.js'));
-  const { chromium } = require('playwright');
+  const { chromium } = await import('playwright');
   const extra = option('--chromium-args')?.split(' ').filter(Boolean) ?? [];
-  const browser = await chromium.launch({ args: ['--enable-unsafe-webgpu', ...extra] });
+  const executablePath = process.env.STONEMIND_CHROMIUM;
+  const browser = await chromium.launch({ args: ['--enable-unsafe-webgpu', ...extra], ...(executablePath ? { executablePath } : {}) });
   const page = await browser.newPage();
   page.on('pageerror', (e) => console.error(`[page] ${e.message}`));
   await page.goto(url);
