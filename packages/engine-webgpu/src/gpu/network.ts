@@ -184,7 +184,7 @@ export class GpuNetwork {
     net.#elem = options.precision ?? 'f32';
     net.#gemm = options.gemm ?? 'v2';
     net.#gemmConfig = options.gemmConfig ?? GEMM_DEFAULT;
-    if (net.#gemmConfig.arith === 'f16' && !engine.features.has('shader-f16')) throw new Error("gemmConfig.arith 'f16' needs the device feature shader-f16");
+    if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
     const scale8 = options.scale8 ?? net.#elem === 'f16';
     net.#desc = scale8 ? applyScale8(model) : model;
