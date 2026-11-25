@@ -26,7 +26,14 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     mask; global pooling; small matrix-vector products.
   - Fusion: where a batch norm and activation feed only a 3×3 convolution, the Winograd input transform applies them
     as it reads, so the normalised tensor is never written out.
-  - Options `winograd: false` and `fuse: false` turn these off; the GPU check runs all three variants. fp16 comes next.
+  - Options `winograd: false` and `fuse: false` turn these off.
+  - **fp16 storage** (`precision: 'f16'`, needs the device feature `shader-f16`): activations, Winograd tensors and
+    convolution weights are stored as f16; every kernel converts to f32 on load and computes in f32. It applies
+    KataGo's **scale8** transform first (`src/model/scale8.ts`, ported from `ModelDesc::applyScale8ToReduceActivations`):
+    activations run at 1/8 scale with `mish_scale8`, and raw outputs are multiplied back by 8 on readback, so results
+    are unscaled either way. `scale8: true` also works in f32.
+  - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
+    `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
     include WebGPU yet.
 
@@ -48,6 +55,17 @@ on b18c384nbt by more than the test's tolerances (up to about 2e-3 in ownership;
 [the measurement](../../docs/spikes/results/2026-11-b18-goldens-backends.md)). The owner's CUDA capture is kept as
 `test/goldens/kata1-b18c384nbt-s9996604416-d4316597426-cuda.json` for the record; tests don't use it.
 
+fp32 variants must match the goldens at the test's tolerances. fp16 variants are judged as KataGo judges an fp16
+configuration against an fp32 reference: its `GpuErrorStats` metrics, 99th percentile and maximum, against the limits
+of `runBackendErrorTest` (`cpp/tests/testnnevalcanary.cpp`, KataGo 1.18). Those are: win rate 2%/5%, lead and score
+1/3 points, top-policy probability 2.5%/6%, policy KL 0.002/0.004, ownership 3.5%/20%. The goldens have no score stdev or
+short-term error outputs, so those metrics are not checked. The report gives each metric's ratio to its limit. The check
+also evaluates the WGSL activations over a grid of inputs against KataGo's formulas in double precision (within 1e-5).
+
+`test/scale8.test.mjs` checks that the scale8 transform leaves the reference network's function unchanged (raw outputs
+divided by 8; post-processed outputs match the goldens). Only b18c384nbt uses Mish, so only it exercises `mish_scale8`;
+it runs when `STONEMIND_B18_MODEL` is set. `test/f16.test.mjs` checks the fp32 → fp16 conversion exhaustively.
+
 `test/rules.test.mjs` checks the rules engine on hand-built positions: captures, suicide, simple ko, a triple-ko cycle
 under positional, situational and simple ko, a ladder with and without a ladder breaker, and pass-alive area.
 
@@ -61,7 +79,7 @@ It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with 
 KataGo version, the backend and the network's SHA-256.
 
 **The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
-WebGPU network on the golden positions in one batch (each variant: Winograd fused, Winograd unfused, implicit GEMM), compares every output with the reference forward pass, and
+WebGPU network on the golden positions in one batch (each variant: Winograd fused, Winograd unfused, implicit GEMM, fp32 with scale8, and fp16 fused and unfused where the device has `shader-f16`), compares every output with the reference forward pass, and
 compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. `--bench`
 adds evaluations per second by batch size.
 

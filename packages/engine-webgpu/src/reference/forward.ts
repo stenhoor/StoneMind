@@ -58,6 +58,9 @@ function activate(x: number, activation: Activation): number {
     }
     case 'silu':
       return f(x / (Math.exp(-x) + 1));
+    case 'mish_scale8':
+      // KataGo's OpenCL kernels (ACTIVATION == 12): a < 20/8 ? a * tanh(log1p(exp(8a))) : a.
+      return x < 2.5 ? f(x * Math.tanh(Math.log1p(Math.exp(8 * x)))) : x;
   }
 }
 

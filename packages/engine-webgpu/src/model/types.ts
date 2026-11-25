@@ -5,7 +5,8 @@
  * be read side by side. Weights are stored in the layouts the reference forward pass reads; see each layer.
  */
 
-export type Activation = 'identity' | 'relu' | 'mish' | 'silu';
+/** `mish_scale8` never comes from a model file: only `applyScale8` (`model/scale8.ts`) produces it. */
+export type Activation = 'identity' | 'relu' | 'mish' | 'silu' | 'mish_scale8';
 
 export interface ConvLayer {
   name: string;
