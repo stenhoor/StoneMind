@@ -35,8 +35,10 @@ export interface GpuNetworkOptions {
    */
   scale8?: boolean;
   /**
-   * The matrix-multiply kernel for the Winograd GEMMs and 1×1 convolutions (default 'v1'). 'v2' is the generic
-   * unrolled GEMM (`GEMM_V2`): larger tiles, and 1×1 convolutions as a plain GEMM per batch position.
+   * The matrix-multiply kernel for the Winograd GEMMs and 1×1 convolutions (default 'v2'): 'v2' is the generic
+   * unrolled GEMM (`GEMM_V2`), with 1×1 convolutions as a plain GEMM per batch position; 'v1' keeps the first kernels
+   * (the Winograd GEMM and the implicit-GEMM convolution). On Edge with an RTX 3080 Laptop GPU, v2 was 1.11–1.29× faster
+   * at batches 8–64 in every variant (docs/spikes/results/2026-11-b18-webgpu-gemm-v2.md).
    */
   gemm?: 'v1' | 'v2';
 }
@@ -149,7 +151,7 @@ export class GpuNetwork {
   /** What raw outputs are multiplied by on readback: 8 with scale8, else 1. */
   #outputFactor = 1;
   #elem: Elem = 'f32';
-  #gemm: 'v1' | 'v2' = 'v1';
+  #gemm: 'v1' | 'v2' = 'v2';
   #winograd = true;
   #timestamps = false;
   #fuse = true;
@@ -177,7 +179,7 @@ export class GpuNetwork {
     net.#winograd = options.winograd ?? true;
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
-    net.#gemm = options.gemm ?? 'v1';
+    net.#gemm = options.gemm ?? 'v2';
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
     const scale8 = options.scale8 ?? net.#elem === 'f16';
     net.#desc = scale8 ? applyScale8(model) : model;
