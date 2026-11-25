@@ -65,6 +65,10 @@ The chain is therefore: WebGPU network ≈ TypeScript reference ≈ KataGo Eigen
 - Every goldens file records its `backend`.
 - `scripts/capture-goldens.mjs` now requires `--backend` and says to use an Eigen build.
 
+**4. The goldens test** (`test/goldens.test.mjs`, with `STONEMIND_B18_MODEL` set, in the cloud session) checks the
+reference against the Eigen goldens at every position under all 8 symmetries, at the test's tolerances. All 20 tests
+pass: 10 for b6, 10 for b18.
+
 ## Not yet re-run
 
 - The GPU check's b18 comparison against the new goldens hasn't been re-run on the owner's machine. Step 3 above and

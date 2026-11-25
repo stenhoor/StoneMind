@@ -39,8 +39,8 @@ symmetries exactly against mirrored boards.
 
 `test/goldens.test.mjs` compares the reference network with outputs captured from native KataGo 1.18.2 (CPU/Eigen
 build, fp32) on the positions in `test/goldens/positions.json`, under all 8 symmetries: win/loss, lead, score, every
-policy and ownership value. Inputs come from `encodePositionV7`. All 10 positions match for g170-b6c96. For
-b18c384nbt, all 10 match at symmetry 0; the full 8-symmetry run is pending. The b18c384nbt test runs only when `STONEMIND_B18_MODEL` points at that model file, because the 98 MB model
+policy and ownership value. Inputs come from `encodePositionV7`. All 10 positions match for g170-b6c96 and for
+b18c384nbt (all 8 symmetries; the b18c384nbt run was checked on 2026-11-25). The b18c384nbt test runs only when `STONEMIND_B18_MODEL` points at that model file, because the 98 MB model
 is not downloaded in CI; otherwise it is skipped by name.
 
 Goldens must come from KataGo's CPU (Eigen) build, which the reference follows. KataGo's CUDA and Eigen backends differ
