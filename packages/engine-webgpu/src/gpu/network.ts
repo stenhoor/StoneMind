@@ -10,7 +10,7 @@ import type { Activation, BatchNormLayer, Block, ConvLayer, MatMulLayer, MatBias
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights } from './kernels.js';
-import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice } from './webgpu.js';
+import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
   /** The plan's board size (default 19 × 19). Smaller boards fit in its top-left corner. */
@@ -22,6 +22,17 @@ export interface GpuNetworkOptions {
   winograd?: boolean;
   /** With Winograd, apply a preceding batch norm and activation inside the input transform (default true). */
   fuse?: boolean;
+}
+
+/** Timings from {@link GpuNetwork.profile}. GPU times come from timestamp queries, in nanoseconds as the browser reports them. */
+export interface GpuProfile {
+  batch: number;
+  /** Wall-clock time of the whole evaluation in milliseconds: input upload, GPU work and readback. */
+  wallMs: number;
+  /** mode 'pass': GPU time of the network's single compute pass. */
+  passNs?: number;
+  /** mode 'ops': GPU time of each dispatch, each run in its own compute pass, in plan order. */
+  ops?: { kind: string; ns: number }[];
 }
 
 interface Op {
@@ -106,6 +117,8 @@ export class GpuNetwork {
   #stagingFloats = 0;
   #pipelines!: Record<'conv' | 'bnAct' | 'gpool' | 'matvec' | 'winoIn' | 'winoGemm' | 'winoOut', GPUComputePipeline>;
   #winograd = true;
+  #timestamps = false;
+  readonly #kinds = new Map<GPUComputePipeline, string>();
   #fuse = true;
   #wino?: { V: GPUBuffer; M: GPUBuffer; tilesX: number; tilesPerBoard: number; tileStride: number };
   #dummy!: GPUBuffer;
@@ -129,6 +142,7 @@ export class GpuNetwork {
     if (model.trunk.sgfMetadataEncoder) throw new Error('models with an SGF metadata encoder are not supported yet');
     const net = new GpuNetwork(engine.device, model, options.xSize ?? 19, options.ySize ?? 19, options.maxBatch ?? 1);
     net.#winograd = options.winograd ?? true;
+    net.#timestamps = engine.features.has('timestamp-query');
     net.#fuse = options.fuse ?? true;
     const { device } = net;
     device.pushErrorScope('validation');
@@ -180,6 +194,7 @@ export class GpuNetwork {
       [CONV, BN_ACT, GPOOL, MATVEC, WINO_IN, WINO_GEMM, WINO_OUT].map(compile),
     );
     this.#pipelines = { conv: conv!, bnAct: bnAct!, gpool: gpool!, matvec: matvec!, winoIn: winoIn!, winoGemm: winoGemm!, winoOut: winoOut! };
+    for (const [kind, pipeline] of Object.entries(this.#pipelines)) this.#kinds.set(pipeline, kind);
 
     const B = this.maxBatch;
     const area = this.#area;
@@ -444,15 +459,43 @@ export class GpuNetwork {
    * one network evaluates one batch at a time.
    */
   evaluate(inputs: readonly NetInput[]): Promise<RawOutputs[]> {
-    const run = this.#busy.then(() => this.#evaluate(inputs));
+    const run = this.#busy.then(() => this.#evaluate(inputs).then((r) => r.outputs));
     this.#busy = run.catch(() => undefined);
     return run;
   }
 
-  async #evaluate(inputs: readonly NetInput[]): Promise<RawOutputs[]> {
+  /** Whether {@link profile} can run: the device has `timestamp-query`. */
+  get canProfile(): boolean {
+    return this.#timestamps;
+  }
+
+  /**
+   * Evaluate a batch while timing it. Mode 'pass' times the normal plan (one compute pass) on the GPU. Mode 'ops' runs
+   * every dispatch in its own compute pass to time each one; that adds pass overhead, so its wall time is not the
+   * plan's.
+   * @throws Error if the device has no `timestamp-query`.
+   */
+  profile(inputs: readonly NetInput[], mode: 'pass' | 'ops'): Promise<GpuProfile> {
+    if (!this.#timestamps) throw new Error('this device has no timestamp-query');
+    const run = this.#busy.then(async () => {
+      const t0 = performance.now();
+      const { timestamps } = await this.#evaluate(inputs, mode);
+      const wallMs = performance.now() - t0;
+      const ts = timestamps!;
+      const delta = (i: number) => Number(ts[2 * i + 1]! - ts[2 * i]!);
+      const result: GpuProfile = { batch: inputs.length, wallMs };
+      if (mode === 'pass') result.passNs = delta(0);
+      else result.ops = this.#ops.map((op, i) => ({ kind: this.#kinds.get(op.pipeline) ?? '?', ns: delta(i) }));
+      return result;
+    });
+    this.#busy = run.catch(() => undefined);
+    return run;
+  }
+
+  async #evaluate(inputs: readonly NetInput[], profile?: 'pass' | 'ops'): Promise<{ outputs: RawOutputs[]; timestamps?: BigUint64Array }> {
     if (this.#destroyed) throw new Error('the network has been destroyed');
     const n = inputs.length;
-    if (n === 0) return [];
+    if (n === 0) return { outputs: [] };
     if (n > this.maxBatch) throw new Error(`batch of ${n} is larger than the plan's ${this.maxBatch}`);
     const { model, device, xSize, ySize } = this;
     const area = this.#area;
@@ -479,20 +522,54 @@ export class GpuNetwork {
     device.queue.writeBuffer(this.#dyn, 0, new Uint32Array([n, 0, 0, 0]));
 
     const encoder = device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    for (const op of this.#ops) {
+    let query: { set: GPUQuerySet; resolve: GPUBuffer; read: GPUBuffer; count: number } | undefined;
+    if (profile) {
+      const count = profile === 'pass' ? 2 : 2 * this.#ops.length;
+      query = {
+        set: device.createQuerySet({ type: 'timestamp', count }),
+        resolve: device.createBuffer({ size: count * 8, usage: BufferUsage.QUERY_RESOLVE | BufferUsage.COPY_SRC }),
+        read: device.createBuffer({ size: count * 8, usage: BufferUsage.MAP_READ | BufferUsage.COPY_DST }),
+        count,
+      };
+    }
+    const dispatch = (pass: ReturnType<typeof encoder.beginComputePass>, op: Op) => {
       pass.setPipeline(op.pipeline);
       pass.setBindGroup(0, op.bindGroup);
       const [x, y, z = 1] = op.workgroups(n);
       pass.dispatchWorkgroups(x, y, z);
+    };
+    if (profile === 'ops') {
+      this.#ops.forEach((op, i) => {
+        const pass = encoder.beginComputePass({ timestampWrites: { querySet: query!.set, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } });
+        dispatch(pass, op);
+        pass.end();
+      });
+    } else {
+      const pass = encoder.beginComputePass(
+        query ? { timestampWrites: { querySet: query.set, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {},
+      );
+      for (const op of this.#ops) dispatch(pass, op);
+      pass.end();
     }
-    pass.end();
     for (const out of this.#outputs) encoder.copyBufferToBuffer(out.buffer, 0, this.#staging, out.stagingOffset * 4, n * out.perBatch * 4);
+    if (query) {
+      encoder.resolveQuerySet(query.set, 0, query.count, query.resolve, 0);
+      encoder.copyBufferToBuffer(query.resolve, 0, query.read, 0, query.count * 8);
+    }
     device.queue.submit([encoder.finish()]);
 
     await this.#staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4);
     const data = new Float32Array(this.#staging.getMappedRange(0, this.#stagingFloats * 4).slice(0));
     this.#staging.unmap();
+    let timestamps: BigUint64Array | undefined;
+    if (query) {
+      await query.read.mapAsync(MapMode.READ);
+      timestamps = new BigUint64Array(query.read.getMappedRange().slice(0));
+      query.read.unmap();
+      query.set.destroy();
+      query.resolve.destroy();
+      query.read.destroy();
+    }
 
     const region = (name: OutputRegion['name'], b: number) => {
       const r = this.#outputs.find((o) => o.name === name)!;
@@ -503,7 +580,7 @@ export class GpuNetwork {
       for (let y = 0; y < input.ySize; y++) out.set(plane.subarray(y * xSize, y * xSize + input.xSize), y * input.xSize);
       return out;
     };
-    return inputs.map((input, b) => {
+    const outputs = inputs.map((input, b) => {
       const policyAll = region('policy', b);
       const policy: Float32Array[] = [];
       for (let c = 0; c < model.policyHead.policyOutChannels; c++) policy.push(crop(policyAll.subarray(c * area, (c + 1) * area), input));
@@ -517,6 +594,7 @@ export class GpuNetwork {
         ownership: crop(region('ownership', b), input),
       };
     });
+    return { outputs, ...(timestamps ? { timestamps } : {}) };
   }
 
   /** Free the network's GPU buffers. The device is left alone. */
