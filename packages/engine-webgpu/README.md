@@ -39,10 +39,14 @@ symmetries exactly against mirrored boards.
 
 `test/goldens.test.mjs` compares the reference network with outputs captured from native KataGo 1.18.2 (CPU/Eigen
 build, fp32) on the positions in `test/goldens/positions.json`, under all 8 symmetries: win/loss, lead, score, every
-policy and ownership value. Inputs come from `encodePositionV7`. All 10 positions match for g170-b6c96. The
-b18c384nbt goldens (captured by the owner, `test/goldens/kata1-b18c384nbt-…json`) run only when
-`STONEMIND_B18_MODEL` points at that model file, because the 98 MB model is not downloaded in CI; otherwise that test
-is skipped by name.
+policy and ownership value. Inputs come from `encodePositionV7`. All 10 positions match for g170-b6c96 and for
+b18c384nbt (all 8 symmetries; the b18c384nbt run was checked on 2026-11-25). The b18c384nbt test runs only when `STONEMIND_B18_MODEL` points at that model file, because the 98 MB model
+is not downloaded in CI; otherwise it is skipped by name.
+
+Goldens must come from KataGo's CPU (Eigen) build, which the reference follows. KataGo's CUDA and Eigen backends differ
+on b18c384nbt by more than the test's tolerances (up to about 2e-3 in ownership; see
+[the measurement](../../docs/spikes/results/2026-11-b18-goldens-backends.md)). The owner's CUDA capture is kept as
+`test/goldens/kata1-b18c384nbt-s9996604416-d4316597426-cuda.json` for the record; tests don't use it.
 
 `test/rules.test.mjs` checks the rules engine on hand-built positions: captures, suicide, simple ko, a triple-ko cycle
 under positional, situational and simple ko, a ladder with and without a ladder breaker, and pass-alive area.
@@ -50,11 +54,11 @@ under positional, situational and simple ko, a ladder with and without a ladder 
 **Capturing goldens** for another network (for example b18c384nbt on a machine with KataGo):
 
 ```bash
-node packages/engine-webgpu/scripts/capture-goldens.mjs --katago <katago> --config <gtp config> --model <net.bin.gz>
+node packages/engine-webgpu/scripts/capture-goldens.mjs --katago <Eigen katago> --config <gtp config> --model <net.bin.gz> --backend EIGEN
 ```
 
 It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with FP16 turned off, and records the
-KataGo version and the network's SHA-256.
+KataGo version, the backend and the network's SHA-256.
 
 **The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
 WebGPU network on the golden positions in one batch (each variant: Winograd fused, Winograd unfused, implicit GEMM), compares every output with the reference forward pass, and

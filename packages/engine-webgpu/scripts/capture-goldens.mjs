@@ -7,11 +7,15 @@
 // and GTP uses a blank line to end a reply.
 // FP16 is turned off with -override-config so the outputs are an fp32 reference.
 //
+// Use a KataGo built with the CPU (Eigen) backend: the reference forward pass follows it. KataGo's own CUDA and Eigen
+// backends differ on b18c384nbt by up to ~2e-3 in ownership and ~9e-4 in policy (both fp32; measured 2026-11-25, see
+// docs/spikes/results/2026-11-b18-goldens-backends.md), more than the goldens test's tolerances.
+//
 // Usage (Node 22.18+, no dependencies):
 //   node packages/engine-webgpu/scripts/capture-goldens.mjs \
 //     --katago ~/katago/katago --config ~/katago/gtp.cfg \
 //     --model ~/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz \
-//     [--override "cudaDeviceToUse=0"] [--out <file>]
+//     --backend EIGEN [--override "..."] [--out <file>]
 //
 // Writes test/goldens/<model name>.json (or --out). Commands used, all from KataGo's GTP (cpp/command/gtp.cpp, 1.18):
 // boardsize, clear_board, kata-set-rules, komi, play, kata-raw-nn, version, quit.
@@ -29,11 +33,12 @@ const { values } = parseArgs({
     config: { type: 'string' },
     model: { type: 'string' },
     override: { type: 'string', default: '' },
+    backend: { type: 'string' },
     out: { type: 'string' },
   },
 });
-if (!values.katago || !values.config || !values.model) {
-  console.error('needs --katago, --config and --model (see the comment at the top of this file)');
+if (!values.katago || !values.config || !values.model || !values.backend) {
+  console.error('needs --katago, --config, --model and --backend, the backend KataGo was built with (see the comment at the top of this file)');
   process.exit(2);
 }
 
@@ -106,7 +111,7 @@ function parseRawNN(text, size) {
 
 const version = await gtp('version');
 const out = {
-  capturedWith: { katagoVersion: version, override, modelFile: basename(values.model), modelSha256, date: new Date().toISOString() },
+  capturedWith: { katagoVersion: version, override, modelFile: basename(values.model), modelSha256, date: new Date().toISOString(), backend: values.backend },
   note: 'kata-raw-nn <symmetry> 0 for symmetries 0-7: raw evaluation under each symmetry, policy optimism 0, fp32. Values from White’s perspective; policy null marks an illegal move; rows run from the top (A19 on 19x19).',
   positions: [],
 };
