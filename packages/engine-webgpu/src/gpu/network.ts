@@ -20,6 +20,8 @@ export interface GpuNetworkOptions {
   maxBatch?: number;
   /** Run 3×3 convolutions with Winograd F(4×4,3×3) (default true); false uses the implicit GEMM for every size. */
   winograd?: boolean;
+  /** With Winograd, apply a preceding batch norm and activation inside the input transform (default true). */
+  fuse?: boolean;
 }
 
 interface Op {
@@ -52,6 +54,14 @@ function convWeightsKxOc(layer: ConvLayer): Float32Array {
   const out = new Float32Array(K * oc);
   for (let o = 0; o < oc; o++) for (let k = 0; k < K; k++) out[k * oc + o] = layer.weights[o * K + k]!;
   return out;
+}
+
+/** A batch norm's merged scales, then its merged biases. */
+function mergedScaleBias(bn: BatchNormLayer): Float32Array {
+  const sb = new Float32Array(2 * bn.numChannels);
+  sb.set(bn.mergedScale, 0);
+  sb.set(bn.mergedBias, bn.numChannels);
+  return sb;
 }
 
 function maxChannels(model: ModelDesc): number {
@@ -96,6 +106,7 @@ export class GpuNetwork {
   #stagingFloats = 0;
   #pipelines!: Record<'conv' | 'bnAct' | 'gpool' | 'matvec' | 'winoIn' | 'winoGemm' | 'winoOut', GPUComputePipeline>;
   #winograd = true;
+  #fuse = true;
   #wino?: { V: GPUBuffer; M: GPUBuffer; tilesX: number; tilesPerBoard: number; tileStride: number };
   #dummy!: GPUBuffer;
   #busy: Promise<unknown> = Promise.resolve();
@@ -118,6 +129,7 @@ export class GpuNetwork {
     if (model.trunk.sgfMetadataEncoder) throw new Error('models with an SGF metadata encoder are not supported yet');
     const net = new GpuNetwork(engine.device, model, options.xSize ?? 19, options.ySize ?? 19, options.maxBatch ?? 1);
     net.#winograd = options.winograd ?? true;
+    net.#fuse = options.fuse ?? true;
     const { device } = net;
     device.pushErrorScope('validation');
     device.pushErrorScope('out-of-memory');
@@ -202,20 +214,23 @@ export class GpuNetwork {
     const block = (blk: Block, target: GPUBuffer, depth: number): void => {
       switch (blk.kind) {
         case 'ordinary':
-          this.#bnAct(blk.preBN, blk.preActivation.activation, target, s.a);
-          this.#conv(blk.regularConv, s.a, s.m);
-          this.#bnAct(blk.midBN, blk.midActivation.activation, s.m, s.b);
-          this.#conv(blk.finalConv, s.b, target, { accumulate: true });
+          this.#bnActConv(blk.preBN, blk.preActivation.activation, target, blk.regularConv, s.m, s.a);
+          this.#bnActConv(blk.midBN, blk.midActivation.activation, s.m, blk.finalConv, target, s.b, { accumulate: true });
           return;
         case 'gpool':
-          this.#bnAct(blk.preBN, blk.preActivation.activation, target, s.a);
-          this.#conv(blk.regularConv, s.a, s.m);
-          this.#conv(blk.gpoolConv, s.a, s.g);
+          if (this.#fusesInto(blk.regularConv) && this.#fusesInto(blk.gpoolConv)) {
+            this.#bnActConv(blk.preBN, blk.preActivation.activation, target, blk.regularConv, s.m, s.a);
+            this.#bnActConv(blk.preBN, blk.preActivation.activation, target, blk.gpoolConv, s.g, s.a);
+          } else {
+            // Both convolutions read the same normalised input: compute it once.
+            this.#bnAct(blk.preBN, blk.preActivation.activation, target, s.a);
+            this.#conv(blk.regularConv, s.a, s.m);
+            this.#conv(blk.gpoolConv, s.a, s.g);
+          }
           this.#bnAct(blk.gpoolBN, blk.gpoolActivation.activation, s.g, s.b);
           this.#gpool(s.b, blk.gpoolConv.outChannels, s.pooled, 0);
           this.#matvec(blk.gpoolToBiasMul, s.pooled, 3 * blk.gpoolConv.outChannels, s.vec, blk.regularConv.outChannels, 0);
-          this.#bnAct(blk.midBN, blk.midActivation.activation, s.m, s.b, s.vec);
-          this.#conv(blk.finalConv, s.b, target, { accumulate: true });
+          this.#bnActConv(blk.midBN, blk.midActivation.activation, s.m, blk.finalConv, target, s.b, { accumulate: true, pre: s.vec });
           return;
         case 'nested_bottleneck': {
           const mid = inner[depth]!;
@@ -284,7 +299,7 @@ export class GpuNetwork {
   }
 
   #conv(layer: ConvLayer, input: GPUBuffer, output: GPUBuffer, opts: { accumulate?: boolean; nbias?: GPUBuffer } = {}): void {
-    if (this.#wino && layer.convYSize === 3 && layer.convXSize === 3 && layer.dilationY === 1 && layer.dilationX === 1) {
+    if (this.#winogradEligible(layer)) {
       this.#winogradConv(layer, input, output, opts);
       return;
     }
@@ -305,13 +320,57 @@ export class GpuNetwork {
     });
   }
 
-  #winogradConv(layer: ConvLayer, input: GPUBuffer, output: GPUBuffer, opts: { accumulate?: boolean; nbias?: GPUBuffer }): void {
+  #winogradEligible(layer: ConvLayer): boolean {
+    return this.#wino !== undefined && layer.convYSize === 3 && layer.convXSize === 3 && layer.dilationY === 1 && layer.dilationX === 1;
+  }
+
+  #fusesInto(layer: ConvLayer): boolean {
+    return this.#fuse && this.#winogradEligible(layer);
+  }
+
+  /**
+   * Batch norm + activation + mask, then a convolution. A Winograd convolution applies the batch norm itself in its
+   * input transform; otherwise the normalised tensor goes through `scratch`.
+   */
+  #bnActConv(
+    bn: BatchNormLayer,
+    activation: Activation,
+    input: GPUBuffer,
+    layer: ConvLayer,
+    output: GPUBuffer,
+    scratch: GPUBuffer,
+    opts: { accumulate?: boolean; pre?: GPUBuffer } = {},
+  ): void {
+    const conv = { accumulate: opts.accumulate ?? false };
+    if (this.#fusesInto(layer)) {
+      this.#winogradConv(layer, input, output, conv, { bn, activation, ...(opts.pre ? { pre: opts.pre } : {}) });
+      return;
+    }
+    this.#bnAct(bn, activation, input, scratch, opts.pre);
+    this.#conv(layer, scratch, output, conv);
+  }
+
+  #winogradConv(
+    layer: ConvLayer,
+    input: GPUBuffer,
+    output: GPUBuffer,
+    opts: { accumulate?: boolean; nbias?: GPUBuffer },
+    fused?: { bn: BatchNormLayer; activation: Activation; pre?: GPUBuffer },
+  ): void {
     const { V, M, tilesX, tilesPerBoard, tileStride } = this.#wino!;
     const { inChannels: ic, outChannels: oc } = layer;
     const { winoIn, winoGemm, winoOut } = this.#pipelines;
+    const inFlags = fused ? 1 | (fused.pre ? 2 : 0) : 0;
+    const act = fused ? ACT[fused.activation] : 0;
     this.#ops.push({
       pipeline: winoIn,
-      bindGroup: this.#bind(winoIn, [this.#uniform([ic, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, 0, 0]), this.#dyn, input, V]),
+      bindGroup: this.#bind(winoIn, [
+        this.#uniform([ic, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, inFlags, act, this.model.numInputChannels * this.#area, 0, 0, 0]),
+        this.#dyn, input, V,
+        fused ? this.#upload(mergedScaleBias(fused.bn)) : this.#dummy,
+        fused?.pre ?? this.#dummy,
+        this.#input,
+      ]),
       workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
     this.#ops.push({
@@ -334,9 +393,7 @@ export class GpuNetwork {
     const C = bn.numChannels;
     const area = this.#area;
     const params = this.#uniform([C, area, pre ? 1 : 0, ACT[activation], this.model.numInputChannels * area, 0, 0, 0]);
-    const sb = new Float32Array(2 * C);
-    sb.set(bn.mergedScale, 0);
-    sb.set(bn.mergedBias, C);
+    const sb = mergedScaleBias(bn);
     const pipeline = this.#pipelines.bnAct;
     this.#ops.push({
       pipeline,

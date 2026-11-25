@@ -9,6 +9,9 @@ const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
 const params = new URLSearchParams(location.search);
 const modelUrl = params.get('model') ?? '../fixtures/g170-b6c96-s175395328-d26788732.bin.gz';
 const goldenUrl = params.get('golden') ?? '../goldens/g170-b6c96-s175395328-d26788732.json';
+// The plain-TypeScript reference is slow on big nets, so it runs by default only for the test network; ?reference=1
+// forces it. Native KataGo's goldens are the correctness check either way.
+const useReference = params.get('reference') !== null ? params.get('reference') === '1' : !params.has('model');
 
 const getJson = async (url) => (await fetch(url)).json();
 
@@ -37,7 +40,7 @@ function compareGolden(got, want, size) {
 }
 
 export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 64], runs = 5 } = {}) {
-  const report = { modelUrl };
+  const report = { modelUrl, referenceCompared: useReference };
   const engine = await requestEngineDevice();
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
@@ -55,18 +58,18 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   });
 
   report.variants = [];
-  for (const winograd of [true, false]) {
-    report.variants.push(await checkVariant({ engine, model, cases, golden, winograd, bench, batches, runs }));
+  for (const variant of [{ winograd: true, fuse: true }, { winograd: true, fuse: false }, { winograd: false }]) {
+    report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
   }
   report.goldensCompared = Boolean(golden);
   report.ok = Boolean(golden) && report.variants.every((v) => v.ok);
   return report;
 }
 
-/** Check one network variant (Winograd on or off) on every case; optionally benchmark it. */
-async function checkVariant({ engine, model, cases, golden, winograd, bench, batches, runs }) {
-  const report = { winograd };
-  const net = await GpuNetwork.create(engine, model, { winograd, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
+/** Check one network variant (GpuNetwork options) on every case; optionally benchmark it. */
+async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }) {
+  const report = { variant };
+  const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
   report.dispatches = net.dispatchCount;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
@@ -75,15 +78,18 @@ async function checkVariant({ engine, model, cases, golden, winograd, bench, bat
   let ok = true;
   cases.forEach(({ position, size, encoded }, i) => {
     const gpu = batched[i];
-    const ref = forward(model, encoded.input);
-    const diff = {
-      policy: Math.max(...gpu.policy.map((p, c) => maxAbsDiff(p, ref.policy[c]))),
-      pass: maxAbsDiff(gpu.pass, ref.pass),
-      value: maxAbsDiff(gpu.value, ref.value),
-      scoreValue: maxAbsDiff(gpu.scoreValue, ref.scoreValue),
-      ownership: maxAbsDiff(gpu.ownership, ref.ownership),
-    };
-    const row = { id: position.id, maxAbsDiffVsReference: diff };
+    const row = { id: position.id };
+    if (useReference) {
+      cases[i].reference ??= forward(model, encoded.input);
+      const ref = cases[i].reference;
+      row.maxAbsDiffVsReference = {
+        policy: Math.max(...gpu.policy.map((p, c) => maxAbsDiff(p, ref.policy[c]))),
+        pass: maxAbsDiff(gpu.pass, ref.pass),
+        value: maxAbsDiff(gpu.value, ref.value),
+        scoreValue: maxAbsDiff(gpu.scoreValue, ref.scoreValue),
+        ownership: maxAbsDiff(gpu.ownership, ref.ownership),
+      };
+    }
     const want = golden?.positions.find((p) => p.id === position.id)?.evaluations.find((e) => e.symmetry === 0);
     if (want) {
       const nextPlayer = encoded.nextPlayer;

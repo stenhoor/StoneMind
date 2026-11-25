@@ -21,8 +21,12 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     boards sit in its top-left corner, masked, as in KataGo).
   - `evaluate(inputs)` runs a batch with one submit and one readback, and returns the same `RawOutputs` as the
     reference forward pass.
-  - Kernels: a tiled implicit-GEMM convolution, batch norm with activation and mask, global pooling and small
-    matrix-vector products. Winograd F(4×4,3×3), fused epilogues and fp16 come next, checked against these.
+  - Kernels: 3×3 convolutions by Winograd F(4×4,3×3) (an input transform, 36 batched GEMMs, an output transform that
+    also adds the residual or bias); other sizes by a tiled implicit-GEMM convolution; batch norm with activation and
+    mask; global pooling; small matrix-vector products.
+  - Fusion: where a batch norm and activation feed only a 3×3 convolution, the Winograd input transform applies them
+    as it reads, so the normalised tensor is never written out.
+  - Options `winograd: false` and `fuse: false` turn these off; the GPU check runs all three variants. fp16 comes next.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
     include WebGPU yet.
 
@@ -53,7 +57,7 @@ It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with 
 KataGo version and the network's SHA-256.
 
 **The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
-WebGPU network on the golden positions in one batch, compares every output with the reference forward pass, and
+WebGPU network on the golden positions in one batch (each variant: Winograd fused, Winograd unfused, implicit GEMM), compares every output with the reference forward pass, and
 compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. `--bench`
 adds evaluations per second by batch size.
 
@@ -63,7 +67,8 @@ npm run gpu-check -w @stonemind/engine-webgpu                         # headless
 node packages/engine-webgpu/scripts/gpu-check.mjs --serve --model <net.bin.gz> --golden <goldens.json>
 ```
 
-With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU. Headless runs use
+With `--model`, the slow TypeScript reference comparison is skipped unless `--reference` is given; the goldens are
+the correctness check. With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU. Headless runs use
 Playwright, a devDependency of this package (approved for this on 2026-11-25); install its browser once with
 `npx playwright install chromium`, or set `STONEMIND_CHROMIUM` to a Chromium executable. CI runs the check on every
 pull request (`npm run gpu-check`). Without a GPU, Chromium's software adapter (SwiftShader) runs it: correct, but far
