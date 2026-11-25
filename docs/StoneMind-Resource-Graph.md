@@ -1,4 +1,4 @@
-i# StoneMind Resource Graph Specification
+# StoneMind Resource Graph Specification
 
 Version: 0.1
 

@@ -1,0 +1,31 @@
+{
+  "name": "@stonemind/ontology",
+  "version": "0.0.1",
+  "description": "Go Ontology seed data, style dimensions, and ontology validation.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "stonemind-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "check": "npm run typecheck && npm run test",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@stonemind/domain": "0.0.1"
+  }
+}
