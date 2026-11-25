@@ -1,6 +1,6 @@
 # Spike 0001: KataGo in the browser on TypeScript + WebGPU
 
-Status: **Planned**, not started.
+Status: **In progress.** Phase 1 merged (https://github.com/stenhoor/StoneMind/pull/5); phase 2 in review.
 
 Date: 2026-11-25
 

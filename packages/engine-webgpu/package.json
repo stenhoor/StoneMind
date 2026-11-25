@@ -1,0 +1,31 @@
+{
+  "name": "@stonemind/engine-webgpu",
+  "version": "0.0.1",
+  "description": "Experimental browser KataGo engine (spike 0001): model loader, reference network, and later WGSL kernels and search.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "exports": {
+    ".": {
+      "stonemind-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "fixtures": "node scripts/fetch-test-model.mjs",
+    "test": "npm run build && npm run fixtures && node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm run test",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
