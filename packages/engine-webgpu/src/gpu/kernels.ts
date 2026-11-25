@@ -312,14 +312,26 @@ export function winogradWeights(weights: Float32Array, inChannels: number, outCh
   return U;
 }
 
-/** Input transform: one thread per (tile, channel). V[e][c][t] = (Bᵀ d B)[e]. */
+/**
+ * Input transform: one thread per (tile, channel). V[e][c][t] = (Bᵀ d B)[e].
+ * flags bit 0: apply BN_ACT's batch norm, activation and mask to each input value first (fusing the preceding layer);
+ * bit 1: with it, first add `pre[b][c]`. Padding stays 0, as it would be after a separate BN_ACT.
+ */
 export const WINO_IN = /* wgsl */ `
 ${DYN}
-struct Params { C: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, _pad0: u32, _pad1: u32 }
+${ACTIVATE}
+struct Params {
+  C: u32, xSize: u32, ySize: u32, tilesX: u32,
+  tilesPerBoard: u32, tileStride: u32, flags: u32, act: u32,
+  maskStride: u32, _pad0: u32, _pad1: u32, _pad2: u32,
+}
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
 @group(0) @binding(2) var<storage, read> inp: array<f32>;
 @group(0) @binding(3) var<storage, read_write> V: array<f32>;
+@group(0) @binding(4) var<storage, read> sb: array<f32>;
+@group(0) @binding(5) var<storage, read> pre: array<f32>;
+@group(0) @binding(6) var<storage, read> mask: array<f32>;
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
@@ -331,13 +343,26 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let y0 = i32(r / P.tilesX) * 4 - 1;
   let x0 = i32(r % P.tilesX) * 4 - 1;
   let base = (b * P.C + c) * P.xSize * P.ySize;
+  let fused = (P.flags & 1u) != 0u;
+  var scale = 1.0;
+  var shift = 0.0;
+  var preBias = 0.0;
+  if (fused) {
+    scale = sb[c];
+    shift = sb[P.C + c];
+    if ((P.flags & 2u) != 0u) { preBias = pre[b * P.C + c]; }
+  }
   var d: array<f32, 36>;
   for (var i = 0; i < 6; i++) {
     for (var j = 0; j < 6; j++) {
       let y = y0 + i;
       let x = x0 + j;
       var v = 0.0;
-      if (y >= 0 && y < i32(P.ySize) && x >= 0 && x < i32(P.xSize)) { v = inp[base + u32(y) * P.xSize + u32(x)]; }
+      if (y >= 0 && y < i32(P.ySize) && x >= 0 && x < i32(P.xSize)) {
+        let pos = u32(y) * P.xSize + u32(x);
+        v = inp[base + pos];
+        if (fused) { v = select(0.0, activate((v + preBias) * scale + shift, P.act), mask[b * P.maskStride + pos] == 1.0); }
+      }
       d[i * 6 + j] = v;
     }
   }

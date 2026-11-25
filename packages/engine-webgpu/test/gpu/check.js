@@ -55,18 +55,18 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   });
 
   report.variants = [];
-  for (const winograd of [true, false]) {
-    report.variants.push(await checkVariant({ engine, model, cases, golden, winograd, bench, batches, runs }));
+  for (const variant of [{ winograd: true, fuse: true }, { winograd: true, fuse: false }, { winograd: false }]) {
+    report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
   }
   report.goldensCompared = Boolean(golden);
   report.ok = Boolean(golden) && report.variants.every((v) => v.ok);
   return report;
 }
 
-/** Check one network variant (Winograd on or off) on every case; optionally benchmark it. */
-async function checkVariant({ engine, model, cases, golden, winograd, bench, batches, runs }) {
-  const report = { winograd };
-  const net = await GpuNetwork.create(engine, model, { winograd, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
+/** Check one network variant (GpuNetwork options) on every case; optionally benchmark it. */
+async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }) {
+  const report = { variant };
+  const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
   report.dispatches = net.dispatchCount;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
