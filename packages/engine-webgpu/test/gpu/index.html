@@ -14,7 +14,7 @@
   <p>Runs the WebGPU network on the golden positions and compares it with the outputs captured from native KataGo;
     optionally measures evaluations per second by batch size. A developer page, served by
     <code>scripts/gpu-check.mjs</code> or from the project's GitHub Pages site.</p>
-  <p><label>Model file (<code>.bin.gz</code>): <input id="model" type="file" accept=".gz,application/gzip"></label><br>
+  <p><label>Model file (<code>.bin.gz</code>, or the same file uncompressed): <input id="model" type="file"></label><br>
     Without a file, the page uses the model in its <code>model</code> parameter, or else the test network. Goldens
     exist for <code>kata1-b18c384nbt-s9996604416-d4316597426</code> and the test network.</p>
   <p><button id="check" type="button">Check correctness</button> <button id="bench" type="button">Check and benchmark</button>
