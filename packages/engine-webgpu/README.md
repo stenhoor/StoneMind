@@ -112,7 +112,9 @@ No StoneMind packages. Dev only: Playwright (Apache-2.0), for the headless GPU c
 
 ## Used by
 
-Nothing yet. Planned: `apps/engine-bench` (phase 4).
+`apps/engine-bench`: its site build publishes the GPU check page (`test/gpu/`) with this package's compiled modules
+and goldens at https://stenhoor.github.io/StoneMind/gpu-check/. There, a model is picked with the page's file input,
+and the report can be downloaded. The page works the same served by `scripts/gpu-check.mjs`.
 
 ## Development
 

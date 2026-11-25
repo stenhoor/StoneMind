@@ -12,6 +12,10 @@ comparisons.
 `@stonemind/engine` (loaded in the page through an import map) and `@stonemind/brand` (tokens, components and logos,
 copied unchanged).
 
+`@stonemind/engine-webgpu`: the site build also publishes that package's GPU check page at
+https://stenhoor.github.io/StoneMind/gpu-check/, copying its compiled modules, `test/gpu/` and its goldens (not the
+CUDA record) with the package's own layout, so a browser on any device can run the check by picking a model file.
+
 ## Used by
 
 Nothing: it is a deployable page.
