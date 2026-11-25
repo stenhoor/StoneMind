@@ -21,7 +21,8 @@ for every option.
   defends against DNS rebinding.
 - **Allowed origins only.** By default these are `https://stenhoor.github.io`, `https://stonemind.app` and local
   development on `:8080`. Use `--origin` to change them.
-- **A one-time pairing token** (256 bits) is required, sent in the WebSocket subprotocol list rather than the URL. The
+- **A pairing token** (256 bits, new each time the bridge starts and valid until it stops; any number of pages may
+  use it meanwhile) is required, sent in the WebSocket subprotocol list rather than the URL. The
   link carries it in the `#fragment`, which browsers never send to a server, and the page removes it from the address
   bar. Other pages on an allowed origin can't drive KataGo without it.
 - **Pages are kept apart.** Each page's query ids are prefixed in the engine and restored on the way back. A page can

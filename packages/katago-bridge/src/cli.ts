@@ -19,7 +19,8 @@ Options:
   --help                 Show this help
 
 The bridge listens on 127.0.0.1 only. A page connects only if its origin is allowed and it presents the
-one-time token in the pairing link, which the bridge prints when it starts.
+pairing token in the link the bridge prints when it starts. The token is new each time the bridge
+starts and stays valid until it stops.
 `;
 
 const { values } = parseArgs({
@@ -56,7 +57,7 @@ if (values.help || typeof values.model !== 'string' || typeof values.config !== 
       log: (m) => process.stderr.write(`[bridge] ${m}\n`),
     });
     process.stdout.write(`\nOpen this link to pair a page with KataGo on this computer:\n\n  ${bridge.pairingLink}\n\n`);
-    process.stdout.write('The link holds a one-time token: share it with no one. Press Ctrl+C to stop.\n');
+    process.stdout.write('The link holds a pairing token, valid until this bridge stops: share it with no one. Press Ctrl+C to stop.\n');
     const stop = () => void bridge.close().then(() => process.stderr.write('[bridge] stopped\n'));
     process.on('SIGINT', stop);
     process.on('SIGTERM', stop);

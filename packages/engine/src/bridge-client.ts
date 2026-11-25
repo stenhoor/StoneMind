@@ -10,7 +10,7 @@ export const bridgeTokenProtocol = (token: string): string => `token.${token}`;
 export interface BridgePairing {
   /** The bridge's WebSocket URL, e.g. "ws://127.0.0.1:6565". */
   url: string;
-  /** The one-time pairing token the bridge printed. */
+  /** The pairing token the bridge printed: new each time the bridge starts, valid until it stops. */
   token: string;
 }
 

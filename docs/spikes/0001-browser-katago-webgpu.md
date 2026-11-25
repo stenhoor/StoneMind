@@ -137,7 +137,7 @@ New packages follow the smaltworks standards from the start: `node --test`, plai
 ## Approved outside code
 
 - ✅ **Benchmark-only (2026-11-25):** onnxruntime-web (MIT) and TF.js (Apache-2.0), loaded only by `apps/engine-bench` and never by the product, to measure the alternatives fairly.
-- ✅ **Bridge pairing (2026-11-25):** starting the bridge prints a link to the bench page with a one-time token in the URL fragment. The fragment is never sent to a server.
+- ✅ **Bridge pairing (2026-11-25):** starting the bridge prints a link to the bench page with a pairing token in the URL fragment (new each time the bridge starts, valid until it stops). The fragment is never sent to a server.
 
 ## Network licences
 

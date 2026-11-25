@@ -20,10 +20,6 @@ git clone https://github.com/stenhoor/StoneMind.git && cd StoneMind
 ```
 
 ```bash
-git switch claude/spike-0001-phase1
-```
-
-```bash
 npm install && npm run build
 ```
 
@@ -38,6 +34,9 @@ npm run serve -w @stonemind/engine-bench
 It prints `http://localhost:8080/engine-bench/`.
 
 ## 4. Start the bridge
+
+KataGo writes its logs to `analysis_logs/` in the folder you start the bridge from (`logDir` in the analysis config).
+From the StoneMind folder that is ignored by git.
 
 In a second terminal, from the StoneMind folder:
 
