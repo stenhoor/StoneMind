@@ -52,6 +52,9 @@ package.json, version, README, build and tests. All interdependencies are docume
 | [`packages/storage`](packages/storage) | Storage ports (Smaltworks/OPFS adapter planned) |
 | [`packages/ontology`](packages/ontology) | Ontology seed data, style dimensions, validation |
 | [`packages/provider-sdk`](packages/provider-sdk) | Provider/plugin contracts and consent-enforcing registry |
+| [`packages/engine`](packages/engine) | Engine contract: KataGo's Analysis Engine protocol, shared by every engine |
+| [`packages/katago-bridge`](packages/katago-bridge) | Local bridge to a native KataGo on the player's computer |
+| [`apps/engine-bench`](apps/engine-bench) | Engine bench page (GitHub Pages) |
 
 ## Getting started
 

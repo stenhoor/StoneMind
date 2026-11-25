@@ -13,7 +13,10 @@
     "packages/domain",
     "packages/storage",
     "packages/ontology",
-    "packages/provider-sdk"
+    "packages/provider-sdk",
+    "packages/engine",
+    "packages/katago-bridge",
+    "apps/engine-bench"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

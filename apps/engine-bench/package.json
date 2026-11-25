@@ -1,0 +1,26 @@
+{
+  "name": "@stonemind/engine-bench",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The engine bench page: analyse positions with KataGo on this computer through the local bridge, and later compare browser engines. Published on GitHub Pages.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/assemble.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm run test",
+    "serve": "npm run build && node scripts/serve.mjs",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stonemind/brand": "0.0.1",
+    "@stonemind/engine": "0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@stonemind/katago-bridge",
+  "version": "0.0.1",
+  "description": "A local bridge that lets a StoneMind page use the native KataGo on this computer: KataGo's analysis engine over a WebSocket on 127.0.0.1.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "bin": {
+    "katago-bridge": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "stonemind-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm run test",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stonemind/engine": "0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

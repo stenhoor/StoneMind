@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoneMind engine bench</title>
+  <meta name="description" content="StoneMind's engine bench: analyse positions with KataGo on this computer, and later compare browser engines.">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" type="image/svg+xml" href="brand/logos/favicon-32.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@700;800&display=swap">
+  <link rel="stylesheet" href="brand/tokens.css">
+  <link rel="stylesheet" href="brand/components.css">
+  <link rel="stylesheet" href="bench.css">
+  <script>
+    try { const t = localStorage.getItem('stonemind.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <script type="importmap">
+    { "imports": { "@stonemind/engine": "./vendor/engine/index.js" } }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body class="sm-root">
+<div class="bench sm-table">
+  <header class="sm-glass sm-bar">
+    <a href="./" class="brand" aria-label="StoneMind engine bench">
+      <img class="sm-logo-light" src="brand/logos/wordmark.svg" alt="StoneMind" height="24">
+      <img class="sm-logo-dark" src="brand/logos/wordmark-on-dark.svg" alt="StoneMind" height="24">
+    </a>
+    <span class="sm-secondary">Engine bench · spike 0001, phase 1</span>
+    <output id="status" class="status" data-state="idle">Not connected</output>
+  </header>
+
+  <main class="panels">
+    <section class="sm-glass panel" aria-labelledby="local-title">
+      <h2 id="local-title" class="h3">KataGo on this computer</h2>
+      <p class="sm-secondary small">
+        From a StoneMind checkout (after <code>npm install</code> and <code>npm run build</code>), start the bridge with your network and analysis config. It prints a link that opens this page already paired.
+      </p>
+      <pre class="command"><code>node packages/katago-bridge/dist/cli.js --model &lt;net.bin.gz&gt; --config &lt;analysis.cfg&gt;</code></pre>
+      <form id="pair" class="pair">
+        <label>Bridge address
+          <input id="bridge-url" name="url" type="text" value="ws://127.0.0.1:6565" autocomplete="off" spellcheck="false">
+        </label>
+        <label>Pairing token
+          <input id="bridge-token" name="token" type="password" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="row">
+          <button type="submit" class="sm-btn sm-btn--primary" id="connect">Connect</button>
+          <button type="button" class="sm-btn" id="disconnect" disabled>Disconnect</button>
+        </div>
+      </form>
+      <dl id="engine-info" class="facts" hidden>
+        <div><dt>KataGo</dt><dd id="info-version"></dd></div>
+        <div><dt>Network</dt><dd id="info-model"></dd></div>
+        <div><dt>Max batch</dt><dd id="info-batch"></dd></div>
+        <div><dt>FP16</dt><dd id="info-fp16"></dd></div>
+      </dl>
+    </section>
+
+    <section class="sm-glass panel" aria-labelledby="analyse-title">
+      <h2 id="analyse-title" class="h3">Analyse</h2>
+      <form id="analyse" class="analyse">
+        <label>Position
+          <select id="position">
+            <option value="empty">Empty 19×19 board</option>
+            <option value="opening">Opening: four star points</option>
+            <option value="fight">Early fight (sample moves)</option>
+          </select>
+        </label>
+        <label>Max visits
+          <input id="max-visits" type="number" min="1" max="1000000" step="1" value="1000">
+        </label>
+        <div class="row">
+          <button type="submit" class="sm-btn sm-btn--primary" id="run" disabled>Analyse</button>
+          <button type="button" class="sm-btn" id="stop" disabled>Stop</button>
+        </div>
+      </form>
+      <dl class="facts" aria-live="polite">
+        <div><dt>Visits</dt><dd id="visits">–</dd></div>
+        <div><dt>Time</dt><dd id="elapsed">–</dd></div>
+        <div><dt>Visits/s</dt><dd id="rate">–</dd></div>
+        <div><dt>Win rate (to move)</dt><dd id="winrate">–</dd></div>
+      </dl>
+      <div class="table-wrap">
+        <table>
+          <caption class="sm-label">Top moves</caption>
+          <thead>
+            <tr><th scope="col">Move</th><th scope="col">Visits</th><th scope="col">Win rate</th><th scope="col">Score lead</th><th scope="col">Prior</th><th scope="col">Line</th></tr>
+          </thead>
+          <tbody id="moves"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sm-secondary small">
+    Visits/s is measured in this page from the engine's reported visits and the wall-clock time, including the bridge.
+  </footer>
+</div>
+</body>
+</html>

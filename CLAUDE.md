@@ -12,7 +12,8 @@ specifications in `docs/` are the source of truth. Read `docs/StoneMind-Charter.
 
 - npm-workspaces monorepo. Each sub-project in `packages/*` (libraries) or `apps/*`
   (deployables, none yet) is an **independent effort**, with its own package.json, version,
-  README, tsconfig, vitest config and tests.
+  README, tsconfig and tests. Older packages test with vitest; new ones use `node --test` on their built
+  `dist/` (the smaltworks standard), with no test dependencies.
 - `docs/MONOREPO.md` is the authoritative map of sub-projects and their interdependencies.
   **Any change that adds a sub-project or a cross-package dependency must update it**,
   along with the "Depends on" / "Used by" sections of the affected package READMEs.
