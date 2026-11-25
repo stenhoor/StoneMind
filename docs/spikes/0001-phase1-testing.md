@@ -9,7 +9,9 @@ criterion: a StoneMind page reaches the KataGo on your computer and streams resu
 - **KataGo with the CUDA or TensorRT backend.** Check it starts with `katago version`.
 - **A kata1 b18c384nbt network** from https://katagotraining.org/networks/. Note the exact file name: it becomes the
   spike's reference net.
-- **An analysis config.** Copy `cpp/configs/analysis_example.cfg` from the KataGo release or source, unchanged.
+- **An analysis config.** The bridge runs `katago analysis`, which takes an analysis config, not `gtp.config`. Use
+  `cpp/configs/analysis_example.cfg` from KataGo's source, at https://github.com/lightvector/KataGo/tree/master/cpp/configs,
+  unchanged. Assumption: a KataGo release archive may already include it, so check `~/katago` first.
 
 ## 2. Build StoneMind
 
@@ -43,8 +45,8 @@ In a second terminal, from the StoneMind folder:
 node packages/katago-bridge/dist/cli.js --katago "$(command -v katago)" --model /path/to/kata1-b18c384nbt-....bin.gz --config /path/to/analysis_example.cfg --page http://localhost:8080/engine-bench/
 ```
 
-Wait for KataGo's log line `Started, ready to begin handling requests` (prefixed `[bridge] katago:`). The first start
-on a GPU can take a minute while the backend tunes itself. The bridge prints a **pairing link**.
+Wait for KataGo's log line `Started, ready to begin handling requests` (prefixed `[bridge] katago:`). The bridge
+prints a **pairing link**.
 
 ## 5. Try it in each browser
 
