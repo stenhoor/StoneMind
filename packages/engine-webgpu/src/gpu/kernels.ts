@@ -536,6 +536,19 @@ export interface GemmConfig {
 /** The default: 4 × 8 per thread, chunks of 16, f32 arithmetic (as measured in issue #33). */
 export const GEMM_DEFAULT: GemmConfig = { rm: 4, rn: 8, tk: 16, arith: 'f32' };
 
+/**
+ * The GEMM v2 shape to use on a device, from measurements on b18 (fp16 storage, Winograd fused, batch 64):
+ * - Apple GPUs (Safari on the owner's iPad, docs/spikes/results/2026-11-b18-webgpu-ipad.md): 4 × 4, chunk 8 was fastest in both
+ *   arithmetic types, with f16 arithmetic ahead of f32 (124.8 against 116.6 evaluations/s); `GEMM_DEFAULT` gave 112.9.
+ * - Everything else keeps `GEMM_DEFAULT`: on the owner's RTX 3080 Laptop GPU in Edge (issues #38 and #41) the four
+ *   fastest shapes, the default among them, were within 1.4% of each other, and f16 arithmetic was slower.
+ * @param vendor The adapter's reported vendor (`GPUAdapterInfo.vendor`), if any.
+ */
+export function defaultGemmConfig(vendor: string | undefined, hasShaderF16: boolean): GemmConfig {
+  if (vendor === 'apple') return { rm: 4, rn: 4, tk: 8, arith: hasShaderF16 ? 'f16' : 'f32' };
+  return GEMM_DEFAULT;
+}
+
 /** The tile of C a workgroup computes. */
 export const gemmTile = (c: GemmConfig) => ({ tm: 16 * c.rm, tn: 16 * c.rn });
 
