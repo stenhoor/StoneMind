@@ -119,9 +119,54 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
       const median = times[times.length >> 1];
       report.bench.push({ batch: n, medianMs: +median.toFixed(2), evalsPerSecond: +((n * 1000) / median).toFixed(1) });
     }
+    if (net.canProfile) report.profile = await profileNetwork(net, input, batches.filter((n) => [1, 16, 64].includes(n)), runs);
+    else report.profile = 'the device has no timestamp-query';
   }
   net.destroy();
   return report;
+}
+
+const median = (xs) => [...xs].sort((a, b) => a - b)[xs.length >> 1];
+const ms = (ns) => +(ns / 1e6).toFixed(3);
+const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+
+/**
+ * GPU timestamp profile at a few batch sizes. 'pass': the normal plan's GPU time against its wall time (median of
+ * `runs`). 'ops': each dispatch timed in its own pass (one run), summed by kernel. `timerTickNs` is the greatest common
+ * divisor of every non-zero measured interval: a large value means the browser coarsens its timestamps.
+ */
+async function profileNetwork(net, input, batches, runs) {
+  const rows = [];
+  const intervals = [];
+  for (const n of batches) {
+    const batch = Array.from({ length: n }, () => input);
+    await net.profile(batch, 'pass'); // warm-up
+    const passes = [];
+    for (let r = 0; r < runs; r++) passes.push(await net.profile(batch, 'pass'));
+    const ops = await net.profile(batch, 'ops');
+    const byKind = {};
+    for (const op of ops.ops) {
+      byKind[op.kind] ??= { count: 0, ms: 0 };
+      byKind[op.kind].count++;
+      byKind[op.kind].ms += op.ns / 1e6;
+      if (op.ns > 0) intervals.push(op.ns);
+    }
+    for (const k of Object.values(byKind)) k.ms = +k.ms.toFixed(3);
+    for (const p of passes) if (p.passNs > 0) intervals.push(p.passNs);
+    rows.push({
+      batch: n,
+      wallMsMedian: +median(passes.map((p) => p.wallMs)).toFixed(3),
+      gpuPassMsMedian: ms(median(passes.map((p) => p.passNs))),
+      perDispatch: {
+        dispatches: ops.ops.length,
+        sumMs: ms(ops.ops.reduce((a, o) => a + o.ns, 0)),
+        wallMs: +ops.wallMs.toFixed(3),
+        byKind,
+        slowest: ops.ops.map((o, i) => ({ index: i, kind: o.kind, ms: ms(o.ns) })).sort((a, b) => b.ms - a.ms).slice(0, 10),
+      },
+    });
+  }
+  return { timerTickNs: intervals.reduce((a, b) => gcd(a, b), 0), rows };
 }
 
 const out = document.getElementById('out');

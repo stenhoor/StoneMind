@@ -39,6 +39,7 @@ export interface GPUDevice {
     label?: string;
   }): GPUBindGroup;
   createCommandEncoder(): GPUCommandEncoder;
+  createQuerySet(descriptor: { type: 'timestamp'; count: number }): GPUQuerySet;
   pushErrorScope(filter: 'validation' | 'out-of-memory' | 'internal'): void;
   popErrorScope(): Promise<{ message: string } | null>;
   destroy(): void;
@@ -59,7 +60,8 @@ export interface GPUQueue {
 }
 
 export interface GPUCommandEncoder {
-  beginComputePass(descriptor?: { label?: string }): GPUComputePassEncoder;
+  beginComputePass(descriptor?: { label?: string; timestampWrites?: GPUComputePassTimestampWrites }): GPUComputePassEncoder;
+  resolveQuerySet(querySet: GPUQuerySet, firstQuery: number, queryCount: number, destination: GPUBuffer, destinationOffset: number): void;
   copyBufferToBuffer(source: GPUBuffer, sourceOffset: number, destination: GPUBuffer, destinationOffset: number, size: number): void;
   finish(): GPUCommandBuffer;
 }
@@ -77,6 +79,17 @@ export interface GPUShaderModule {
 
 export interface GPUComputePipeline {
   getBindGroupLayout(index: number): GPUBindGroupLayout;
+}
+
+export interface GPUComputePassTimestampWrites {
+  querySet: GPUQuerySet;
+  beginningOfPassWriteIndex?: number;
+  endOfPassWriteIndex?: number;
+}
+
+export interface GPUQuerySet {
+  readonly count: number;
+  destroy(): void;
 }
 
 // Opaque handles.
@@ -98,6 +111,7 @@ export const BufferUsage = {
   COPY_DST: 0x0008,
   UNIFORM: 0x0040,
   STORAGE: 0x0080,
+  QUERY_RESOLVE: 0x0200,
 } as const;
 
 /** GPUMapMode flags. */

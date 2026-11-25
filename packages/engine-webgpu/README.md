@@ -71,6 +71,12 @@ npm run gpu-check -w @stonemind/engine-webgpu                         # headless
 node packages/engine-webgpu/scripts/gpu-check.mjs --serve --model <net.bin.gz> --golden <goldens.json>
 ```
 
+With the benchmark, on a device with `timestamp-query`, the report also has a `profile` at batches 1, 16 and 64: the
+plan's GPU time from timestamps at the start and end of its single compute pass, against wall time; and each dispatch
+timed in its own pass, summed by kernel, with the ten slowest. `timerTickNs` is the greatest common divisor of the
+measured intervals; a large value means the browser coarsens its timestamps. `GpuNetwork.profile(inputs, 'pass' |
+'ops')` does the timing.
+
 With `--model`, the slow TypeScript reference comparison is skipped unless `--reference` is given; the goldens are
 the correctness check. With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU; each report is
 posted back and saved to `--out` (default `gpu-check-report.json`). Headless runs use
