@@ -20,17 +20,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npm run build
       - run: node --test apps/engine-bench/test/*.test.mjs
-      - uses: actions/upload-pages-artifact@v3
+      # v5 runs on Node 24. Unlike v3, it drops hidden files unless asked; the site needs its .nojekyll.
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/engine-bench/dist/site
+          include-hidden-files: true
 
   deploy:
     needs: build
@@ -40,4 +42,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
