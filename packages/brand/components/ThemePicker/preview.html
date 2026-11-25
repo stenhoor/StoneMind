@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StoneMind Theme picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@700;800&display=swap">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../styles/components.css">
+<script>
+  try { const t = localStorage.getItem('stonemind.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
+<style>
+  body { margin: 0; }
+  .stage { min-height: 100vh; box-sizing: border-box; padding: var(--space-8); display: grid; place-items: center; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+</style>
+</head>
+<body class="sm-root">
+<main class="stage sm-table">
+  <form class="sm-glass" style="width: min(520px, 100%)">
+    <fieldset class="sm-theme-picker">
+      <legend class="sm-label">Theme</legend>
+      <label><input type="radio" name="theme" value=""> System</label>
+      <label><input type="radio" name="theme" value="washi"> Washi &amp; Shu</label>
+      <label><input type="radio" name="theme" value="hinoki"> Hinoki &amp; Indigo</label>
+      <label><input type="radio" name="theme" value="night"> Night</label>
+    </fieldset>
+  </form>
+  <script>
+    // The whole theme mechanism: set data-theme on <html>, remember it, and nothing else.
+    const key = 'stonemind.theme';
+    const picker = document.querySelector('.sm-theme-picker');
+    let saved = '';
+    try { saved = localStorage.getItem(key) ?? ''; } catch {}
+    picker.querySelector(`input[value="${saved}"]`).checked = true;
+    picker.addEventListener('change', (e) => {
+      const theme = e.target.value;
+      if (theme) document.documentElement.dataset.theme = theme;
+      else delete document.documentElement.dataset.theme;
+      try { localStorage.setItem(key, theme); } catch {}
+    });
+  </script>
+</main>
+</body>
+</html>

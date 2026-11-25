@@ -29,6 +29,17 @@ npm run build        # build all, in dependency order
 npm run check -w @stonemind/ontology   # one sub-project
 ```
 
+## Interface and brand
+
+- Read `packages/brand/BRAND.md` before building any interface or writing product copy.
+- StoneMind is one product with one brand. Sub-projects are not branded on their own.
+- Interfaces are semantic HTML and CSS on `@stonemind/brand` tokens and `components.css`. No UI frameworks or
+  component libraries; behaviour is small, plain TypeScript using platform APIs.
+- Ask the owner before adding any outside code (a dependency, copied or bundled code, or a CDN script): say what it is,
+  its licence and size, and why our own code can't do it. This follows the smaltworks rule.
+- Colours come from tokens, never hand-picked values. Contrast rules are tested in `packages/brand/test/`.
+- No claims in copy that the product can't back up yet.
+
 ## Conventions
 
 - TypeScript, strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,

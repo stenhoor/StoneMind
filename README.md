@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="packages/brand/logos/wordmark-on-dark.svg">
+  <img alt="StoneMind" src="packages/brand/logos/wordmark.svg" width="280">
+</picture>
+
 # StoneMind
 
 **Unlock your Go.**
@@ -42,6 +47,7 @@ package.json, version, README, build and tests. All interdependencies are docume
 
 | Sub-project | Purpose |
 |---|---|
+| [`packages/brand`](packages/brand) | Brand: Lit Stone logos, theme tokens, glass material, HTML/CSS components |
 | [`packages/domain`](packages/domain) | Data model types |
 | [`packages/storage`](packages/storage) | Storage ports (Smaltworks/OPFS adapter planned) |
 | [`packages/ontology`](packages/ontology) | Ontology seed data, style dimensions, validation |

@@ -1,0 +1,27 @@
+{
+  "name": "@stonemind/brand",
+  "version": "0.0.1",
+  "description": "StoneMind brand: the Lit Stone logos, theme tokens, the glass material and HTML/CSS component references.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./tokens/tokens.css",
+    "./tokens.json": "./tokens/tokens.json",
+    "./components.css": "./styles/components.css",
+    "./logos/*": "./logos/*"
+  },
+  "files": [
+    "tokens",
+    "styles",
+    "logos",
+    "components",
+    "BRAND.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build-tokens.mjs",
+    "check:tokens": "node scripts/build-tokens.mjs --check",
+    "test": "node --test test/*.test.mjs",
+    "check": "npm run check:tokens && npm run test",
+    "clean": "true"
+  }
+}
