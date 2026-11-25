@@ -1,0 +1,495 @@
+{
+  "modelUrl": "/model.bin.gz",
+  "referenceCompared": false,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-25T17:41:50.471Z",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "variants": [
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true
+      },
+      "dispatches": 338,
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[3] -0.02901112322949183 vs KataGo -0.0292308",
+            "ownership[21] -0.022672090294913173 vs KataGo -0.0229233",
+            "ownership[26] -0.03016935323332938 vs KataGo -0.0303941",
+            "ownership[30] -0.037168728355773166 vs KataGo -0.0373781",
+            "ownership[32] 0.006497730788127177 vs KataGo 0.0062222"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.04756223258975928 vs KataGo -0.047862",
+            "ownership[1] -0.08233716042909452 vs KataGo -0.0826104",
+            "ownership[4] -0.07587465477709852 vs KataGo -0.0761432",
+            "ownership[6] -0.06331884839907741 vs KataGo -0.0635376",
+            "ownership[13] -0.001608244968765974 vs KataGo -0.0020207"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.03572762833742739 vs KataGo -0.0355136",
+            "ownership[2] -0.01865882097745606 vs KataGo -0.0184044",
+            "ownership[14] -0.09171412584460471 vs KataGo -0.0914263",
+            "ownership[19] -0.01380987767804959 vs KataGo -0.0135423",
+            "ownership[20] -0.04458957116827038 vs KataGo -0.0443819"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[4] 0.045560881557785635 vs KataGo 0.0452465",
+            "ownership[5] 0.044165690978973805 vs KataGo 0.0438575",
+            "ownership[6] 0.006101888774923712 vs KataGo 0.0058981",
+            "ownership[7] 0.01513584866351849 vs KataGo 0.014742",
+            "ownership[9] 0.04514497567212289 vs KataGo 0.0449399"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.4106337171437473 vs KataGo 0.410867",
+            "whiteLoss 0.5893662828562527 vs KataGo 0.589133",
+            "ownership[0] 0.20474720040333144 vs KataGo 0.2049861",
+            "ownership[23] 0.13357762334938278 vs KataGo 0.1338131",
+            "ownership[24] 0.07114627992062646 vs KataGo 0.0715068"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.07721342712857084 vs KataGo 0.0774189",
+            "ownership[8] 0.011926256869957255 vs KataGo 0.0121544",
+            "ownership[29] 0.08838071281337628 vs KataGo 0.0886492",
+            "ownership[30] 0.18013309983172254 vs KataGo 0.1804787",
+            "ownership[31] 0.2559497792051516 vs KataGo 0.256348"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.023898114701204197 vs KataGo -0.0235548",
+            "ownership[2] -0.062031195022067206 vs KataGo -0.0617839",
+            "ownership[7] -0.40050313137171 vs KataGo -0.4007464",
+            "ownership[9] 0.009493446677538517 vs KataGo 0.009729",
+            "ownership[10] 0.008345235117203215 vs KataGo 0.0086459"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "policy[22] 0.3872437411408986 vs KataGo 0.38689",
+            "ownership[22] 0.5487704633476526 vs KataGo 0.548504",
+            "policy[31] 0.5180532561505833 vs KataGo 0.518482",
+            "ownership[31] 0.456217989936428 vs KataGo 0.4565447",
+            "ownership[53] 0.2609177186685977 vs KataGo 0.2611182"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.22170549324884234 vs KataGo 0.2220071",
+            "ownership[1] 0.1892078459406253 vs KataGo 0.1895074",
+            "ownership[3] 0.04308872193971197 vs KataGo 0.0435408",
+            "ownership[4] -0.002124508673266027 vs KataGo -0.0018512",
+            "ownership[5] -0.04491570658649859 vs KataGo -0.0445132"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[12] -0.10049959014285206 vs KataGo -0.1007031",
+            "ownership[14] -0.04188249363219269 vs KataGo -0.0416794",
+            "ownership[15] 0.04817779759333733 vs KataGo 0.0484467",
+            "ownership[23] -0.07072102788279913 vs KataGo -0.070408",
+            "ownership[26] 0.20668372907861682 vs KataGo 0.2069054"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "ok": false,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 16.4,
+          "evalsPerSecond": 61
+        },
+        {
+          "batch": 2,
+          "medianMs": 13.3,
+          "evalsPerSecond": 150.4
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.2,
+          "evalsPerSecond": 232.6
+        },
+        {
+          "batch": 8,
+          "medianMs": 29.8,
+          "evalsPerSecond": 268.5
+        },
+        {
+          "batch": 16,
+          "medianMs": 51,
+          "evalsPerSecond": 313.7
+        },
+        {
+          "batch": 32,
+          "medianMs": 95.5,
+          "evalsPerSecond": 335.1
+        },
+        {
+          "batch": 64,
+          "medianMs": 175.3,
+          "evalsPerSecond": 365.1
+        }
+      ]
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false
+      },
+      "dispatches": 410,
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[3] -0.02901112322949183 vs KataGo -0.0292308",
+            "ownership[21] -0.022672090294913173 vs KataGo -0.0229233",
+            "ownership[26] -0.03016935323332938 vs KataGo -0.0303941",
+            "ownership[30] -0.037168728355773166 vs KataGo -0.0373781",
+            "ownership[32] 0.006497730788127177 vs KataGo 0.0062222"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.04756223258975928 vs KataGo -0.047862",
+            "ownership[1] -0.08233716042909452 vs KataGo -0.0826104",
+            "ownership[4] -0.07587465477709852 vs KataGo -0.0761432",
+            "ownership[6] -0.06331884839907741 vs KataGo -0.0635376",
+            "ownership[13] -0.001608244968765974 vs KataGo -0.0020207"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.03572762833742739 vs KataGo -0.0355136",
+            "ownership[2] -0.01865882097745606 vs KataGo -0.0184044",
+            "ownership[14] -0.09171412584460471 vs KataGo -0.0914263",
+            "ownership[19] -0.01380987767804959 vs KataGo -0.0135423",
+            "ownership[20] -0.04458957116827038 vs KataGo -0.0443819"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[4] 0.045560881557785635 vs KataGo 0.0452465",
+            "ownership[5] 0.044165690978973805 vs KataGo 0.0438575",
+            "ownership[6] 0.006101888774923712 vs KataGo 0.0058981",
+            "ownership[7] 0.01513584866351849 vs KataGo 0.014742",
+            "ownership[9] 0.04514497567212289 vs KataGo 0.0449399"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.4106337171437473 vs KataGo 0.410867",
+            "whiteLoss 0.5893662828562527 vs KataGo 0.589133",
+            "ownership[0] 0.20474720040333144 vs KataGo 0.2049861",
+            "ownership[23] 0.13357762334938278 vs KataGo 0.1338131",
+            "ownership[24] 0.07114627992062646 vs KataGo 0.0715068"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.07721342712857084 vs KataGo 0.0774189",
+            "ownership[8] 0.011926256869957255 vs KataGo 0.0121544",
+            "ownership[29] 0.08838071281337628 vs KataGo 0.0886492",
+            "ownership[30] 0.18013309983172254 vs KataGo 0.1804787",
+            "ownership[31] 0.2559497792051516 vs KataGo 0.256348"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.023898114701204197 vs KataGo -0.0235548",
+            "ownership[2] -0.062031195022067206 vs KataGo -0.0617839",
+            "ownership[7] -0.40050313137171 vs KataGo -0.4007464",
+            "ownership[9] 0.009493446677538517 vs KataGo 0.009729",
+            "ownership[10] 0.008345235117203215 vs KataGo 0.0086459"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "policy[22] 0.3872437411408986 vs KataGo 0.38689",
+            "ownership[22] 0.5487704633476526 vs KataGo 0.548504",
+            "policy[31] 0.5180532561505833 vs KataGo 0.518482",
+            "ownership[31] 0.456217989936428 vs KataGo 0.4565447",
+            "ownership[53] 0.2609177186685977 vs KataGo 0.2611182"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.22170549324884234 vs KataGo 0.2220071",
+            "ownership[1] 0.1892078459406253 vs KataGo 0.1895074",
+            "ownership[3] 0.04308872193971197 vs KataGo 0.0435408",
+            "ownership[4] -0.002124508673266027 vs KataGo -0.0018512",
+            "ownership[5] -0.04491570658649859 vs KataGo -0.0445132"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[12] -0.10049959014285206 vs KataGo -0.1007031",
+            "ownership[14] -0.04188249363219269 vs KataGo -0.0416794",
+            "ownership[15] 0.04817779759333733 vs KataGo 0.0484467",
+            "ownership[23] -0.07072102788279913 vs KataGo -0.070408",
+            "ownership[26] 0.20668372907861682 vs KataGo 0.2069054"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "ok": false,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 12.9,
+          "evalsPerSecond": 77.5
+        },
+        {
+          "batch": 2,
+          "medianMs": 13.9,
+          "evalsPerSecond": 143.9
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.1,
+          "evalsPerSecond": 233.9
+        },
+        {
+          "batch": 8,
+          "medianMs": 27.4,
+          "evalsPerSecond": 292
+        },
+        {
+          "batch": 16,
+          "medianMs": 50.8,
+          "evalsPerSecond": 315
+        },
+        {
+          "batch": 32,
+          "medianMs": 95.1,
+          "evalsPerSecond": 336.5
+        },
+        {
+          "batch": 64,
+          "medianMs": 174.9,
+          "evalsPerSecond": 365.9
+        }
+      ]
+    },
+    {
+      "variant": {
+        "winograd": false
+      },
+      "dispatches": 254,
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[3] -0.029015686590825818 vs KataGo -0.0292308",
+            "ownership[21] -0.022671308386062985 vs KataGo -0.0229233",
+            "ownership[26] -0.030169974790547064 vs KataGo -0.0303941",
+            "ownership[30] -0.03716087140986217 vs KataGo -0.0373781",
+            "ownership[32] 0.0065067283807565554 vs KataGo 0.0062222"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.04756893409173987 vs KataGo -0.047862",
+            "ownership[1] -0.08233701982776152 vs KataGo -0.0826104",
+            "ownership[4] -0.07587495108460696 vs KataGo -0.0761432",
+            "ownership[6] -0.06332350118234364 vs KataGo -0.0635376",
+            "ownership[13] -0.001608666158310669 vs KataGo -0.0020207"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.03572539601618814 vs KataGo -0.0355136",
+            "ownership[2] -0.018657692607452495 vs KataGo -0.0184044",
+            "ownership[14] -0.09171263348654221 vs KataGo -0.0914263",
+            "ownership[19] -0.013811222251346213 vs KataGo -0.0135423",
+            "ownership[20] -0.044587377616752015 vs KataGo -0.0443819"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[4] 0.045562833275227546 vs KataGo 0.0452465",
+            "ownership[5] 0.04415951905791893 vs KataGo 0.0438575",
+            "ownership[6] 0.006102415883872645 vs KataGo 0.0058981",
+            "ownership[7] 0.015136009745412168 vs KataGo 0.014742",
+            "ownership[9] 0.04514515040392283 vs KataGo 0.0449399"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.41063365944319385 vs KataGo 0.410867",
+            "whiteLoss 0.5893663405568063 vs KataGo 0.589133",
+            "ownership[0] 0.20474899923955028 vs KataGo 0.2049861",
+            "ownership[23] 0.13357813558414888 vs KataGo 0.1338131",
+            "ownership[24] 0.07114701379445056 vs KataGo 0.0715068"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.07721245692142228 vs KataGo 0.0774189",
+            "ownership[8] 0.01192876735841159 vs KataGo 0.0121544",
+            "ownership[29] 0.08837881297062601 vs KataGo 0.0886492",
+            "ownership[30] 0.18013213384904547 vs KataGo 0.1804787",
+            "ownership[31] 0.2559454624556866 vs KataGo 0.256348"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.023898125870692326 vs KataGo -0.0235548",
+            "ownership[2] -0.06202870497029313 vs KataGo -0.0617839",
+            "ownership[7] -0.4005058337385753 vs KataGo -0.4007464",
+            "ownership[9] 0.009495506577366978 vs KataGo 0.009729",
+            "ownership[10] 0.00834462048710845 vs KataGo 0.0086459"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "policy[22] 0.3872460384383888 vs KataGo 0.38689",
+            "ownership[22] 0.5487686305353843 vs KataGo 0.548504",
+            "policy[31] 0.5180501537908488 vs KataGo 0.518482",
+            "ownership[31] 0.45622020827910653 vs KataGo 0.4565447",
+            "ownership[53] 0.2609176075748414 vs KataGo 0.2611182"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.2217096730170401 vs KataGo 0.2220071",
+            "ownership[1] 0.18920668215621808 vs KataGo 0.1895074",
+            "ownership[3] 0.04309093809027467 vs KataGo 0.0435408",
+            "ownership[4] -0.0021219536013011692 vs KataGo -0.0018512",
+            "ownership[5] -0.044913884876687085 vs KataGo -0.0445132"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[12] -0.10049805607428845 vs KataGo -0.1007031",
+            "ownership[15] 0.04818481833057848 vs KataGo 0.0484467",
+            "ownership[23] -0.07071350336223532 vs KataGo -0.070408",
+            "ownership[26] 0.20669582543710824 vs KataGo 0.2069054",
+            "ownership[27] 0.09916546410959143 vs KataGo 0.0994843"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "ok": false,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 39.7,
+          "evalsPerSecond": 25.2
+        },
+        {
+          "batch": 2,
+          "medianMs": 40.2,
+          "evalsPerSecond": 49.8
+        },
+        {
+          "batch": 4,
+          "medianMs": 46.9,
+          "evalsPerSecond": 85.3
+        },
+        {
+          "batch": 8,
+          "medianMs": 64.3,
+          "evalsPerSecond": 124.4
+        },
+        {
+          "batch": 16,
+          "medianMs": 117.7,
+          "evalsPerSecond": 135.9
+        },
+        {
+          "batch": 32,
+          "medianMs": 220,
+          "evalsPerSecond": 145.5
+        },
+        {
+          "batch": 64,
+          "medianMs": 412.3,
+          "evalsPerSecond": 155.2
+        }
+      ]
+    }
+  ],
+  "goldensCompared": true,
+  "ok": false
+}
