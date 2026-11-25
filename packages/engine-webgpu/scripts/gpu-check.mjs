@@ -64,6 +64,7 @@ if (model) query.set('model', '/model.bin.gz');
 if (golden) query.set('golden', '/golden.json');
 else if (model) query.set('golden', '/none.json');
 if (flag('--reference')) query.set('reference', '1');
+if (option('--variants')) query.set('variants', option('--variants'));
 const url = `http://127.0.0.1:${server.address().port}/test/gpu/index.html${query.size ? `?${query}` : ''}`;
 
 if (flag('--serve')) {

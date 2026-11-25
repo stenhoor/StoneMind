@@ -509,3 +509,105 @@ ${sandwich(AT, 'm', 6, 't', 'y')}
   }
 }
 `;
+
+// ------------------------------------------------------------------ GEMM v2
+//
+// A generic batched matrix multiply, C[z][m][n] = Σ_k A[z][k][m] · B[z][k][n], used for the Winograd GEMMs (z = the
+// 36 elements) and for 1×1 convolutions (z = the position in the batch; A = weights [ic][oc], B = input [ic][point],
+// C = output [oc][point]). Each workgroup of 16 × 16 threads computes a GEMM_TILE_M × GEMM_TILE_N tile of C, each
+// thread a 4 × 8 block, reading GEMM_TILE_K of the reduction at a time through workgroup memory.
+//
+// The inner product is fully unrolled by this generator and the accumulators are scalars, so no index in it is a
+// run-time value except the thread's own offsets into workgroup memory. (WebKit's WGSL compiler clamps every array
+// index that is not a compile-time constant: Source/WebGPU/WGSL/BoundsCheck.cpp.)
+
+export const GEMM_TILE_M = 64;
+export const GEMM_TILE_N = 128;
+const GEMM_TILE_K = 16;
+const GEMM_RM = 4; // rows per thread: m = ty + i·16
+const GEMM_RN = 8; // columns per thread: n = tx + j·16
+
+/**
+ * GEMM v2. Params: M, K; N is `nFixed` when non-zero, else dyn.n · nPerBatch; z is the workgroup's z index (the
+ * dispatch covers exactly the batches wanted). Strides are in elements. flags bit 0: add to C (the residual add);
+ * bit 1: add `nbias[z · nbiasStride + m]` (per batch position and output channel, for 1×1 convolutions).
+ */
+export const GEMM_V2 = (aT: Elem, bT: Elem, cT: Elem) => {
+  const TM = GEMM_TILE_M;
+  const TN = GEMM_TILE_N;
+  const TK = GEMM_TILE_K;
+  let decl = '';
+  for (let i = 0; i < GEMM_RM; i++) for (let j = 0; j < GEMM_RN; j++) decl += `  var c${i}_${j} = 0.0;\n`;
+  let inner = '';
+  // One block per reduction step, so only that step's 4 + 8 operands are live at a time.
+  for (let kk = 0; kk < TK; kk++) {
+    inner += '    {\n';
+    for (let i = 0; i < GEMM_RM; i++) inner += `      let a${i} = As[${kk * TM + i * 16}u + ty];\n`;
+    for (let j = 0; j < GEMM_RN; j++) inner += `      let b${j} = Bs[${kk * TN + j * 16}u + tx];\n`;
+    for (let i = 0; i < GEMM_RM; i++) for (let j = 0; j < GEMM_RN; j++) inner += `      c${i}_${j} = fma(a${i}, b${j}, c${i}_${j});\n`;
+    inner += '    }\n';
+  }
+  let store = '';
+  for (let i = 0; i < GEMM_RM; i++) {
+    store += `  { let m = m0 + ty + ${i * 16}u;\n    if (m < P.M) {\n`;
+    store += `      var bias = 0.0;\n      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }\n`;
+    for (let j = 0; j < GEMM_RN; j++) {
+      store += `      { let n = n0 + tx + ${j * 16}u;\n        if (n < N) {\n`;
+      store += `          let o = z * P.cBatch + m * P.cRow + n;\n          var v = c${i}_${j} + bias;\n`;
+      store += `          if ((P.flags & 1u) != 0u) { v += f32(C[o]); }\n          C[o] = ${cT}(v);\n        }\n      }\n`;
+    }
+    store += `    }\n  }\n`;
+  }
+  return /* wgsl */ `${enableFor(aT, bT, cT)}
+${DYN}
+struct Params {
+  M: u32, K: u32, nFixed: u32, nPerBatch: u32,
+  aBatch: u32, aRow: u32, bBatch: u32, bRow: u32,
+  cBatch: u32, cRow: u32, flags: u32, nbiasStride: u32,
+}
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> A: array<${aT}>;
+@group(0) @binding(3) var<storage, read> B: array<${bT}>;
+@group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
+@group(0) @binding(5) var<storage, read> nbias: array<f32>;
+
+var<workgroup> As: array<f32, ${TK * TM}>; // [TK][TM]
+var<workgroup> Bs: array<f32, ${TK * TN}>; // [TK][TN]
+
+@compute @workgroup_size(16, 16)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
+  let tx = l.x;
+  let ty = l.y;
+  let tid = ty * 16u + tx;
+  let z = wg.z;
+  let m0 = wg.y * ${TM}u;
+  let n0 = wg.x * ${TN}u;
+  var N = P.nFixed;
+  if (N == 0u) { N = dyn.n * P.nPerBatch; }
+  let aBase = z * P.aBatch;
+  let bBase = z * P.bBatch;
+${decl}
+  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
+    for (var r = 0u; r < ${(TK * TM) / 256}u; r++) {
+      let idx = tid + r * 256u;
+      let k = k0 + idx / ${TM}u;
+      let m = m0 + idx % ${TM}u;
+      var a = 0.0;
+      if (k < P.K && m < P.M) { a = f32(A[aBase + k * P.aRow + m]); }
+      As[idx] = a;
+    }
+    for (var r = 0u; r < ${(TK * TN) / 256}u; r++) {
+      let idx = tid + r * 256u;
+      let k = k0 + idx / ${TN}u;
+      let n = n0 + idx % ${TN}u;
+      var b = 0.0;
+      if (k < P.K && n < N) { b = f32(B[bBase + k * P.bRow + n]); }
+      Bs[idx] = b;
+    }
+    workgroupBarrier();
+${inner}    workgroupBarrier();
+  }
+${store}}
+`;
+};

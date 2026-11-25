@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_TILE_M, GEMM_TILE_N, GEMM_V2, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_OUT, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -34,6 +34,11 @@ export interface GpuNetworkOptions {
    * activations inside fp16's range. Default: on for 'f16', off for 'f32'. Results are returned unscaled either way.
    */
   scale8?: boolean;
+  /**
+   * The matrix-multiply kernel for the Winograd GEMMs and 1×1 convolutions (default 'v1'). 'v2' is the generic
+   * unrolled GEMM (`GEMM_V2`): larger tiles, and 1×1 convolutions as a plain GEMM per batch position.
+   */
+  gemm?: 'v1' | 'v2';
 }
 
 /** An op as the plan builder records it, before its shader is compiled. */
@@ -56,6 +61,8 @@ export interface GpuProfile {
 }
 
 interface Op {
+  /** What the op is, for profiles (several kinds can share one pipeline). */
+  kind: string;
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
   workgroups: (n: number) => [number, number] | [number, number, number];
@@ -142,9 +149,9 @@ export class GpuNetwork {
   /** What raw outputs are multiplied by on readback: 8 with scale8, else 1. */
   #outputFactor = 1;
   #elem: Elem = 'f32';
+  #gemm: 'v1' | 'v2' = 'v1';
   #winograd = true;
   #timestamps = false;
-  readonly #kinds = new Map<GPUComputePipeline, string>();
   #fuse = true;
   #wino?: { V: GPUBuffer; M: GPUBuffer; tilesX: number; tilesPerBoard: number; tileStride: number };
   #dummy!: GPUBuffer;
@@ -170,6 +177,7 @@ export class GpuNetwork {
     net.#winograd = options.winograd ?? true;
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
+    net.#gemm = options.gemm ?? 'v1';
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
     const scale8 = options.scale8 ?? net.#elem === 'f16';
     net.#desc = scale8 ? applyScale8(model) : model;
@@ -247,8 +255,7 @@ export class GpuNetwork {
     }
     for (const spec of this.#specs) {
       const pipeline = await pipelines.get(spec.code)!;
-      this.#kinds.set(pipeline, spec.kind);
-      this.#ops.push({ pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups });
+      this.#ops.push({ kind: spec.kind, pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups });
     }
   }
 
@@ -378,6 +385,10 @@ export class GpuNetwork {
       this.#winogradConv(layer, input, output, opts);
       return;
     }
+    if (this.#gemm === 'v2' && layer.convYSize === 1 && layer.convXSize === 1) {
+      this.#conv1x1(layer, input, output, opts);
+      return;
+    }
     const K = layer.inChannels * layer.convYSize * layer.convXSize;
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     const params = this.#uniform([
@@ -392,6 +403,23 @@ export class GpuNetwork {
       code: CONV(this.#elemOf(input), this.#elem, this.#elemOf(output)),
       buffers: [params, this.#dyn, input, weights, output, opts.nbias ?? this.#dummy],
       workgroups: (n) => [Math.ceil((n * area) / CONV_TILE_N), Math.ceil(layer.outChannels / CONV_TILE_M)],
+    });
+  }
+
+  /** A 1×1 convolution as GEMM v2, one GEMM per batch position: out[oc][p] = Σ_ic w[ic][oc] · in[ic][p]. */
+  #conv1x1(layer: ConvLayer, input: GPUBuffer, output: GPUBuffer, opts: { accumulate?: boolean; nbias?: GPUBuffer }): void {
+    const { inChannels: ic, outChannels: oc } = layer;
+    const area = this.#area;
+    const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
+    const weights = this.#upload(convWeightsKxOc(layer), this.#elem);
+    this.#specs.push({
+      kind: 'conv1x1',
+      code: GEMM_V2(this.#elemOf(weights), this.#elemOf(input), this.#elemOf(output)),
+      buffers: [
+        this.#uniform([oc, ic, area, 0, 0, oc, ic * area, area, oc * area, area, flags, oc]),
+        this.#dyn, weights, input, output, opts.nbias ?? this.#dummy,
+      ],
+      workgroups: (n) => [Math.ceil(area / GEMM_TILE_N), Math.ceil(oc / GEMM_TILE_M), n],
     });
   }
 
@@ -449,12 +477,25 @@ export class GpuNetwork {
       workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
     const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
-    this.#specs.push({
-      kind: 'winoGemm',
-      code: WINO_GEMM(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),
-      buffers: [this.#uniform([ic, oc, tilesPerBoard, tileStride]), this.#dyn, U, V, M],
-      workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), Math.ceil(oc / 64), 36],
-    });
+    if (this.#gemm === 'v2') {
+      // M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t], as GEMM v2 with z = e.
+      this.#specs.push({
+        kind: 'winoGemm',
+        code: GEMM_V2(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),
+        buffers: [
+          this.#uniform([oc, ic, 0, tilesPerBoard, ic * oc, oc, ic * tileStride, tileStride, oc * tileStride, tileStride, 0, 0]),
+          this.#dyn, U, V, M, this.#dummy,
+        ],
+        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / GEMM_TILE_N), Math.ceil(oc / GEMM_TILE_M), 36],
+      });
+    } else {
+      this.#specs.push({
+        kind: 'winoGemm',
+        code: WINO_GEMM(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),
+        buffers: [this.#uniform([ic, oc, tilesPerBoard, tileStride]), this.#dyn, U, V, M],
+        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), Math.ceil(oc / 64), 36],
+      });
+    }
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     this.#specs.push({
       kind: 'winoOut',
@@ -548,7 +589,7 @@ export class GpuNetwork {
       const delta = (i: number) => Number(ts[2 * i + 1]! - ts[2 * i]!);
       const result: GpuProfile = { batch: inputs.length, wallMs };
       if (mode === 'pass') result.passNs = delta(0);
-      else result.ops = this.#ops.map((op, i) => ({ kind: this.#kinds.get(op.pipeline) ?? '?', ns: delta(i) }));
+      else result.ops = this.#ops.map((op, i) => ({ kind: op.kind, ns: delta(i) }));
       return result;
     });
     this.#busy = run.catch(() => undefined);
