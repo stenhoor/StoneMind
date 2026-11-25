@@ -5,6 +5,8 @@
 //   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench [--batches 1,8,64]] [--model <net.bin.gz> [--golden <goldens.json>]]
 //   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...]   # serve the page; open it in any browser
 //
+// With --model, the slow TypeScript reference comparison is skipped unless --reference is given; the goldens decide.
+//
 // Without --serve it drives headless Chromium through Playwright (a devDependency of this package; install its browser
 // once with `npx playwright install chromium`, or point STONEMIND_CHROMIUM at a Chromium executable). Extra Chromium
 // flags can be passed with --chromium-args "...". Without --model it uses the test network (npm run fixtures).
@@ -47,6 +49,7 @@ const query = new URLSearchParams();
 if (model) query.set('model', '/model.bin.gz');
 if (golden) query.set('golden', '/golden.json');
 else if (model) query.set('golden', '/none.json');
+if (flag('--reference')) query.set('reference', '1');
 const url = `http://127.0.0.1:${server.address().port}/test/gpu/index.html${query.size ? `?${query}` : ''}`;
 
 if (flag('--serve')) {
