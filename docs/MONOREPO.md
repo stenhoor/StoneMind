@@ -85,7 +85,11 @@ Expected dependencies are listed so they can be checked when each is created.
 | `@stonemind/site` | `apps/site` | Project website, deployed to **stonemind.org**: research, specifications, docs, community | brand (may render content from `docs/`) | M0–M1 |
 | `@stonemind/sgf` | `packages/sgf` | SGF parsing/serialisation | none | M1 |
 | `@stonemind/storage-smaltworks` | `packages/storage-smaltworks` | Smaltworks + OPFS implementation of storage ports | storage, Smaltworks | M1 |
-| `@stonemind/provider-katago` | `packages/provider-katago` | KataGo analysis provider | provider-sdk, domain, sgf | M1 |
+| `@stonemind/engine` | `packages/engine` | Engine contract: KataGo Analysis Engine JSON types and the `AnalysisEngine` interface shared by every engine ([spike 0001](spikes/0001-browser-katago-webgpu.md)) | domain | M1 |
+| `@stonemind/engine-webgpu` | `packages/engine-webgpu` | Experimental browser engine: TypeScript search and WGSL network, no WebAssembly ([spike 0001](spikes/0001-browser-katago-webgpu.md)) | engine | M1 |
+| `@stonemind/katago-bridge` | `packages/katago-bridge` | Local bridge from the browser to a native `katago analysis` over a localhost WebSocket ([spike 0001](spikes/0001-browser-katago-webgpu.md)) | engine | M1 |
+| `@stonemind/engine-bench` | `apps/engine-bench` | Benchmark page on GitHub Pages comparing engines on the same positions ([spike 0001](spikes/0001-browser-katago-webgpu.md)) | engine, engine-webgpu | M1 |
+| `@stonemind/provider-katago` | `packages/provider-katago` | KataGo analysis provider: puts an `AnalysisEngine` (browser or local) behind the provider SDK, with its data disclosure | provider-sdk, engine, domain, sgf | M1 |
 | `@stonemind/evidence-engine` | `packages/evidence-engine` | Observations → indicators → hypotheses pipeline | domain, ontology | M1–M2 |
 | `@stonemind/player-graph` | `packages/player-graph` | Player Understanding Graph engine | domain, ontology, storage | M2 |
 | `@stonemind/recommendation-engine` | `packages/recommendation-engine` | Goal-aware recommendations | domain, ontology, player-graph | M3 |
