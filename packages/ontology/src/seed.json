@@ -1,0 +1,767 @@
+{
+  "$comment": "Machine-readable form of docs/StoneMind-Ontology-Seed.md. Relation targets are concept NAMES exactly as written in the seed doc; they are resolved to ids by name or via `aliases`. Unresolvable targets are reported by validateSeed() rather than silently dropped.",
+  "version": "0.1",
+  "source": "docs/StoneMind-Ontology-Seed.md",
+  "aliases": {
+    "Framework Building": [
+      "framework-development"
+    ],
+    "Corners": [
+      "corner-development"
+    ],
+    "Influence Evaluation": [
+      "influence"
+    ],
+    "Whole Board Evaluation": [
+      "whole-board-judgment"
+    ],
+    "Weak Group Identification": [
+      "weak-groups"
+    ],
+    "Capturing Races": [
+      "capturing-race"
+    ],
+    "Invasions": [
+      "invasion"
+    ],
+    "Sente/Gote Evaluation": [
+      "sente",
+      "gote"
+    ],
+    "Frameworks": [
+      "framework"
+    ]
+  },
+  "rootDependencies": [
+    "Reading",
+    "Shape",
+    "Influence",
+    "Territory",
+    "Thickness",
+    "Direction of Play",
+    "Life and Death",
+    "Whole Board Judgment",
+    "Timing",
+    "Judgment"
+  ],
+  "concepts": [
+    {
+      "id": "efficiency",
+      "name": "Efficiency",
+      "category": "meta",
+      "concerns": [
+        "Maximum value",
+        "Minimal waste"
+      ],
+      "relations": {
+        "RELATED_TO": [
+          "Shape",
+          "Thickness",
+          "Direction of Play"
+        ]
+      }
+    },
+    {
+      "id": "timing",
+      "name": "Timing",
+      "category": "meta",
+      "concerns": [
+        "When to play",
+        "When to wait",
+        "Urgency"
+      ],
+      "relations": {
+        "RELATED_TO": [
+          "Sente",
+          "Reduction",
+          "Invasion",
+          "Attack"
+        ]
+      }
+    },
+    {
+      "id": "balance",
+      "name": "Balance",
+      "category": "meta",
+      "concerns": [
+        "Territory",
+        "Influence",
+        "Thickness",
+        "Risk"
+      ],
+      "relations": {
+        "RELATED_TO": [
+          "Whole Board Judgment"
+        ]
+      }
+    },
+    {
+      "id": "flexibility",
+      "name": "Flexibility",
+      "category": "meta",
+      "concerns": [
+        "Adaptation",
+        "Multiple options",
+        "Aji"
+      ],
+      "relations": {
+        "RELATED_TO": [
+          "Sabaki",
+          "Shape"
+        ]
+      }
+    },
+    {
+      "id": "judgment",
+      "name": "Judgment",
+      "category": "meta",
+      "concerns": [
+        "Evaluation",
+        "Decision Making",
+        "Prioritization"
+      ],
+      "relations": {
+        "RELATED_TO": [
+          "Fuseki",
+          "Fighting",
+          "Endgame"
+        ]
+      }
+    },
+    {
+      "id": "fuseki",
+      "name": "Fuseki",
+      "category": "opening",
+      "description": "Whole-board opening planning.",
+      "relations": {
+        "SUPPORTS": [
+          "Direction of Play",
+          "Framework Development",
+          "Opening Balance"
+        ],
+        "RELATED_TO": [
+          "Joseki",
+          "Corners",
+          "Influence"
+        ]
+      }
+    },
+    {
+      "id": "joseki",
+      "name": "Joseki",
+      "category": "opening",
+      "description": "Locally accepted opening sequences.",
+      "commonMisunderstandings": [
+        "Knowing sequences without understanding purpose."
+      ],
+      "relations": {
+        "SUPPORTS": [
+          "Fuseki",
+          "Corner Development"
+        ],
+        "RELATED_TO": [
+          "Shape",
+          "Influence",
+          "Territory"
+        ]
+      }
+    },
+    {
+      "id": "corner-development",
+      "name": "Corner Development",
+      "category": "opening",
+      "description": "Securing efficient corner positions.",
+      "relations": {
+        "SUPPORTS": [
+          "Territory",
+          "Framework Building"
+        ]
+      }
+    },
+    {
+      "id": "side-development",
+      "name": "Side Development",
+      "category": "opening",
+      "description": "Expanding influence and territory along sides.",
+      "relations": {
+        "SUPPORTS": [
+          "Fuseki",
+          "Framework Development"
+        ]
+      }
+    },
+    {
+      "id": "framework-development",
+      "name": "Framework Development",
+      "category": "opening",
+      "description": "Creating large-scale potential territory.",
+      "relations": {
+        "SUPPORTS": [
+          "Influence",
+          "Reduction",
+          "Invasion"
+        ]
+      }
+    },
+    {
+      "id": "direction-of-play",
+      "name": "Direction of Play",
+      "category": "opening",
+      "description": "Choosing the proper area of the board to develop.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Whole Board Judgment",
+          "Influence",
+          "Thickness"
+        ]
+      }
+    },
+    {
+      "id": "influence",
+      "name": "Influence",
+      "category": "strategic",
+      "description": "Potential future value that affects surrounding areas.",
+      "relations": {
+        "SUPPORTS": [
+          "Attack",
+          "Reduction",
+          "Framework Building"
+        ],
+        "RELATED_TO": [
+          "Thickness",
+          "Direction of Play"
+        ]
+      }
+    },
+    {
+      "id": "territory",
+      "name": "Territory",
+      "category": "strategic",
+      "description": "Secured points.",
+      "relations": {
+        "SUPPORTS": [
+          "Scoring",
+          "Endgame"
+        ],
+        "CONTRASTS_WITH": [
+          "Influence"
+        ]
+      }
+    },
+    {
+      "id": "thickness",
+      "name": "Thickness",
+      "category": "strategic",
+      "description": "Strong, resilient positions.",
+      "commonMisunderstandings": [
+        "Overconcentration."
+      ],
+      "relations": {
+        "SUPPORTS": [
+          "Attack",
+          "Influence"
+        ],
+        "RELATED_TO": [
+          "Shape",
+          "Weak Groups"
+        ]
+      }
+    },
+    {
+      "id": "aji",
+      "name": "Aji",
+      "category": "strategic",
+      "description": "Latent potential remaining in a position.",
+      "relations": {
+        "SUPPORTS": [
+          "Tactics",
+          "Future Development"
+        ],
+        "RELATED_TO": [
+          "Shape",
+          "Flexibility"
+        ]
+      }
+    },
+    {
+      "id": "whole-board-judgment",
+      "name": "Whole Board Judgment",
+      "category": "strategic",
+      "description": "Ability to evaluate the board as an integrated system.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Influence",
+          "Territory",
+          "Thickness",
+          "Direction of Play"
+        ]
+      }
+    },
+    {
+      "id": "good-shape",
+      "name": "Good Shape",
+      "category": "shape",
+      "description": "Efficient stone arrangement.",
+      "relations": {
+        "SUPPORTS": [
+          "Flexibility",
+          "Efficiency"
+        ]
+      }
+    },
+    {
+      "id": "bad-shape",
+      "name": "Bad Shape",
+      "category": "shape",
+      "description": "Inefficient stone arrangement.",
+      "relations": {
+        "PRODUCES": [
+          "Weaknesses",
+          "Overconcentration"
+        ]
+      }
+    },
+    {
+      "id": "connectivity",
+      "name": "Connectivity",
+      "category": "shape",
+      "description": "Ability for stones to work together.",
+      "relations": {
+        "SUPPORTS": [
+          "Defense",
+          "Stability"
+        ]
+      }
+    },
+    {
+      "id": "cutting-points",
+      "name": "Cutting Points",
+      "category": "shape",
+      "description": "Potential separation weaknesses.",
+      "relations": {
+        "SUPPORTS": [
+          "Attack",
+          "Tactics"
+        ]
+      }
+    },
+    {
+      "id": "sabaki",
+      "name": "Sabaki",
+      "category": "shape",
+      "description": "Efficient light development under pressure.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Shape",
+          "Flexibility",
+          "Reading"
+        ]
+      }
+    },
+    {
+      "id": "attack",
+      "name": "Attack",
+      "category": "fighting",
+      "description": "Applying pressure.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Thickness",
+          "Reading",
+          "Weak Group Identification"
+        ]
+      }
+    },
+    {
+      "id": "defense",
+      "name": "Defense",
+      "category": "fighting",
+      "description": "Protecting weaknesses.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Shape",
+          "Judgment"
+        ]
+      }
+    },
+    {
+      "id": "weak-groups",
+      "name": "Weak Groups",
+      "category": "fighting",
+      "description": "Groups requiring attention.",
+      "relations": {
+        "SUPPORTS": [
+          "Attack",
+          "Strategic Pressure"
+        ]
+      }
+    },
+    {
+      "id": "strong-groups",
+      "name": "Strong Groups",
+      "category": "fighting",
+      "description": "Secure groups requiring little maintenance.",
+      "relations": {
+        "SUPPORTS": [
+          "Initiative"
+        ]
+      }
+    },
+    {
+      "id": "sacrifice",
+      "name": "Sacrifice",
+      "category": "fighting",
+      "description": "Giving up stones for greater profit.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Whole Board Judgment",
+          "Influence"
+        ]
+      }
+    },
+    {
+      "id": "initiative",
+      "name": "Initiative",
+      "category": "fighting",
+      "description": "Maintaining control of flow.",
+      "relations": {
+        "RELATED_TO": [
+          "Sente",
+          "Attack"
+        ]
+      }
+    },
+    {
+      "id": "reduction",
+      "name": "Reduction",
+      "category": "territorial",
+      "description": "Limiting opponent potential.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Influence Evaluation",
+          "Timing"
+        ],
+        "RELATED_TO": [
+          "Invasion"
+        ]
+      }
+    },
+    {
+      "id": "invasion",
+      "name": "Invasion",
+      "category": "territorial",
+      "description": "Entering opponent potential territory.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Life and Death",
+          "Reading",
+          "Timing"
+        ],
+        "RELATED_TO": [
+          "Reduction"
+        ]
+      }
+    },
+    {
+      "id": "framework",
+      "name": "Framework",
+      "category": "territorial",
+      "description": "Potential territory.",
+      "relations": {
+        "SUPPORTS": [
+          "Influence"
+        ],
+        "LEADS_TO": [
+          "Reduction Decisions",
+          "Invasion Decisions"
+        ]
+      }
+    },
+    {
+      "id": "reading",
+      "name": "Reading",
+      "category": "tactical",
+      "description": "Visualization and calculation of sequences. Supports almost everything.",
+      "relations": {
+        "PREREQUISITE_FOR": [
+          "Life and Death",
+          "Tesuji",
+          "Capturing Races",
+          "Invasions",
+          "Fighting"
+        ]
+      }
+    },
+    {
+      "id": "life-and-death",
+      "name": "Life and Death",
+      "category": "tactical",
+      "description": "Determining survival.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Reading"
+        ],
+        "SUPPORTS": [
+          "Invasion",
+          "Attack"
+        ]
+      }
+    },
+    {
+      "id": "tesuji",
+      "name": "Tesuji",
+      "category": "tactical",
+      "description": "Efficient tactical techniques.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Reading",
+          "Shape Recognition"
+        ]
+      }
+    },
+    {
+      "id": "capturing-race",
+      "name": "Capturing Race",
+      "category": "tactical",
+      "description": "Competing to eliminate liberties.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Reading",
+          "Liberties"
+        ]
+      }
+    },
+    {
+      "id": "liberties",
+      "name": "Liberties",
+      "category": "tactical",
+      "description": "Immediate tactical resource.",
+      "relations": {
+        "SUPPORTS": [
+          "Life and Death",
+          "Capturing Races"
+        ]
+      }
+    },
+    {
+      "id": "ko",
+      "name": "Ko",
+      "category": "tactical",
+      "description": "Repeated tactical conflict.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Reading",
+          "Whole Board Evaluation"
+        ]
+      }
+    },
+    {
+      "id": "sente",
+      "name": "Sente",
+      "category": "endgame",
+      "description": "Moves requiring response.",
+      "relations": {
+        "SUPPORTS": [
+          "Initiative"
+        ]
+      }
+    },
+    {
+      "id": "gote",
+      "name": "Gote",
+      "category": "endgame",
+      "description": "Moves yielding initiative.",
+      "relations": {
+        "CONTRASTS_WITH": [
+          "Sente"
+        ]
+      }
+    },
+    {
+      "id": "counting",
+      "name": "Counting",
+      "category": "endgame",
+      "description": "Estimating score.",
+      "relations": {
+        "SUPPORTS": [
+          "Endgame Decisions",
+          "Strategic Decisions"
+        ]
+      }
+    },
+    {
+      "id": "yose",
+      "name": "Yose",
+      "category": "endgame",
+      "description": "Endgame optimization.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Counting",
+          "Sente/Gote Evaluation"
+        ]
+      }
+    },
+    {
+      "id": "endgame-prioritization",
+      "name": "Endgame Prioritization",
+      "category": "endgame",
+      "description": "Selecting highest-value endgame plays.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Counting",
+          "Judgment"
+        ]
+      }
+    },
+    {
+      "id": "pattern-recognition",
+      "name": "Pattern Recognition",
+      "category": "learning",
+      "description": "Recognizing recurring structures.",
+      "relations": {
+        "SUPPORTS": [
+          "Joseki",
+          "Tesuji",
+          "Shape"
+        ]
+      }
+    },
+    {
+      "id": "conceptual-understanding",
+      "name": "Conceptual Understanding",
+      "category": "learning",
+      "description": "Knowing why something works.",
+      "relations": {
+        "CONTRASTS_WITH": [
+          "Memorization"
+        ]
+      }
+    },
+    {
+      "id": "practical-application",
+      "name": "Practical Application",
+      "category": "learning",
+      "description": "Executing understanding during games.",
+      "relations": {
+        "DEPENDS_ON": [
+          "Conceptual Understanding",
+          "Experience"
+        ]
+      }
+    },
+    {
+      "id": "review-discipline",
+      "name": "Review Discipline",
+      "category": "learning",
+      "description": "Learning from games.",
+      "relations": {
+        "SUPPORTS": [
+          "Improvement"
+        ]
+      }
+    },
+    {
+      "id": "reflection",
+      "name": "Reflection",
+      "category": "learning",
+      "description": "Active evaluation of learning.",
+      "relations": {
+        "SUPPORTS": [
+          "Self-Awareness"
+        ]
+      }
+    },
+    {
+      "id": "aggression",
+      "name": "Aggression",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Attack",
+          "Invasion",
+          "Initiative"
+        ]
+      }
+    },
+    {
+      "id": "stability",
+      "name": "Stability",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Defense",
+          "Strong Groups",
+          "Territory"
+        ]
+      }
+    },
+    {
+      "id": "territory-orientation",
+      "name": "Territory Orientation",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Secure Profit",
+          "Counting"
+        ]
+      }
+    },
+    {
+      "id": "influence-orientation",
+      "name": "Influence Orientation",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Thickness",
+          "Frameworks"
+        ]
+      }
+    },
+    {
+      "id": "tactical-orientation",
+      "name": "Tactical Orientation",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Reading",
+          "Tesuji",
+          "Fighting"
+        ]
+      }
+    },
+    {
+      "id": "strategic-orientation",
+      "name": "Strategic Orientation",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Whole Board Judgment",
+          "Direction of Play"
+        ]
+      }
+    },
+    {
+      "id": "risk-tolerance",
+      "name": "Risk Tolerance",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Sacrifice",
+          "Invasion",
+          "Ko"
+        ]
+      }
+    },
+    {
+      "id": "complexity-preference",
+      "name": "Complexity Preference",
+      "category": "style",
+      "relations": {
+        "RELATED_TO": [
+          "Fighting",
+          "Ko",
+          "Tactical Variation"
+        ]
+      }
+    }
+  ]
+}
