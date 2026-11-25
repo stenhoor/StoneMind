@@ -105,24 +105,26 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   report.variants = [];
   // The implicit GEMM runs last: it is the slowest variant, and losing the device there (as happened once in Safari on
   // an iPad, while profiling it) should not cost the other variants' results.
+  // Every variant names its GEMM, so the report doesn't depend on the default (v2 since it was measured faster).
   const variants = [
-    { winograd: true, fuse: true },
-    { winograd: true, fuse: false },
+    { winograd: true, fuse: true, gemm: 'v1' },
+    { winograd: true, fuse: false, gemm: 'v1' },
     // GEMM v2: the unrolled matrix multiply for the Winograd GEMMs and 1×1 convolutions.
     { winograd: true, fuse: true, gemm: 'v2' },
     { winograd: true, fuse: false, gemm: 'v2' },
     // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
-    { winograd: true, fuse: true, scale8: true },
+    { winograd: true, fuse: true, scale8: true, gemm: 'v2' },
   ];
   if (engine.features.has('shader-f16')) {
     variants.push(
-      { winograd: true, fuse: true, precision: 'f16' },
-      { winograd: true, fuse: false, precision: 'f16' },
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v1' },
+      { winograd: true, fuse: false, precision: 'f16', gemm: 'v1' },
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v2' },
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v2' },
     );
   }
-  variants.push({ winograd: false });
+  // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
+  variants.push({ winograd: false, gemm: 'v1' });
   if (!engine.features.has('shader-f16')) report.f16 = 'not checked: the device has no shader-f16';
   // ?variants=<text>: run only the variants whose JSON contains the text (for example "v2"; default: all).
   const only = params.get('variants');

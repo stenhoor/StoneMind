@@ -32,7 +32,7 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     KataGo's **scale8** transform first (`src/model/scale8.ts`, ported from `ModelDesc::applyScale8ToReduceActivations`):
     activations run at 1/8 scale with `mish_scale8`, and raw outputs are multiplied back by 8 on readback, so results
     are unscaled either way. `scale8: true` also works in f32.
-  - **GEMM v2** (`gemm: 'v2'`, default `'v1'` until it is measured faster): one generic batched matrix multiply
+  - **GEMM v2** (`gemm: 'v2'`, the default; `'v1'` keeps the first kernels): one generic batched matrix multiply
     (`GEMM_V2`) for the Winograd GEMMs and for 1×1 convolutions, which become a plain GEMM per batch position instead
     of going through the implicit-GEMM convolution. 64 × 128 tiles, 4 × 8 outputs per thread, and a fully unrolled
     inner product with scalar accumulators, so no index there is a run-time value apart from each thread's offsets
