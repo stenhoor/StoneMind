@@ -37,6 +37,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     of going through the implicit-GEMM convolution. 64 × 128 tiles, 4 × 8 outputs per thread, and a fully unrolled
     inner product with scalar accumulators, so no index there is a run-time value apart from each thread's offsets
     into workgroup memory (WebKit clamps every non-constant array index: `Source/WebGPU/WGSL/BoundsCheck.cpp`).
+    `gemmConfig` sets its shape: rows and columns per thread (`rm`, `rn`: 4 or 8), the reduction chunk (`tk`: 8 or
+    16) and the arithmetic (`arith`: `f32`, or `f16` where the device has `shader-f16`, with each chunk summed in f16
+    and added into f32 accumulators). The default (`GEMM_DEFAULT`) is 4 × 8, chunks of 16, f32.
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
     `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
@@ -99,6 +102,10 @@ plan's GPU time from timestamps at the start and end of its single compute pass,
 timed in its own pass, summed by kernel, with the ten slowest. `timerTickNs` is the greatest common divisor of the
 measured intervals; a large value means the browser coarsens its timestamps. `GpuNetwork.profile(inputs, 'pass' |
 'ops')` does the timing.
+
+**Tuning** (`--tune`, or the page's "Tune the GEMM" button) runs every GEMM v2 shape (`rm`, `rn`, `tk`, and `arith`
+f32 and, where available, f16) with Winograd fused and the device's best storage precision. Each is checked for
+correctness and benchmarked at batches 16 and 64, without the profile.
 
 With `--model`, the slow TypeScript reference comparison is skipped unless `--reference` is given; the goldens are
 the correctness check. With `--serve` it only serves the page and prints its address, to open in any browser with WebGPU; each report is

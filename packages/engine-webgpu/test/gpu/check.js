@@ -61,7 +61,7 @@ function compareGolden(got, want, size) {
 /**
  * Run the check. `file` is a model picked on the page (a File); without it the model is fetched from `modelUrl`.
  */
-export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 64], runs = 5, file = null } = {}) {
+export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 64], runs = 5, file = null, tune = false } = {}) {
   useReference = referenceDefault(file);
   const report = {
     modelUrl: file ? `file: ${file.name}` : modelUrl,
@@ -125,6 +125,18 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   }
   // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
   variants.push({ winograd: false, gemm: 'v1' });
+  if (tune) {
+    // Tuning: every GEMM v2 shape, in the storage precision this device runs best (f16 where it can), each checked for
+    // correctness and benchmarked at batches 16 and 64. No profile, to keep the run short.
+    variants.length = 0;
+    const precision = engine.features.has('shader-f16') ? 'f16' : 'f32';
+    for (const arith of precision === 'f16' ? ['f32', 'f16'] : ['f32']) {
+      for (const rm of [4, 8]) for (const rn of [4, 8]) for (const tk of [8, 16]) {
+        variants.push({ winograd: true, fuse: true, gemm: 'v2', precision, gemmConfig: { rm, rn, tk, arith } });
+      }
+    }
+    report.tuning = { precision, batches };
+  }
   if (!engine.features.has('shader-f16')) report.f16 = 'not checked: the device has no shader-f16';
   // ?variants=<text>: run only the variants whose JSON contains the text (for example "v2"; default: all).
   const only = params.get('variants');
@@ -136,7 +148,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     }
     step(`variant ${JSON.stringify(variant)}`);
     try {
-      report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }));
+      report.variants.push(await checkVariant({ engine, model, cases, golden, variant, bench, batches, runs, tune }));
     } catch (e) {
       // Keep going: record where and why this variant failed, so the other variants' results are not lost.
       const failedAt = steps.at(-1);
@@ -268,7 +280,7 @@ function katagoErrorStats(evaluated) {
 /** The network of the variant being checked, so a failure part-way can still free it. */
 let currentNet = null;
 
-async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs }) {
+async function checkVariant({ engine, model, cases, golden, variant, bench, batches, runs, tune }) {
   const report = { variant };
   step('  building the network');
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(cases.length, bench ? Math.max(...batches) : 1) });
@@ -336,8 +348,9 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
       const median = times[times.length >> 1];
       report.bench.push({ batch: n, medianMs: +median.toFixed(2), evalsPerSecond: +((n * 1000) / median).toFixed(1) });
     }
-    step('  profiling');
-    if (net.canProfile) report.profile = await profileNetwork(net, input, batches.filter((n) => [1, 16, 64].includes(n)), runs);
+    if (!tune) step('  profiling');
+    if (tune) report.profile = 'skipped while tuning';
+    else if (net.canProfile) report.profile = await profileNetwork(net, input, batches.filter((n) => [1, 16, 64].includes(n)), runs);
     else report.profile = 'the device has no timestamp-query';
   }
   net.destroy();
@@ -435,6 +448,18 @@ const run = (bench) => () => {
 };
 document.getElementById('check').addEventListener('click', run(false));
 document.getElementById('bench').addEventListener('click', run(true));
+document.getElementById('tune').addEventListener('click', () => {
+  summary.textContent = 'Running…';
+  out.textContent = '';
+  download.hidden = true;
+  const file = picker.files?.[0] ?? null;
+  runCheck({ bench: true, tune: true, batches: [16, 64], file }).then(show, (e) => {
+    const error = describeError(e);
+    summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+    lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+    download.hidden = false;
+  });
+});
 download.addEventListener('click', () => {
   if (!lastReport) return;
   const blob = new Blob([JSON.stringify(lastReport, null, 2) + '\n'], { type: 'application/json' });
