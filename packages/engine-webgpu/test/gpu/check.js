@@ -2,7 +2,7 @@
 // .bin.gz), or else the test network. Goldens: the `golden` parameter, or else ../goldens/<model name>.json.
 import {
   loadModel, encodePositionV7, gtpMove, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
-  buildHistory, Search, PASS_LOC,
+  buildHistory, Search, PASS_LOC, reviewGame,
 } from '../../dist/index.js';
 
 // The same tolerances as test/goldens.test.mjs.
@@ -420,13 +420,20 @@ const picker = document.getElementById('model');
 let lastReport = null;
 
 /**
- * The search benchmark: visits per second on one position at several batch sizes ("live"), and a whole game reviewed at
- * a fixed number of visits per move ("review"). The game is played by the search itself from an empty board (the
- * most-visited move each turn), and its moves are in the report so native KataGo can review the same game.
+ * The search benchmark: visits per second on one position at several batch sizes ("live"), and a fixed game reviewed at
+ * a fixed number of visits per turn ("review"), in several modes. The game's moves are in the report so native KataGo
+ * can review the same game (scripts/native-search-bench.mjs).
  * Network: Winograd fused, GEMM v2, fp16 storage where the device has shader-f16 (the fastest measured on the owner's
  * NVIDIA GPU and iPad), or `?searchVariant=<GpuNetwork options JSON>`.
  */
-export async function runSearchBench({ file = null, liveVisits = 2000, liveBatches = [16, 32, 64], reviewMoves = 250, reviewVisits = 100, reviewBatch = 64 } = {}) {
+export async function runSearchBench({
+  file = null,
+  liveVisits = 2000,
+  liveBatches = [16, 32, 64],
+  reviewMoves = 250,
+  reviewVisits = 100,
+  reviewModes = [{ batchSize: 64, concurrency: 1 }, { batchSize: 16, concurrency: 1 }, { batchSize: 16, concurrency: 4 }],
+} = {}) {
   const report = { kind: 'search', modelUrl: file ? `file: ${file.name}` : modelUrl, userAgent: navigator.userAgent, date: new Date().toISOString() };
   steps.length = 0;
   step('requesting a WebGPU device');
@@ -446,7 +453,7 @@ export async function runSearchBench({ file = null, liveVisits = 2000, liveBatch
     : { winograd: true, fuse: true, gemm: 'v2', precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
   report.variant = variant;
   step(`building the network ${JSON.stringify(variant)}`);
-  const maxBatch = Math.max(...liveBatches, reviewBatch);
+  const maxBatch = Math.max(...liveBatches, ...reviewModes.map((m) => m.batchSize * m.concurrency));
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch });
   report.gemmConfig = net.gemmConfig;
   const cols = 'ABCDEFGHJKLMNOPQRST';
@@ -490,40 +497,34 @@ export async function runSearchBench({ file = null, liveVisits = 2000, liveBatch
       step(`  ${run.visitsPerSecond} visits/s (best ${run.bestMove})`);
     }
 
-    // Review: a game played by the search, reviewMoves moves (or to the end), reviewVisits visits each.
-    step(`review: ${reviewMoves} moves × ${reviewVisits} visits`);
-    const hist = buildHistory({ xSize: 19, ySize: 19, rules: 'tromp-taylor', komi: 7.5, moves: [] });
-    const game = [];
-    const perMove = [];
-    const t0 = performance.now();
-    let visits = 0;
-    for (let t = 0; t < reviewMoves && !hist.isGameFinished; t++) {
-      const m0 = performance.now();
-      const search = new Search(model, net, hist, { batchSize: reviewBatch });
-      await search.run({ maxVisits: reviewVisits });
-      visits += search.stats.visits;
-      const top = search.analysis().moveInfos[0];
-      const pla = hist.nextPla === 1 ? 'B' : 'W';
-      game.push([pla, gtpOf(hist.board, top.loc)]);
-      perMove.push(+(performance.now() - m0).toFixed(1));
-      hist.play(top.loc, hist.nextPla);
-      if (t % 25 === 24) step(`  ${t + 1} moves, ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+    // Review: the fixed game of test/goldens/agreement-game.json (the first reviewMoves turns), reviewVisits visits a
+    // turn, in each mode: turns one at a time at batch 64 (the first benchmark's setting), one at a time at batch 16,
+    // and several at once at batch 16 with their leaves combined into one network call. Every mode shares one
+    // evaluation cache across turns, as native KataGo's analysis does.
+    const agreementGame = await getJson('../goldens/agreement-game.json');
+    const game = agreementGame.moves.slice(0, reviewMoves);
+    const histories = [];
+    for (let t = 0; t < game.length; t++) {
+      histories.push(buildHistory({ xSize: 19, ySize: 19, rules: agreementGame.rules, komi: agreementGame.komi, moves: game.slice(0, t).map(([c, l]) => gtpMove(c, l, 19)) }));
     }
-    const totalMs = performance.now() - t0;
-    report.review = {
-      rules: 'tromp-taylor',
-      komi: 7.5,
-      visitsPerMove: reviewVisits,
-      batch: reviewBatch,
-      moves: game.length,
-      visits,
-      totalMs: +totalMs.toFixed(1),
-      visitsPerSecond: +((visits * 1000) / totalMs).toFixed(1),
-      minutesFor250Moves: +((totalMs / game.length) * 250 / 60000).toFixed(2),
-      perMoveMs: perMove,
-      game,
-    };
-    step(`  ${game.length} moves in ${(totalMs / 1000).toFixed(1)} s`);
+    report.review = { rules: agreementGame.rules, komi: agreementGame.komi, visitsPerMove: reviewVisits, moves: game.length, game, modes: [] };
+    for (const mode of reviewModes) {
+      step(`review: ${game.length} turns × ${reviewVisits} visits, batch ${mode.batchSize}, ${mode.concurrency} at once`);
+      const t0 = performance.now();
+      const results = await reviewGame(model, net, histories, { visits: reviewVisits, batchSize: mode.batchSize, concurrency: mode.concurrency });
+      const totalMs = performance.now() - t0;
+      const visits = results.reduce((sum, r) => sum + r.rootVisits, 0);
+      const run = {
+        ...mode,
+        visits,
+        totalMs: +totalMs.toFixed(1),
+        visitsPerSecond: +((visits * 1000) / totalMs).toFixed(1),
+        minutesFor250Moves: +((totalMs / game.length) * 250 / 60000).toFixed(2),
+        bestMoves: results.map((r) => gtpOf(histories[0].board, r.moveInfos[0].loc)),
+      };
+      report.review.modes.push(run);
+      step(`  ${(totalMs / 1000).toFixed(1)} s (${run.visitsPerSecond} visits/s)`);
+    }
   } finally {
     net.destroy();
   }
@@ -599,8 +600,8 @@ function summarise(r) {
     for (const run of r.live?.runs ?? []) {
       lines.push(`live (${r.live.position}), batch ${run.batch}: ${run.visitsPerSecond} visits/s (${run.visits} visits, mean batch ${run.meanBatch}, network ${run.nnMs} ms, other ${run.cpuMs} ms)`);
     }
-    if (r.review) {
-      lines.push(`review: ${r.review.moves} moves × ${r.review.visitsPerMove} visits in ${(r.review.totalMs / 1000).toFixed(1)} s (${r.review.visitsPerSecond} visits/s; ${r.review.minutesFor250Moves} min for 250 moves)`);
+    for (const m of r.review?.modes ?? []) {
+      lines.push(`review: ${r.review.moves} turns × ${r.review.visitsPerMove} visits, batch ${m.batchSize}, ${m.concurrency} at once: ${(m.totalMs / 1000).toFixed(1)} s (${m.visitsPerSecond} visits/s; ${m.minutesFor250Moves} min for 250 moves)`);
     }
     return lines.join('\n');
   }

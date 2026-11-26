@@ -88,6 +88,15 @@ const turns = [...Array(game.length).keys()];
 await query({ id: 'clear-review', action: 'clear_cache' });
 const { responses: reviewResponses, ms: reviewMs } = await query({ id: 'review', ...base, moves: game, analyzeTurns: turns, maxVisits: report.review.visitsPerMove }, turns.length);
 const reviewVisits = reviewResponses.reduce((s, r) => s + r.rootInfo.visits, 0);
+// Native's recommended move at each turn, and how often each browser review mode recommended the same.
+const nativeBest = new Map(reviewResponses.map((r) => [r.turnNumber, r.moveInfos.find((m) => m.order === 0)?.move ?? null]));
+const modes = (report.review.modes ?? []).map((m) => ({
+  batchSize: m.batchSize,
+  concurrency: m.concurrency,
+  minutesFor250Moves: m.minutesFor250Moves,
+  agreesWithNative: m.bestMoves.filter((move, t) => move === nativeBest.get(t)).length,
+  turns: m.bestMoves.length,
+}));
 proc.stdin.end();
 
 const version = spawnSync(values.katago, ['version'], { encoding: 'utf8' }).stdout.split('\n')[0];
@@ -106,7 +115,9 @@ const out = {
     totalMs: +reviewMs.toFixed(1),
     visitsPerSecond: +((reviewVisits * 1000) / reviewMs).toFixed(1),
     minutesFor250Moves: +((reviewMs / game.length) * 250 / 60000).toFixed(2),
+    bestMoves: turns.map((t) => nativeBest.get(t)),
   },
+  browserReviewModes: modes,
 };
 const text = JSON.stringify(out, null, 2) + '\n';
 if (values.out) writeFileSync(values.out, text);
