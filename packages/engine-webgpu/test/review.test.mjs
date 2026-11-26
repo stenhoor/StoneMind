@@ -56,3 +56,71 @@ test('reviewGame searches every turn, several at once, with combined network cal
   // 8 searches × 23 visits after the root, in batches of 4 per search: alone they would need at least 8 × 6 calls.
   assert.ok(calls < 8 * 6, `calls ${calls}`);
 });
+
+/** The reference network behind a delay, allowing `maxInFlight` calls at once and recording how many overlap. */
+function overlapping(maxInFlight, maxBatch = 16) {
+  const net = {
+    maxBatch,
+    maxInFlight,
+    calls: 0,
+    inFlight: 0,
+    mostInFlight: 0,
+    sizes: [],
+    async evaluate(inputs) {
+      net.calls++;
+      net.sizes.push(inputs.length);
+      net.inFlight++;
+      net.mostInFlight = Math.max(net.mostInFlight, net.inFlight);
+      assert.ok(net.inFlight <= maxInFlight, `${net.inFlight} calls in flight, more than ${maxInFlight}`);
+      await new Promise((r) => setTimeout(r, 5));
+      net.inFlight--;
+      return inputs.map((i) => forward(model, i));
+    },
+  };
+  return net;
+}
+
+test('with two calls allowed in flight, requests made together are spread across two calls', async () => {
+  const inputs = ['E5', 'C3', 'G7', 'D4', 'F6', 'C7'].map((m) => encodePositionV7({ xSize: 9, ySize: 9, rules: 'tromp-taylor', komi: 7.5, moves: [gtpMove('B', m, 9)] }).input);
+  const net = overlapping(2);
+  const shared = new SharedEvaluator(net);
+  assert.equal(shared.maxInFlight, 2);
+  const [a, b, c] = await Promise.all([shared.evaluate(inputs.slice(0, 2)), shared.evaluate(inputs.slice(2, 4)), shared.evaluate(inputs.slice(4, 6))]);
+  assert.equal(net.calls, 2, 'two calls');
+  assert.equal(net.mostInFlight, 2, 'both in flight at once');
+  assert.deepEqual([...net.sizes].sort(), [2, 4], 'each request whole: 2 + 2 in one call, 2 in the other');
+  const direct = inputs.map((i) => forward(model, i));
+  for (const [got, want] of [[a, direct.slice(0, 2)], [b, direct.slice(2, 4)], [c, direct.slice(4, 6)]]) {
+    got.forEach((g, k) => {
+      assert.deepEqual(g.value, want[k].value);
+      assert.deepEqual(g.ownership, want[k].ownership);
+    });
+  }
+});
+
+test('requests wait for a free call, in arrival order, and never exceed maxInFlight', async () => {
+  const input = encodePositionV7({ xSize: 9, ySize: 9, rules: 'tromp-taylor', komi: 7.5, moves: [] }).input;
+  const net = overlapping(2, 8);
+  const shared = new SharedEvaluator(net);
+  // Five requests of 6: no two fit in one call of 8, so they go 2, then 2, then 1, as calls free up.
+  const outs = await Promise.all(Array.from({ length: 5 }, () => shared.evaluate(Array.from({ length: 6 }, () => input))));
+  assert.equal(outs.flat().length, 30);
+  assert.equal(net.calls, 5);
+  assert.equal(net.mostInFlight, 2);
+});
+
+test('reviewGame with two calls in flight still gives every turn its visits', async () => {
+  const game = JSON.parse(readFileSync(here('./goldens/search-late-9.json'), 'utf8')).moves.slice(0, 6);
+  const histories = [];
+  for (let t = 0; t < game.length; t++) {
+    histories.push(buildHistory({ xSize: 9, ySize: 9, rules: 'tromp-taylor', komi: 7.5, moves: game.slice(0, t).map(([c, l]) => gtpMove(c, l, 9)) }));
+  }
+  const net = overlapping(2);
+  const results = await reviewGame(model, net, histories, { visits: 16, batchSize: 4, concurrency: 2 });
+  assert.equal(results.length, 6);
+  for (const r of results) {
+    assert.equal(r.rootVisits, 16);
+    assert.equal(r.moveInfos.reduce((s, m) => s + m.visits, 0), 15);
+  }
+  assert.equal(net.mostInFlight, 2, 'the two turns overlapped');
+});
