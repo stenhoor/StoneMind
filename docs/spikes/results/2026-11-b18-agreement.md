@@ -51,6 +51,8 @@ All values below are quoted from them, or from the KataGo log where stated.
 From the KataGo log, as printed:
 
 ```
+Cuda backend thread 0: Model version 14 useFP16 = true useNHWC = true
+Analyzing up to 2 positions at a time in parallel
 ```
 
 ## Agreement
