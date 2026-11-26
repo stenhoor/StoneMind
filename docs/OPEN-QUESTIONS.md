@@ -143,8 +143,13 @@ Native KataGo's CUDA build can use the GPU's matrix hardware. In the browser it'
 experimental `chromium-experimental-subgroup-matrix`, which Edge 158 on the owner's laptop offers only with
 `--enable-unsafe-webgpu`. Decided in code, with no spec covering it:
 - **The engine requests the feature whenever the adapter offers it**, and records the supported shapes.
-- **`GpuNetwork` runs the Winograd GEMMs on it only when asked** (`winoGemm: 'mma'`, off by default). Nothing
-  depends on it.
+- **`GpuNetwork` uses it automatically where it was measured faster** (`matrix: 'auto'`, the default; the owner's
+  decision, 2026-11-26): the Winograd GEMMs and 1×1 convolutions, with f16 storage, in the shape measured fastest
+  for the call's batch size on the owner's laptop (`MATRIX_GEMM_BY_BATCH`). Without the feature nothing changes.
+- **A GEMM runs on matrix hardware at every batch size or at none.** The matrix and vector GEMMs round differently, so
+  mixing them by batch size would make a position's result depend on how many positions shared its call; the three
+  matrix shapes give identical results (the check page compares calls of 1, 4–5 and 14 exactly).
 
-Open: whether StoneMind should ever use it before browsers ship it without a switch. Measured on the owner's laptop:
-`docs/spikes/results/2026-11-b18-matrix.md`.
+Open: whether the shapes and batch ranges measured on the owner's laptop suit other GPUs once browsers ship the
+feature without a switch. Measured on the owner's laptop: `docs/spikes/results/2026-11-b18-matrix.md` and
+`docs/spikes/results/2026-11-b18-matrix-ladder.md`.
