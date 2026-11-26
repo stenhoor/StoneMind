@@ -135,25 +135,30 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     { winograd: true, fuse: true, scale8: true, gemm: 'v2' },
   ];
   if (engine.features.has('shader-f16')) {
+    // matrix: 'off' keeps these on the GEMM they name where the device has matrix hardware (GpuNetwork's 'auto').
     variants.push(
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v1' },
-      { winograd: true, fuse: false, precision: 'f16', gemm: 'v1' },
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v2' },
-      { winograd: true, fuse: false, precision: 'f16', gemm: 'v2' },
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
-      { winograd: true, fuse: false, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3' },
-      { winograd: true, fuse: false, precision: 'f16', gemm: 'v3' },
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', winoTransforms: 'v1' },
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', winoTransforms: 'v3' },
-      { winograd: true, fuse: false, precision: 'f16', gemm: 'v3', winoTransforms: 'v3' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v1' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v1' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v2' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v2' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v2', winoTransforms: 'v2' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v2', winoTransforms: 'v2' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', winoTransforms: 'v1' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', winoTransforms: 'v3' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', winoTransforms: 'v3' },
     );
   }
-  // Experimental: the Winograd GEMMs on matrix hardware, where the device offers it (today only behind a browser switch).
+  // Matrix hardware, where the device offers it (today only behind a browser switch): the Winograd GEMMs and 1×1
+  // convolutions chosen per batch size (matrix 'auto', the default), and the first matrix GEMM (winoGemm 'mma'). The
+  // check's calls cover each of MATRIX_GEMM_BY_BATCH's ranges: 14 positions at once, one, and three calls of 4–5.
   if (engine.features.has('chromium-experimental-subgroup-matrix') && engine.features.has('shader-f16')) {
     variants.push(
-      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', winoGemm: 'mma' },
-      { winograd: true, fuse: false, precision: 'f16', gemm: 'v3', winoGemm: 'mma' },
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', matrix: 'auto' },
+      { winograd: true, fuse: false, precision: 'f16', gemm: 'v3', matrix: 'auto' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', winoGemm: 'mma' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', winoGemm: 'mma' },
     );
   }
   // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
@@ -327,6 +332,8 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   report.gemm = net.gemm;
   report.winoTransforms = net.winoTransforms;
   if (net.winoGemmMma) report.winoGemmMma = net.winoGemmMma;
+  report.matrix = net.matrix;
+  if (net.matrix) report.matrixUse = net.matrixUse;
   report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
@@ -507,6 +514,8 @@ export async function runSearchBench({
   report.gemm = net.gemm;
   report.winoTransforms = net.winoTransforms;
   if (net.winoGemmMma) report.winoGemmMma = net.winoGemmMma;
+  report.matrix = net.matrix;
+  if (net.matrix) report.matrixUse = net.matrixUse;
   report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   report.maxInFlight = net.maxInFlight;
   const cols = 'ABCDEFGHJKLMNOPQRST';

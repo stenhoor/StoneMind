@@ -73,11 +73,18 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     16) and the arithmetic (`arith`: `f32`; or, where the device has `shader-f16`, `f16` or `f16x2`, the latter on pairs
     of output columns as `vec2<f16>`; both sum each chunk in f16 and add it into f32 accumulators). The default is chosen per device by `defaultGemmConfig`: on Apple GPUs 4 × 4, chunks of 8, with f16 arithmetic
     when `precision` is `'f16'` (fastest on the owner's iPad) and f32 arithmetic otherwise; elsewhere `GEMM_DEFAULT`, 4 × 8, chunks of 16, f32.
-  - **Matrix hardware (experimental)** (`winoGemm: 'mma'`, off by default): the Winograd GEMMs on subgroup matrices
-    (`GEMM_MMA`, 16 × 16 × 16, f16 in, f32 sums), with the Winograd weights stored transposed. Browsers offer the
+  - **Matrix hardware** (`matrix`, default `'auto'`): where the device offers subgroup matrices with an f16 → f32
+    16 × 16 × 16 shape, `precision` is `'f16'` and `gemm` is `'v2'` or `'v3'`, the Winograd GEMMs and 1×1 convolutions run
+    on subgroup matrices (`GEMM_MMA`: f16 in, f32 sums), on the same weights as `gemm`. Each call uses the shape
+    `MATRIX_GEMM_BY_BATCH` gives for its batch size (2 × 1 matrices at batch 1, 2 × 2 up to 8, 4 × 2 per subgroup and
+    3 × 2 subgroups sharing their loads through workgroup memory above that). A GEMM whose shape fits none of them keeps
+    `gemm` at every batch size, so a position's result doesn't depend on its call's batch size. Browsers offer the
     feature (`chromium-experimental-subgroup-matrix`) only behind a switch today; on the owner's laptop, Edge with
-    `--enable-unsafe-webgpu` offers it. The device requests it when offered. Results:
-    `docs/spikes/results/2026-11-b18-matrix.md`.
+    `--enable-unsafe-webgpu` offers it, and the device requests it when offered. Elsewhere, and with `'off'`, nothing
+    changes. On the owner's laptop it was faster than GEMM v3 at every batch measured (1–64), the batch-16 pass took
+    22–25% less time, and the review 15.8% less (`docs/spikes/results/2026-11-b18-matrix-ladder.md`). The first matrix
+    GEMM, the Winograd GEMMs only with transposed weights (`winoGemm: 'mma'`), stays as an option
+    (`docs/spikes/results/2026-11-b18-matrix.md`).
   - **Winograd transforms v2** (`winoIn`, `winoOut`, `winoTransforms` sets both): each workgroup copies a few channels
     of one board into workgroup memory with adjacent reads, applying a fused batch norm once per point (v1 recomputes it
     for each overlapping tile), and writes the output board back with adjacent writes. The v2 input transform was
@@ -215,7 +222,11 @@ shapes in the opposite order. `?gemmShapes=small` measures narrower v3 tiles ins
 along N), for small batches. `?gemmLadder=1` measures v3 shapes whole and by stage (the main loop from workgroup memory and
 from registers, and the loads alone; `GemmV3Config.stage`), against the device's ceilings measured in the same session
 (`test/gpu/ceilings.js`); `?gemmLadderShapes=` and `?gemmLadderVariants=vload,blocks,prefetch,double` choose the shapes
-and the candidate fixes (`docs/spikes/results/2026-11-b18-gemm-ladder.md`).
+and the candidate fixes (`docs/spikes/results/2026-11-b18-gemm-ladder.md`). Where the device has subgroup matrices,
+`?gemmMmaLadder=1` measures matrix GEMM shapes whole, at 8 × K, their multiply-accumulates alone at 8 × K, and without
+their loop (`GemmMmaConfig.stage`, `kRepeat`), against the matrix peak and the read bandwidth from L2-sized and
+DRAM-sized working sets measured in the same session; `?gemmMmaLadder=whole` measures them whole only, and
+`?gemmMmaShapes=<JSON list of [fm, fn, ta, options]>` chooses them (`docs/spikes/results/2026-11-b18-matrix-ladder.md`).
 
 **The budget benchmark** (the page's "Budget benchmark" button, `test/gpu/budget-bench.js`) measures what each kind
 of work in the network costs on this device, against what the device can do. It measures the ceilings first: copy

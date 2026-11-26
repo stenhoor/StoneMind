@@ -1,0 +1,5163 @@
+{
+  "kind": "gemm",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query",
+    "chromium-experimental-subgroup-matrix"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T18:13:36.490Z",
+  "batches": [
+    16,
+    64
+  ],
+  "repeat": 30,
+  "runs": 7,
+  "elem": "f16",
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "maxComputeWorkgroupStorageSize": 49152,
+  "mmaLadder": true,
+  "smallShapes": false,
+  "ladder": false,
+  "subgroupMatrixConfigs": [
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    }
+  ],
+  "matrixPeak": {
+    "tflops": 43.98,
+    "best": {
+      "sg": 4,
+      "acc": 8
+    },
+    "variants": [
+      {
+        "subgroupsPerWorkgroup": 1,
+        "accumulators": 4,
+        "workgroups": 3072,
+        "iterations": 1024,
+        "msPerDispatch": 3.1176,
+        "tflops": 33.06
+      },
+      {
+        "subgroupsPerWorkgroup": 1,
+        "accumulators": 8,
+        "workgroups": 3072,
+        "iterations": 1024,
+        "msPerDispatch": 4.6931,
+        "tflops": 43.93
+      },
+      {
+        "subgroupsPerWorkgroup": 4,
+        "accumulators": 4,
+        "workgroups": 768,
+        "iterations": 1024,
+        "msPerDispatch": 2.3681,
+        "tflops": 43.53
+      },
+      {
+        "subgroupsPerWorkgroup": 4,
+        "accumulators": 8,
+        "workgroups": 768,
+        "iterations": 1024,
+        "msPerDispatch": 4.6871,
+        "tflops": 43.98
+      },
+      {
+        "subgroupsPerWorkgroup": 8,
+        "accumulators": 8,
+        "workgroups": 384,
+        "iterations": 1024,
+        "msPerDispatch": 4.6923,
+        "tflops": 43.94
+      }
+    ]
+  },
+  "reverse": false,
+  "warmUpMs": 2000,
+  "rows": [
+    {
+      "batch": 16,
+      "shape": "wino 192→192",
+      "M": 192,
+      "K": 192,
+      "N": 400,
+      "Z": 36,
+      "perNetwork": 62,
+      "gflop": 1.062,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.2437,
+          "tflops": 4.36,
+          "passMedianMsPerDispatch": 0.2436,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1754,
+          "tflops": 6.05,
+          "passMedianMsPerDispatch": 0.1754,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "msPerDispatch": 0.1261,
+          "tflops": 8.42,
+          "passMedianMsPerDispatch": 0.1261,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8136,
+          "tflops": 1.3,
+          "passMedianMsPerDispatch": 0.8134,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2049,
+          "tflops": 5.18,
+          "passMedianMsPerDispatch": 0.2049,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0243,
+          "tflops": 43.73,
+          "passMedianMsPerDispatch": 0.0242,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1244,
+          "tflops": 8.54,
+          "passMedianMsPerDispatch": 0.1243,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8142,
+          "tflops": 1.3,
+          "passMedianMsPerDispatch": 0.8118,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2049,
+          "tflops": 5.18,
+          "passMedianMsPerDispatch": 0.2049,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0243,
+          "tflops": 43.72,
+          "passMedianMsPerDispatch": 0.0242,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1097,
+          "tflops": 9.68,
+          "passMedianMsPerDispatch": 0.1095,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.616,
+          "tflops": 1.72,
+          "passMedianMsPerDispatch": 0.6159,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2145,
+          "tflops": 4.95,
+          "passMedianMsPerDispatch": 0.2144,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0306,
+          "tflops": 34.71,
+          "passMedianMsPerDispatch": 0.0305,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1221,
+          "tflops": 8.7,
+          "passMedianMsPerDispatch": 0.1221,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5075,
+          "tflops": 2.09,
+          "passMedianMsPerDispatch": 0.5076,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2325,
+          "tflops": 4.57,
+          "passMedianMsPerDispatch": 0.2324,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0522,
+          "tflops": 20.33,
+          "passMedianMsPerDispatch": 0.0522,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.125,
+          "tflops": 8.49,
+          "passMedianMsPerDispatch": 0.125,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5673,
+          "tflops": 1.87,
+          "passMedianMsPerDispatch": 0.5659,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2592,
+          "tflops": 4.1,
+          "passMedianMsPerDispatch": 0.2592,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0524,
+          "tflops": 20.27,
+          "passMedianMsPerDispatch": 0.0523,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1507,
+          "tflops": 7.05,
+          "passMedianMsPerDispatch": 0.1506,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6127,
+          "tflops": 1.73,
+          "passMedianMsPerDispatch": 0.6128,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3053,
+          "tflops": 3.48,
+          "passMedianMsPerDispatch": 0.304,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0799,
+          "tflops": 13.28,
+          "passMedianMsPerDispatch": 0.0799,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.1427,
+          "tflops": 7.44,
+          "passMedianMsPerDispatch": 0.1408,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.0247,
+          "tflops": 1.04,
+          "passMedianMsPerDispatch": 1.0245,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2123,
+          "tflops": 5,
+          "passMedianMsPerDispatch": 0.2123,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0241,
+          "tflops": 44.02,
+          "passMedianMsPerDispatch": 0.0241,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.1112,
+          "tflops": 9.55,
+          "passMedianMsPerDispatch": 0.1113,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7117,
+          "tflops": 1.49,
+          "passMedianMsPerDispatch": 0.7133,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2287,
+          "tflops": 4.64,
+          "passMedianMsPerDispatch": 0.2287,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0317,
+          "tflops": 33.48,
+          "passMedianMsPerDispatch": 0.0317,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "msPerDispatch": 0.1418,
+          "tflops": 7.49,
+          "passMedianMsPerDispatch": 0.1417,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.0316,
+          "tflops": 1.03,
+          "passMedianMsPerDispatch": 1.0313,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2258,
+          "tflops": 4.7,
+          "passMedianMsPerDispatch": 0.2258,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0239,
+          "tflops": 44.41,
+          "passMedianMsPerDispatch": 0.0238,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "shape": "1x1 384→192",
+      "M": 192,
+      "K": 384,
+      "N": 361,
+      "Z": 16,
+      "perNetwork": 18,
+      "gflop": 0.852,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.1697,
+          "tflops": 5.02,
+          "passMedianMsPerDispatch": 0.1695,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1193,
+          "tflops": 7.14,
+          "passMedianMsPerDispatch": 0.119,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "msPerDispatch": 0.1763,
+          "tflops": 4.83,
+          "passMedianMsPerDispatch": 0.1763,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.736,
+          "tflops": 1.16,
+          "passMedianMsPerDispatch": 0.7354,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2178,
+          "tflops": 3.91,
+          "passMedianMsPerDispatch": 0.2182,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1061,
+          "tflops": 8.03,
+          "passMedianMsPerDispatch": 0.1057,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0981,
+          "tflops": 8.68,
+          "passMedianMsPerDispatch": 0.098,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7017,
+          "tflops": 1.21,
+          "passMedianMsPerDispatch": 0.7046,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1693,
+          "tflops": 5.03,
+          "passMedianMsPerDispatch": 0.1692,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0107,
+          "tflops": 79.72,
+          "passMedianMsPerDispatch": 0.0106,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0809,
+          "tflops": 10.52,
+          "passMedianMsPerDispatch": 0.0807,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5442,
+          "tflops": 1.57,
+          "passMedianMsPerDispatch": 0.5436,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1723,
+          "tflops": 4.94,
+          "passMedianMsPerDispatch": 0.1722,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0135,
+          "tflops": 63.01,
+          "passMedianMsPerDispatch": 0.0135,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0805,
+          "tflops": 10.58,
+          "passMedianMsPerDispatch": 0.0807,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4262,
+          "tflops": 2,
+          "passMedianMsPerDispatch": 0.4257,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2303,
+          "tflops": 3.7,
+          "passMedianMsPerDispatch": 0.2303,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0227,
+          "tflops": 37.58,
+          "passMedianMsPerDispatch": 0.0226,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0811,
+          "tflops": 10.5,
+          "passMedianMsPerDispatch": 0.0811,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4446,
+          "tflops": 1.92,
+          "passMedianMsPerDispatch": 0.4428,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2307,
+          "tflops": 3.69,
+          "passMedianMsPerDispatch": 0.2306,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0226,
+          "tflops": 37.64,
+          "passMedianMsPerDispatch": 0.0226,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1162,
+          "tflops": 7.33,
+          "passMedianMsPerDispatch": 0.1162,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5218,
+          "tflops": 1.63,
+          "passMedianMsPerDispatch": 0.5206,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2603,
+          "tflops": 3.27,
+          "passMedianMsPerDispatch": 0.2603,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0408,
+          "tflops": 20.89,
+          "passMedianMsPerDispatch": 0.0408,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.1174,
+          "tflops": 7.26,
+          "passMedianMsPerDispatch": 0.1172,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8743,
+          "tflops": 0.97,
+          "passMedianMsPerDispatch": 0.8742,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1708,
+          "tflops": 4.99,
+          "passMedianMsPerDispatch": 0.1707,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0111,
+          "tflops": 76.51,
+          "passMedianMsPerDispatch": 0.0111,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.0785,
+          "tflops": 10.85,
+          "passMedianMsPerDispatch": 0.0783,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5687,
+          "tflops": 1.5,
+          "passMedianMsPerDispatch": 0.5684,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1728,
+          "tflops": 4.93,
+          "passMedianMsPerDispatch": 0.1728,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0156,
+          "tflops": 54.62,
+          "passMedianMsPerDispatch": 0.0156,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "msPerDispatch": 0.1105,
+          "tflops": 7.71,
+          "passMedianMsPerDispatch": 0.1104,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8202,
+          "tflops": 1.04,
+          "passMedianMsPerDispatch": 0.8199,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1701,
+          "tflops": 5.01,
+          "passMedianMsPerDispatch": 0.1701,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0104,
+          "tflops": 82.12,
+          "passMedianMsPerDispatch": 0.0103,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "shape": "1x1 192→384",
+      "M": 384,
+      "K": 192,
+      "N": 361,
+      "Z": 16,
+      "perNetwork": 18,
+      "gflop": 0.852,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.1718,
+          "tflops": 4.96,
+          "passMedianMsPerDispatch": 0.1716,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1219,
+          "tflops": 6.99,
+          "passMedianMsPerDispatch": 0.1221,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "msPerDispatch": 0.1537,
+          "tflops": 5.54,
+          "passMedianMsPerDispatch": 0.1537,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7273,
+          "tflops": 1.17,
+          "passMedianMsPerDispatch": 0.7267,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2853.1975,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1953,
+          "tflops": 4.36,
+          "passMedianMsPerDispatch": 0.1953,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0808,
+          "tflops": 10.55,
+          "passMedianMsPerDispatch": 0.0807,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 407.6254,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1038,
+          "tflops": 8.21,
+          "passMedianMsPerDispatch": 0.1037,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6966,
+          "tflops": 1.22,
+          "passMedianMsPerDispatch": 0.6961,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1715,
+          "tflops": 4.97,
+          "passMedianMsPerDispatch": 0.1717,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0212,
+          "tflops": 40.23,
+          "passMedianMsPerDispatch": 0.0211,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0881,
+          "tflops": 9.67,
+          "passMedianMsPerDispatch": 0.0881,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5237,
+          "tflops": 1.63,
+          "passMedianMsPerDispatch": 0.5246,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1758,
+          "tflops": 4.85,
+          "passMedianMsPerDispatch": 0.1757,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0257,
+          "tflops": 33.15,
+          "passMedianMsPerDispatch": 0.0257,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0965,
+          "tflops": 8.82,
+          "passMedianMsPerDispatch": 0.0965,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4231,
+          "tflops": 2.01,
+          "passMedianMsPerDispatch": 0.4232,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2045,
+          "tflops": 4.16,
+          "passMedianMsPerDispatch": 0.2043,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0426,
+          "tflops": 20,
+          "passMedianMsPerDispatch": 0.0424,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.0954,
+          "tflops": 8.92,
+          "passMedianMsPerDispatch": 0.0953,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4487,
+          "tflops": 1.9,
+          "passMedianMsPerDispatch": 0.4483,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.206,
+          "tflops": 4.13,
+          "passMedianMsPerDispatch": 0.2046,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.043,
+          "tflops": 19.83,
+          "passMedianMsPerDispatch": 0.0427,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.1138,
+          "tflops": 7.48,
+          "passMedianMsPerDispatch": 0.1136,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4658,
+          "tflops": 1.83,
+          "passMedianMsPerDispatch": 0.4657,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2306,
+          "tflops": 3.69,
+          "passMedianMsPerDispatch": 0.2294,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0622,
+          "tflops": 13.68,
+          "passMedianMsPerDispatch": 0.0621,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.1149,
+          "tflops": 7.41,
+          "passMedianMsPerDispatch": 0.1149,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8726,
+          "tflops": 0.98,
+          "passMedianMsPerDispatch": 0.8726,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1753,
+          "tflops": 4.86,
+          "passMedianMsPerDispatch": 0.1753,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.021,
+          "tflops": 40.51,
+          "passMedianMsPerDispatch": 0.021,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.0839,
+          "tflops": 10.15,
+          "passMedianMsPerDispatch": 0.0839,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5817,
+          "tflops": 1.46,
+          "passMedianMsPerDispatch": 0.5826,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1762,
+          "tflops": 4.83,
+          "passMedianMsPerDispatch": 0.1762,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0253,
+          "tflops": 33.6,
+          "passMedianMsPerDispatch": 0.0253,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "msPerDispatch": 0.1097,
+          "tflops": 7.77,
+          "passMedianMsPerDispatch": 0.1097,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.817,
+          "tflops": 1.04,
+          "passMedianMsPerDispatch": 0.8195,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1747,
+          "tflops": 4.88,
+          "passMedianMsPerDispatch": 0.1747,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0191,
+          "tflops": 44.63,
+          "passMedianMsPerDispatch": 0.0194,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "shape": "wino 192→192",
+      "M": 192,
+      "K": 192,
+      "N": 1600,
+      "Z": 36,
+      "perNetwork": 62,
+      "gflop": 4.247,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.8356,
+          "tflops": 5.08,
+          "passMedianMsPerDispatch": 0.8373
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.5668,
+          "tflops": 7.49,
+          "passMedianMsPerDispatch": 0.5666,
+          "maxAbsDiffFromV2": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "msPerDispatch": 0.4957,
+          "tflops": 8.57,
+          "passMedianMsPerDispatch": 0.4956,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.3683,
+          "tflops": 1.26,
+          "passMedianMsPerDispatch": 3.3478,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.818,
+          "tflops": 5.19,
+          "passMedianMsPerDispatch": 0.818,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0913,
+          "tflops": 46.53,
+          "passMedianMsPerDispatch": 0.0912,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.5006,
+          "tflops": 8.48,
+          "passMedianMsPerDispatch": 0.4996,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.3413,
+          "tflops": 1.27,
+          "passMedianMsPerDispatch": 3.3381,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.818,
+          "tflops": 5.19,
+          "passMedianMsPerDispatch": 0.8179,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0905,
+          "tflops": 46.92,
+          "passMedianMsPerDispatch": 0.0905,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.3965,
+          "tflops": 10.71,
+          "passMedianMsPerDispatch": 0.3965,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.3668,
+          "tflops": 1.79,
+          "passMedianMsPerDispatch": 2.3634,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8048,
+          "tflops": 5.28,
+          "passMedianMsPerDispatch": 0.8048,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1105,
+          "tflops": 38.44,
+          "passMedianMsPerDispatch": 0.1105,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.4218,
+          "tflops": 10.07,
+          "passMedianMsPerDispatch": 0.4217,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.8993,
+          "tflops": 2.24,
+          "passMedianMsPerDispatch": 1.8996,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8124,
+          "tflops": 5.23,
+          "passMedianMsPerDispatch": 0.8128,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1744,
+          "tflops": 24.35,
+          "passMedianMsPerDispatch": 0.1742,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.4195,
+          "tflops": 10.12,
+          "passMedianMsPerDispatch": 0.4195,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.9827,
+          "tflops": 2.14,
+          "passMedianMsPerDispatch": 1.9826,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8236,
+          "tflops": 5.16,
+          "passMedianMsPerDispatch": 0.8226,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1768,
+          "tflops": 24.02,
+          "passMedianMsPerDispatch": 0.1766,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.5394,
+          "tflops": 7.87,
+          "passMedianMsPerDispatch": 0.5384,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.1646,
+          "tflops": 1.96,
+          "passMedianMsPerDispatch": 2.1645,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.1308,
+          "tflops": 3.76,
+          "passMedianMsPerDispatch": 1.1308,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.2951,
+          "tflops": 14.39,
+          "passMedianMsPerDispatch": 0.2948,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.5524,
+          "tflops": 7.69,
+          "passMedianMsPerDispatch": 0.5531,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 4.0787,
+          "tflops": 1.04,
+          "passMedianMsPerDispatch": 4.0319,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7979,
+          "tflops": 5.32,
+          "passMedianMsPerDispatch": 0.7978,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.084,
+          "tflops": 50.55,
+          "passMedianMsPerDispatch": 0.0839,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.3872,
+          "tflops": 10.97,
+          "passMedianMsPerDispatch": 0.388,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.5624,
+          "tflops": 1.66,
+          "passMedianMsPerDispatch": 2.5493,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8002,
+          "tflops": 5.31,
+          "passMedianMsPerDispatch": 0.8002,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1073,
+          "tflops": 39.57,
+          "passMedianMsPerDispatch": 0.1073,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "msPerDispatch": 0.5074,
+          "tflops": 8.37,
+          "passMedianMsPerDispatch": 0.5074,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.7824,
+          "tflops": 1.12,
+          "passMedianMsPerDispatch": 3.7805,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8059,
+          "tflops": 5.27,
+          "passMedianMsPerDispatch": 0.8061,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0806,
+          "tflops": 52.7,
+          "passMedianMsPerDispatch": 0.0804,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "shape": "1x1 384→192",
+      "M": 192,
+      "K": 384,
+      "N": 361,
+      "Z": 64,
+      "perNetwork": 18,
+      "gflop": 3.407,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.6537,
+          "tflops": 5.21,
+          "passMedianMsPerDispatch": 0.6546
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.449,
+          "tflops": 7.59,
+          "passMedianMsPerDispatch": 0.4511,
+          "maxAbsDiffFromV2": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "msPerDispatch": 0.5362,
+          "tflops": 6.35,
+          "passMedianMsPerDispatch": 0.5361,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.95,
+          "tflops": 1.15,
+          "passMedianMsPerDispatch": 2.9464,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7033,
+          "tflops": 4.84,
+          "passMedianMsPerDispatch": 0.7017,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1817,
+          "tflops": 18.75,
+          "passMedianMsPerDispatch": 0.1816,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.4047,
+          "tflops": 8.42,
+          "passMedianMsPerDispatch": 0.4047,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.8429,
+          "tflops": 1.2,
+          "passMedianMsPerDispatch": 2.8251,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6439,
+          "tflops": 5.29,
+          "passMedianMsPerDispatch": 0.6439,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0402,
+          "tflops": 84.65,
+          "passMedianMsPerDispatch": 0.0402,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.3093,
+          "tflops": 11.01,
+          "passMedianMsPerDispatch": 0.3092,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.2143,
+          "tflops": 1.54,
+          "passMedianMsPerDispatch": 2.2079,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6711,
+          "tflops": 5.08,
+          "passMedianMsPerDispatch": 0.6713,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0496,
+          "tflops": 68.73,
+          "passMedianMsPerDispatch": 0.0495,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.2985,
+          "tflops": 11.41,
+          "passMedianMsPerDispatch": 0.2984,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.5999,
+          "tflops": 2.13,
+          "passMedianMsPerDispatch": 1.6042,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7262,
+          "tflops": 4.69,
+          "passMedianMsPerDispatch": 0.7262,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.075,
+          "tflops": 45.4,
+          "passMedianMsPerDispatch": 0.075,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.3051,
+          "tflops": 11.17,
+          "passMedianMsPerDispatch": 0.3051,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7367,
+          "tflops": 1.96,
+          "passMedianMsPerDispatch": 1.7368,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7312,
+          "tflops": 4.66,
+          "passMedianMsPerDispatch": 0.7321,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0755,
+          "tflops": 45.1,
+          "passMedianMsPerDispatch": 0.0755,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.392,
+          "tflops": 8.69,
+          "passMedianMsPerDispatch": 0.3914,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7565,
+          "tflops": 1.94,
+          "passMedianMsPerDispatch": 1.7565,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7878,
+          "tflops": 4.32,
+          "passMedianMsPerDispatch": 0.7877,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1235,
+          "tflops": 27.6,
+          "passMedianMsPerDispatch": 0.1234,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.4802,
+          "tflops": 7.09,
+          "passMedianMsPerDispatch": 0.4813,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.6689,
+          "tflops": 0.93,
+          "passMedianMsPerDispatch": 3.67,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6734,
+          "tflops": 5.06,
+          "passMedianMsPerDispatch": 0.6726,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0385,
+          "tflops": 88.52,
+          "passMedianMsPerDispatch": 0.0383,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.2988,
+          "tflops": 11.4,
+          "passMedianMsPerDispatch": 0.2986,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.4094,
+          "tflops": 1.41,
+          "passMedianMsPerDispatch": 2.4092,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6715,
+          "tflops": 5.07,
+          "passMedianMsPerDispatch": 0.6715,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0481,
+          "tflops": 70.88,
+          "passMedianMsPerDispatch": 0.048,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "msPerDispatch": 0.4592,
+          "tflops": 7.42,
+          "passMedianMsPerDispatch": 0.4596,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.4463,
+          "tflops": 0.99,
+          "passMedianMsPerDispatch": 3.446,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6695,
+          "tflops": 5.09,
+          "passMedianMsPerDispatch": 0.6696,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0368,
+          "tflops": 92.65,
+          "passMedianMsPerDispatch": 0.0366,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "shape": "1x1 192→384",
+      "M": 384,
+      "K": 192,
+      "N": 361,
+      "Z": 64,
+      "perNetwork": 18,
+      "gflop": 3.407,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.6614,
+          "tflops": 5.15,
+          "passMedianMsPerDispatch": 0.6616
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.4543,
+          "tflops": 7.5,
+          "passMedianMsPerDispatch": 0.4542,
+          "maxAbsDiffFromV2": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "msPerDispatch": 0.5208,
+          "tflops": 6.54,
+          "passMedianMsPerDispatch": 0.5208,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.9287,
+          "tflops": 1.16,
+          "passMedianMsPerDispatch": 2.9192,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6975,
+          "tflops": 4.88,
+          "passMedianMsPerDispatch": 0.6975,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.2021,
+          "tflops": 16.86,
+          "passMedianMsPerDispatch": 0.2019,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.4,
+          "tflops": 8.52,
+          "passMedianMsPerDispatch": 0.3998,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.8733,
+          "tflops": 1.19,
+          "passMedianMsPerDispatch": 2.8646,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6777,
+          "tflops": 5.03,
+          "passMedianMsPerDispatch": 0.6788,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0775,
+          "tflops": 43.94,
+          "passMedianMsPerDispatch": 0.0773,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.3305,
+          "tflops": 10.31,
+          "passMedianMsPerDispatch": 0.3295,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.1394,
+          "tflops": 1.59,
+          "passMedianMsPerDispatch": 2.1384,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6953,
+          "tflops": 4.9,
+          "passMedianMsPerDispatch": 0.6955,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0957,
+          "tflops": 35.6,
+          "passMedianMsPerDispatch": 0.0957,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.3546,
+          "tflops": 9.61,
+          "passMedianMsPerDispatch": 0.3543,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.649,
+          "tflops": 2.07,
+          "passMedianMsPerDispatch": 1.6487,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.716,
+          "tflops": 4.76,
+          "passMedianMsPerDispatch": 0.716,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1471,
+          "tflops": 23.16,
+          "passMedianMsPerDispatch": 0.147,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.3601,
+          "tflops": 9.46,
+          "passMedianMsPerDispatch": 0.3601,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7228,
+          "tflops": 1.98,
+          "passMedianMsPerDispatch": 1.7215,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7108,
+          "tflops": 4.79,
+          "passMedianMsPerDispatch": 0.7108,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1486,
+          "tflops": 22.93,
+          "passMedianMsPerDispatch": 0.1485,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "msPerDispatch": 0.4683,
+          "tflops": 7.27,
+          "passMedianMsPerDispatch": 0.4683,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.8512,
+          "tflops": 1.84,
+          "passMedianMsPerDispatch": 1.8512,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.9137,
+          "tflops": 3.73,
+          "passMedianMsPerDispatch": 0.9127,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.2465,
+          "tflops": 13.82,
+          "passMedianMsPerDispatch": 0.2463,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.4546,
+          "tflops": 7.49,
+          "passMedianMsPerDispatch": 0.4546,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.6231,
+          "tflops": 0.94,
+          "passMedianMsPerDispatch": 3.6417,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6864,
+          "tflops": 4.96,
+          "passMedianMsPerDispatch": 0.6865,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0747,
+          "tflops": 45.6,
+          "passMedianMsPerDispatch": 0.0745,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "msPerDispatch": 0.3109,
+          "tflops": 10.96,
+          "passMedianMsPerDispatch": 0.311,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.3796,
+          "tflops": 1.43,
+          "passMedianMsPerDispatch": 2.3795,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6783,
+          "tflops": 5.02,
+          "passMedianMsPerDispatch": 0.6783,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0939,
+          "tflops": 36.29,
+          "passMedianMsPerDispatch": 0.0939,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "msPerDispatch": 0.4356,
+          "tflops": 7.82,
+          "passMedianMsPerDispatch": 0.4354,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 3.4131,
+          "tflops": 1,
+          "passMedianMsPerDispatch": 3.4131,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6843,
+          "tflops": 4.98,
+          "passMedianMsPerDispatch": 0.6843,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0708,
+          "tflops": 48.11,
+          "passMedianMsPerDispatch": 0.0704,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        }
+      ]
+    }
+  ],
+  "perNetwork": [
+    {
+      "batch": 16,
+      "ms": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "ms": 21.256
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "ms": 15.216
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "ms": 13.758
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "ms": 76.783
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 20.14
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "ms": 4.871
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 11.347
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 75.65
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 18.838
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 2.081
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 9.843
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 57.414
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 19.565
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 2.603
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 10.756
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 46.752
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 22.241
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 4.412
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 10.927
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 51.252
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 23.931
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 4.43
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 13.483
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 55.764
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 27.765
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 6.808
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "ms": 13.029
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "ms": 94.976
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 19.392
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "ms": 2.072
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "ms": 9.818
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "ms": 64.833
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 20.461
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "ms": 2.702
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "ms": 12.755
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "ms": 93.429
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 20.206
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "ms": 2.013
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "ms": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "ms": 75.479
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "ms": 51.401
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true
+          },
+          "ms": 49.759
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "kRepeat": 8
+          },
+          "ms": 314.651
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 75.93
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "stage": "fixed"
+          },
+          "ms": 12.569
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 45.522
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 310.052
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.505
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 7.73
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 36.099
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 225.108
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.493
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 9.466
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 37.907
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 176.237
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 76.328
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 14.811
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 37.983
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 185.198
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 77.019
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 14.995
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true
+          },
+          "ms": 48.928
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "kRepeat": 8
+          },
+          "ms": 199.144
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 100.737
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "stage": "fixed"
+          },
+          "ms": 24.956
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "ms": 51.075
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "ms": 384.135
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 73.946
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "ms": 7.246
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2
+          },
+          "ms": 34.981
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "kRepeat": 8
+          },
+          "ms": 245.071
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 73.909
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 2,
+            "sgn": 2,
+            "stage": "fixed"
+          },
+          "ms": 9.209
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4
+          },
+          "ms": 47.565
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "kRepeat": 8
+          },
+          "ms": 357.978
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 1,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "sgm": 1,
+            "sgn": 4,
+            "stage": "fixed"
+          },
+          "ms": 6.934
+        }
+      ]
+    }
+  ],
+  "ok": true,
+  "model": "gemm",
+  "steps": [
+    "18:13:37.579 matrix units: 1×4 33.06, 1×8 43.93, 4×4 43.53, 4×8 43.98, 8×8 43.94 TFLOPS",
+    "18:13:37.579 compiling 38 kernels",
+    "18:13:47.861 warming up for 2000 ms",
+    "18:13:49.971 batch 16, wino 192→192",
+    "18:14:05.219 batch 16, 1x1 384→192",
+    "18:14:16.799 batch 16, 1x1 192→384",
+    "18:14:30.799 batch 64, wino 192→192",
+    "18:15:01.737 batch 64, 1x1 384→192",
+    "18:15:24.390 batch 64, 1x1 192→384"
+  ]
+}

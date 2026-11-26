@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_MMA, gemmMmaTile, type GemmMmaConfig, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_IN_V3, WINO_OUT, WINO_OUT_V2, WINO_OUT_V3, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_MMA, gemmMmaTile, MATRIX_GEMM_BY_BATCH, matrixGemmFits, type GemmMmaConfig, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_IN_V3, WINO_OUT, WINO_OUT_V2, WINO_OUT_V3, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePassEncoder, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -60,6 +60,16 @@ export interface GpuNetworkOptions {
   /** The matrix GEMM's shape for \`winoGemm: 'mma'\` (default 2 × 1 accumulators, direct loads). */
   winoGemmMmaConfig?: GemmMmaConfig;
   /**
+   * Matrix hardware for the Winograd GEMMs and 1×1 convolutions (default 'auto'). With 'auto', where the device offers
+   * subgroup matrices with an f16 → f32 16 × 16 × 16 shape (\`chromium-experimental-subgroup-matrix\`, which browsers
+   * offer only behind a switch today), \`precision\` is 'f16' and \`gemm\` is 'v2' or 'v3', each such GEMM runs on
+   * \`GEMM_MMA\` with the shape \`MATRIX_GEMM_BY_BATCH\` gives for the call's batch size, on the same weights. A GEMM
+   * whose shape doesn't fit keeps \`gemm\`. Elsewhere, and with 'off', nothing changes. On the owner's RTX 3080 Laptop
+   * GPU the matrix GEMM was faster than GEMM v3 for b18 at every batch measured, 1 to 64
+   * (docs/spikes/results/2026-11-b18-matrix-ladder.md). \`winoGemm: 'mma'\` takes precedence for the Winograd GEMMs.
+   */
+  matrix?: 'auto' | 'off';
+  /**
    * The Winograd input and output transforms together. 'v2' stages each board through workgroup memory (`WINO_IN_V2`,
    * `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point. 'v3' is v2 reading
    * (input) or writing (output) each workgroup's boards as contiguous vec4 spans (`WINO_IN_V3`, `WINO_OUT_V3`). `winoIn`
@@ -96,6 +106,8 @@ interface OpSpec {
   workgroups: (n: number) => [number, number] | [number, number, number];
   /** The least work the op needs at batch n (measurement only, see {@link OpWork}). */
   work: (n: number) => { flops: number; bytes: number };
+  /** The batch sizes the op runs at (default all): ops that do the same work for different batch sizes. */
+  when?: (n: number) => boolean;
 }
 
 /**
@@ -127,6 +139,7 @@ interface Op {
   bindGroup: GPUBindGroup;
   workgroups: (n: number) => [number, number] | [number, number, number];
   work: (n: number) => { flops: number; bytes: number };
+  when?: (n: number) => boolean;
 }
 
 interface OutputRegion {
@@ -287,6 +300,22 @@ export class GpuNetwork {
   get winoGemmMma(): GemmMmaConfig | null {
     return this.#winoGemmMma;
   }
+  #matrix = false;
+  /** Whether the plan runs its Winograd GEMMs and 1×1 convolutions on matrix hardware where they fit (option \`matrix\`). */
+  get matrix(): boolean {
+    return this.#matrix;
+  }
+  readonly #matrixUse: Record<string, { gemms: number; matrix: number; byRange: number[] }> = {};
+  /**
+   * For each GEMM kind ('winoGemm', 'conv1x1'): how many GEMMs the plan has, how many run on matrix hardware (at every
+   * batch size), and for each range of \`MATRIX_GEMM_BY_BATCH\` how many of those use that range's own shape (the
+   * others use a smaller one that fits).
+   */
+  get matrixUse(): Readonly<Record<string, { gemms: number; matrix: number; byRange: readonly number[] }>> {
+    return this.#matrixUse;
+  }
+  /** Tensors with room after them for the matrix GEMM's reads past N (\`GemmMmaConfig.overreadN\`). */
+  readonly #padded = new Set<GPUBuffer>();
   #winoIn: 'v1' | 'v2' | 'v3' = 'v3';
   #winoOut: 'v1' | 'v2' | 'v3' = 'v3';
   /** The Winograd input and output transforms the plan uses. */
@@ -335,6 +364,8 @@ export class GpuNetwork {
       if (net.#elem !== 'f16') throw new Error("winoGemm 'mma' needs precision 'f16'");
       net.#winoGemmMma = { ...(options.winoGemmMmaConfig ?? { fm: 2, fn: 1, direct: true }), ta: true };
     }
+    net.#matrix = (options.matrix ?? 'auto') === 'auto' && net.#elem === 'f16' && net.#gemm !== 'v1' &&
+      engine.subgroupMatrixConfigs.some((c) => c.componentType === 'f16' && c.resultComponentType === 'f32' && c.M === 16 && c.N === 16 && c.K === 16);
     const scale8 = options.scale8 ?? net.#elem === 'f16';
     net.#desc = scale8 ? applyScale8(model) : model;
     net.#outputFactor = scale8 ? 8 : 1;
@@ -362,9 +393,56 @@ export class GpuNetwork {
     return b;
   }
 
-  /** A large tensor, in the plan's storage precision. */
+  /**
+   * A large tensor, in the plan's storage precision. With matrix hardware, 256 elements follow it, which the matrix
+   * GEMM may read (never use) when its last tile runs past the end of a row (\`GemmMmaConfig.overreadN\`).
+   */
   #tensor(count: number): GPUBuffer {
-    return this.#buffer(count, STORAGE, this.#elem);
+    if (!this.#matrix) return this.#buffer(count, STORAGE, this.#elem);
+    const b = this.#buffer(count + 256, STORAGE, this.#elem);
+    this.#padded.add(b);
+    return b;
+  }
+
+  /**
+   * Push a GEMM (GEMM v2's bindings and parameters) as the plan's \`gemm\` kernel, and with matrix hardware also as
+   * \`GEMM_MMA\` for each batch range of \`MATRIX_GEMM_BY_BATCH\` whose shape fits; each batch size then runs exactly
+   * one of them. \`grid(tm, tn, n)\` gives the workgroups for a tile.
+   */
+  #gemmSpecs(
+    kind: string,
+    A: GPUBuffer,
+    B: GPUBuffer,
+    C: GPUBuffer,
+    M: number,
+    K: number,
+    buffers: GPUBuffer[],
+    grid: (tm: number, tn: number, n: number) => [number, number, number],
+    work: (n: number) => { flops: number; bytes: number },
+  ): void {
+    const kernel = this.#gemmKernel(this.#elemOf(A), this.#elemOf(B), this.#elemOf(C));
+    const matrix = this.#matrix && this.#elemOf(A) === 'f16' && this.#elemOf(B) === 'f16' && this.#padded.has(B);
+    const ranges: { lo: number; hi: number; code: string; tm: number; tn: number }[] = [];
+    const use = (this.#matrixUse[kind] ??= { gemms: 0, matrix: 0, byRange: MATRIX_GEMM_BY_BATCH.map(() => 0) });
+    use.gemms++;
+    // Each range's shape, or where it doesn't fit, the first earlier (smaller) shape that does. A GEMM runs on matrix
+    // hardware at every batch size or at none, so a position's result doesn't depend on which kernel family its call's
+    // batch size picked.
+    const fits = MATRIX_GEMM_BY_BATCH.map(({ config }, i) =>
+      matrixGemmFits(config, M, K) ? config : MATRIX_GEMM_BY_BATCH.slice(0, i).reverse().find((r) => matrixGemmFits(r.config, M, K))?.config);
+    let lo = 1;
+    if (matrix && fits.every((c) => c !== undefined))
+      MATRIX_GEMM_BY_BATCH.forEach(({ maxBatch }, i) => {
+        const config = fits[i]!;
+        ranges.push({ lo, hi: maxBatch, code: GEMM_MMA(this.#elemOf(A), this.#elemOf(B), this.#elemOf(C), config), ...gemmMmaTile(config) });
+        if (config === MATRIX_GEMM_BY_BATCH[i]!.config) use.byRange[i]!++;
+        lo = maxBatch + 1;
+      });
+    if (ranges.length) use.matrix++;
+    const onMatrix = (n: number) => ranges.some((r) => n >= r.lo && n <= r.hi);
+    this.#specs.push({ kind, code: kernel.code, buffers, workgroups: (n) => grid(kernel.tm, kernel.tn, n), work, ...(ranges.length ? { when: (n: number) => !onMatrix(n) } : {}) });
+    for (const r of ranges)
+      this.#specs.push({ kind, code: r.code, buffers, workgroups: (n) => grid(r.tm, r.tn, n), work, when: (n) => n >= r.lo && n <= r.hi });
   }
 
   #upload(data: Float32Array, elem: Elem = 'f32'): GPUBuffer {
@@ -416,7 +494,7 @@ export class GpuNetwork {
     }
     for (const spec of this.#specs) {
       const pipeline = await pipelines.get(spec.code)!;
-      this.#ops.push({ kind: spec.kind, pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups, work: spec.work });
+      this.#ops.push({ kind: spec.kind, pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups, work: spec.work, ...(spec.when ? { when: spec.when } : {}) });
     }
   }
 
@@ -579,20 +657,18 @@ export class GpuNetwork {
     const area = this.#area;
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     const weights = this.#upload(convWeightsKxOc(layer), this.#elem);
-    const kernel = this.#gemmKernel(this.#elemOf(weights), this.#elemOf(input), this.#elemOf(output));
-    this.#specs.push({
-      kind: 'conv1x1',
-      code: kernel.code,
-      buffers: [
+    this.#gemmSpecs(
+      'conv1x1', weights, input, output, oc, ic,
+      [
         this.#uniform([oc, ic, area, 0, 0, oc, ic * area, area, oc * area, area, flags, oc]),
         this.#dyn, weights, input, output, opts.nbias ?? this.#dummy,
       ],
-      workgroups: (n) => [Math.ceil(area / kernel.tn), Math.ceil(oc / kernel.tm), n],
-      work: (n) => ({
+      (tm, tn, n) => [Math.ceil(area / tn), Math.ceil(oc / tm), n],
+      (n) => ({
         flops: 2 * n * area * oc * ic,
         bytes: n * ic * area * this.#eb(input) + ic * oc * this.#eb(weights) + n * oc * area * this.#eb(output) * (opts.accumulate ? 2 : 1),
       }),
-    });
+    );
   }
 
   #winogradEligible(layer: ConvLayer): boolean {
@@ -681,20 +757,18 @@ export class GpuNetwork {
     } else if (this.#gemm !== 'v1') {
       const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
       // M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t], as GEMM v2 or v3 with z = e.
-      const kernel = this.#gemmKernel(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M));
-      this.#specs.push({
-        kind: 'winoGemm',
-        code: kernel.code,
-        buffers: [
+      this.#gemmSpecs(
+        'winoGemm', U, V, M, oc, ic,
+        [
           this.#uniform([oc, ic, 0, tilesPerBoard, ic * oc, oc, ic * tileStride, tileStride, oc * tileStride, tileStride, 0, 0]),
           this.#dyn, U, V, M, this.#dummy,
         ],
-        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / kernel.tn), Math.ceil(oc / kernel.tm), 36],
-        work: (n: number) => ({
+        (tm, tn, n) => [Math.ceil((n * tilesPerBoard) / tn), Math.ceil(oc / tm), 36],
+        (n: number) => ({
           flops: 2 * 36 * oc * ic * n * tilesPerBoard,
           bytes: 36 * ic * oc * this.#eb(U) + 36 * ic * n * tilesPerBoard * this.#eb(V) + 36 * oc * n * tilesPerBoard * this.#eb(M),
         }),
-      });
+      );
     } else {
       const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
       this.#specs.push({
@@ -781,14 +855,19 @@ export class GpuNetwork {
 
   // ---------------------------------------------------------------- evaluating
 
-  /** The number of compute dispatches in one evaluation. */
+  /** The ops that run at batch n, in plan order. */
+  #active(n: number): Op[] {
+    return this.#ops.filter((op) => op.when === undefined || op.when(n));
+  }
+
+  /** The number of compute dispatches in one evaluation (the same at every batch size). */
   get dispatchCount(): number {
-    return this.#ops.length;
+    return this.#active(1).length;
   }
 
   /** The least work of each dispatch at batch n, in plan order (measurement only, see {@link OpWork}). */
   opWork(n: number): OpWork[] {
-    return this.#ops.map((op) => ({ kind: op.kind, ...op.work(n) }));
+    return this.#active(n).map((op) => ({ kind: op.kind, ...op.work(n) }));
   }
 
   /**
@@ -799,7 +878,7 @@ export class GpuNetwork {
   recordPass(pass: GPUComputePassEncoder, n: number, skip: ReadonlySet<string> = new Set()): void {
     if (n < 1 || n > this.maxBatch) throw new Error(`batch ${n} is outside 1..${this.maxBatch}`);
     this.device.queue.writeBuffer(this.#dyn, 0, new Uint32Array([n, 0, 0, 0]));
-    for (const op of this.#ops) {
+    for (const op of this.#active(n)) {
       if (skip.has(op.kind)) continue;
       pass.setPipeline(op.pipeline);
       pass.setBindGroup(0, op.bindGroup);
@@ -859,7 +938,7 @@ export class GpuNetwork {
         const delta = (i: number) => Number(ts[2 * i + 1]! - ts[2 * i]!);
         const result: GpuProfile = { batch: inputs.length, wallMs };
         if (mode === 'pass') result.passNs = delta(0);
-        else result.ops = this.#ops.map((op, i) => ({ kind: op.kind, ns: delta(i) }));
+        else result.ops = this.#active(inputs.length).map((op, i) => ({ kind: op.kind, ns: delta(i) }));
         return result;
       } finally {
         this.#release(stagings);
@@ -909,10 +988,11 @@ export class GpuNetwork {
     device.queue.writeBuffer(this.#dyn, 0, new Uint32Array([n, 0, 0, 0]));
     const tWritten = performance.now();
 
+    const ops = this.#active(n);
     const encoder = device.createCommandEncoder();
     let query: { set: GPUQuerySet; resolve: GPUBuffer; read: GPUBuffer; count: number } | undefined;
     if (profile) {
-      const count = profile === 'pass' ? 2 : 2 * this.#ops.length;
+      const count = profile === 'pass' ? 2 : 2 * ops.length;
       query = {
         set: device.createQuerySet({ type: 'timestamp', count }),
         resolve: device.createBuffer({ size: count * 8, usage: BufferUsage.QUERY_RESOLVE | BufferUsage.COPY_SRC }),
@@ -939,7 +1019,7 @@ export class GpuNetwork {
       }
     }
     if (profile === 'ops') {
-      this.#ops.forEach((op, i) => {
+      ops.forEach((op, i) => {
         const pass = encoder.beginComputePass({ timestampWrites: { querySet: query!.set, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } });
         dispatch(pass, op);
         pass.end();
@@ -949,7 +1029,7 @@ export class GpuNetwork {
       const pass = encoder.beginComputePass(
         timed ? { timestampWrites: { querySet: timed.set, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {},
       );
-      for (const op of this.#ops) dispatch(pass, op);
+      for (const op of ops) dispatch(pass, op);
       pass.end();
     }
     for (const out of this.#outputs) encoder.copyBufferToBuffer(out.buffer, 0, staging, out.stagingOffset * 4, n * out.perBatch * 4);

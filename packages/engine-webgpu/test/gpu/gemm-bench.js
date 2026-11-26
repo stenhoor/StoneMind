@@ -6,7 +6,7 @@
 import { requestEngineDevice, toFloat16Array, fromFloat16Bits } from '../../dist/index.js';
 import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, GEMM_MMA, gemmTile, gemmV3Tile, gemmMmaTile } from '../../dist/gpu/kernels.js';
 import { timePasses } from './timing.js';
-import { measureMatrixPeak, measureCeilings } from './ceilings.js';
+import { measureMatrixPeak, measureCeilings, measureCacheRead } from './ceilings.js';
 
 const TILES_PER_BOARD = 25; // 19 × 19 in 4 × 4 tiles
 const AREA = 361;
@@ -79,8 +79,14 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
   // that option, whole (and for blocks and prefetch, its loop: stage 'inner' at 1× and 8×).
   const ladderShapes = ladderParams.get('gemmLadderShapes') ? JSON.parse(ladderParams.get('gemmLadderShapes')) : [[4, 8, 16, 16, 16]];
   const ladderVariants = (ladderParams.get('gemmLadderVariants') ?? '').split(',').filter(Boolean);
-  const shapesToTry = ladder
-    ? ladderShapes
+  // ?gemmMmaLadder=1: the matrix GEMM's ladder (GemmMmaConfig.stage and kRepeat), with only v2 and the default v3
+  // alongside. ?gemmMmaShapes=<JSON list of [fm, fn, ta, extra options]> (default [[2, 1, true], [2, 2, true]]).
+  // ?gemmMmaLadder=whole: the same kernels, whole only (no stages).
+  const mmaLadder = ladderParams.get('gemmMmaLadder') === '1' || ladderParams.get('gemmMmaLadder') === 'whole';
+  const mmaStages = ladderParams.get('gemmMmaLadder') === '1';
+  report.mmaLadder = mmaLadder;
+  const shapesToTry = ladder || mmaLadder
+    ? (mmaLadder ? [[4, 8, 16, 16, 16]] : ladderShapes)
     : smallShapes
     ? [[4, 8, 16, 16, 16], [4, 4, 16, 16, 16], [4, 4, 16, 16, 8], [4, 4, 16, 8, 8], [4, 4, 8, 8, 8], [4, 4, 16, 8, 16], [4, 4, 16, 16, 4], [4, 4, 32, 8, 8]]
     : [[4, 8, 16, 16, 16], [4, 4, 16, 16, 16], [4, 8, 8, 16, 16], [4, 8, 32, 16, 16], [8, 8, 16, 16, 16], [8, 8, 16, 8, 16], [8, 4, 16, 8, 16], [4, 8, 16, 16, 16, true]];
@@ -106,16 +112,36 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
   const mma = elem === 'f16' && engine.subgroupMatrixConfigs.some((c) => c.componentType === 'f16' && c.resultComponentType === 'f32' && c.M === 16 && c.N === 16 && c.K === 16);
   report.subgroupMatrixConfigs = engine.subgroupMatrixConfigs;
   if (mma) {
-    // Direct loads, with A as GpuNetwork stores it and transposed (as winoGemm: 'mma' stores it).
-    for (const [fm, fn, ta] of [[2, 1, false], [2, 2, false], [2, 1, true], [2, 2, true]]) {
-      const config = ta ? { fm, fn, direct: true, ta } : { fm, fn, direct: true };
-      kernels.push({ name: 'mma', config, code: GEMM_MMA(elem, elem, elem, config), tile: gemmMmaTile(config) });
+    // Direct loads, with A as GpuNetwork stores it and transposed (as winoGemm: 'mma' stores it). In the matrix ladder,
+    // each shape whole at K and 8 × K, its multiply-accumulates alone at K and 8 × K, and its fixed part.
+    const mmaShapes = mmaLadder ? JSON.parse(ladderParams.get('gemmMmaShapes') ?? '[[2,1,true],[2,2,true]]') : [[2, 1, false], [2, 2, false], [2, 1, true], [2, 2, true]];
+    for (const [fm, fn, ta, extra = {}] of mmaShapes) {
+      const base = { ...(ta ? { fm, fn, direct: true, ta } : { fm, fn, direct: true }), ...extra };
+      // Per pass of K: whole at 8 × K ÷ 8 (loop and loads) and mmaOnly at 8 × K ÷ 8 (multiply-accumulates). A difference
+      // of 1 × and 8 × K isn't used: workgroups overlap one another's fixed part, so it underestimates the loop.
+      const stages = mmaStages ? [{}, { kRepeat: 8 }, { stage: 'mmaOnly', kRepeat: 8 }, { stage: 'fixed' }] : [{}];
+      for (const st of stages) {
+        const config = { ...base, ...st };
+        kernels.push({ name: 'mma', config, code: GEMM_MMA(elem, elem, elem, config), tile: gemmMmaTile(config) });
+      }
     }
   }
   // Raw matrix throughput (measureMatrixPeak).
+  if (mma && mmaLadder) {
+    // The read bandwidth the matrix GEMM's direct loads are compared with: L2-sized working sets and a DRAM-sized one.
+    const time = async (record) => {
+      const xs = [];
+      for (let r = 0; r < 3; r++) xs.push((await timePasses(device, record, { runs })).msPerPass);
+      xs.sort((a, b) => a - b);
+      return { msPerPass: xs[1], min: xs[0], max: xs[2] };
+    };
+    const spread = (t) => ({ ms: +t.msPerPass.toFixed(4), minMs: +t.min.toFixed(4), maxMs: +t.max.toFixed(4) });
+    report.cacheRead = await measureCacheRead(device, { time, spread });
+    step(`reads: ${report.cacheRead.map((c) => `${c.mib} MiB ${c.gbPerSecond} GB/s`).join(', ')}`);
+  }
   if (mma) {
     report.matrixPeak = await measureMatrixPeak(device, { runs });
-    step(`matrix units: ${report.matrixPeak.tflops} TFLOPS`);
+    step(`matrix units: ${report.matrixPeak.variants.map((v) => `${v.subgroupsPerWorkgroup}×${v.accumulators} ${v.tflops}`).join(', ')} TFLOPS`);
   }
   // reverse: measure the v3 shapes in the opposite order (v2 stays first, as the reference for the output check).
   if (reverse) kernels.splice(1, kernels.length - 1, ...kernels.slice(1).reverse());
@@ -209,7 +235,10 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
       const Avals = values(shape.sizes.A, 1);
       const Bvals = values(shape.sizes.B, 2);
       const A = upload(Avals);
-      const B = upload(Bvals);
+      // B is followed by 256 values, for the matrix GEMM's overreadN (read, never used).
+      const Bpadded = new Float32Array(Bvals.length + 256);
+      Bpadded.set(Bvals);
+      const B = upload(Bpadded);
       // For kernels that take A transposed ([M][K] per matrix): the same values, and the row length K.
       let At = null;
       let paramsT = null;
@@ -327,8 +356,8 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
       ms: kernels.map((k, i) => ({ kernel: k.name, config: k.config, ms: +rows.reduce((s, r) => s + r.perNetwork * r.kernels[i].msPerDispatch, 0).toFixed(3) })),
     };
   });
-  // A stage of a kernel (GemmV3Config.stage) computes nothing correct, so it isn't checked.
-  report.ok = report.rows.every((r) => r.kernels.every((e) => e.config?.stage !== undefined || ((e.kernel === 'mma' ? e.worstV2Ratio <= 1 : (e.maxAbsDiffFromV2 ?? 0) === 0) && e.matchesReference !== false)));
+  // A stage of a kernel (GemmV3Config.stage, GemmMmaConfig.stage or kRepeat) computes nothing correct, so it isn't checked.
+  report.ok = report.rows.every((r) => r.kernels.every((e) => e.config?.stage !== undefined || e.config?.kRepeat !== undefined || ((e.kernel === 'mma' ? e.worstV2Ratio <= 1 : (e.maxAbsDiffFromV2 ?? 0) === 0) && e.matchesReference !== false)));
   if (lost) report.deviceLost = lost;
   device.destroy();
   return report;

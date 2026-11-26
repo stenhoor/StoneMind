@@ -120,50 +120,89 @@ export async function measureCeilings(device, { hasF16, matrix, time, spread, ru
 }
 
 /**
- * Raw matrix throughput: only subgroupMatrixMultiplyAccumulate on values already in registers (no loads), with 4
- * independent accumulators, so the figure is what the matrix units reach through WebGPU on this device. Needs the
- * device feature chromium-experimental-subgroup-matrix with an f16 → f32 16 × 16 × 16 shape.
+ * Read bandwidth from a working set of `mib` MiB (a power of two) read over and over: sets that fit in L2 give its
+ * bandwidth to the SMs, larger ones DRAM's. Each workgroup reads 4 KB blocks (consecutive threads, consecutive vec4s),
+ * moving 97 blocks on each step, so over its steps it reads blocks across the whole set, far more than an SM's L1.
  */
-export async function measureMatrixPeak(device, { runs = 7 } = {}) {
+export async function measureCacheRead(device, { time, spread, sizesMiB = [1, 2, 64] }) {
+  const ITER = 256;
+  const WGS = 48 * 16;
+  const code = `
+@group(0) @binding(0) var<storage, read> src: array<vec4<u32>>;
+@group(0) @binding(1) var<storage, read_write> dst: array<vec4<u32>>;
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) g: vec3<u32>) {
+  let mask = arrayLength(&src) - 1u;
+  var acc = vec4<u32>(0u);
+  for (var r = 0u; r < ${ITER}u; r++) { acc ^= src[(g.x + r * ${97 * 256}u) & mask]; }
+  if (all(acc == vec4<u32>(0xdeadbeefu))) { dst[g.x] = acc; }
+}
+`;
+  const pipeline = await pipelineOf(device, code);
+  const dst = device.createBuffer({ size: WGS * 256 * 16, usage: GPUBufferUsage.STORAGE });
+  const out = [];
+  for (const mib of sizesMiB) {
+    const src = device.createBuffer({ size: mib * 1024 * 1024, usage: GPUBufferUsage.STORAGE });
+    const bind = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: src } }, { binding: 1, resource: { buffer: dst } }] });
+    const t = await time((p) => { p.setPipeline(pipeline); p.setBindGroup(0, bind); p.dispatchWorkgroups(WGS); });
+    const bytes = WGS * 256 * ITER * 16;
+    out.push({ mib, bytesRead: bytes, ...spread(t), gbPerSecond: +(bytes / (t.msPerPass / 1000) / 1e9).toFixed(1) });
+    src.destroy();
+  }
+  dst.destroy();
+  return out;
+}
+
+/**
+ * Raw matrix throughput: only subgroupMatrixMultiplyAccumulate on values already in registers (no loads), so the
+ * figure is what the matrix units reach through WebGPU on this device. Needs the device feature
+ * chromium-experimental-subgroup-matrix with an f16 → f32 16 × 16 × 16 shape.
+ *
+ * Each variant is `sg` subgroups per workgroup and `acc` independent accumulators per subgroup; the first (1, 4) is
+ * the kernel used in #80. `tflops` is the best variant's.
+ */
+export async function measureMatrixPeak(device, { runs = 7, variants = [[1, 4], [1, 8], [4, 4], [4, 8], [8, 8]] } = {}) {
   const ITER = 1024;
-  const WGS = 48 * 64;
-  const code = `enable f16;
+  const SUBGROUPS = 48 * 64;
+  const all = [];
+  for (const [sg, acc] of variants) {
+    const WGS = SUBGROUPS / sg;
+    let decl = '';
+    let body = '';
+    let store = '';
+    for (let a = 0; a < acc; a++) {
+      decl += `  var a${a} = subgroup_matrix_result<f32, 16, 16>();\n`;
+      body += `    a${a} = subgroupMatrixMultiplyAccumulate(l, r, a${a});\n`;
+      store += `  subgroupMatrixStore(&out, base + ${a * 256}u, a${a}, false, 16u);\n`;
+    }
+    const code = `enable f16;
 enable chromium_experimental_subgroup_matrix;
 @group(0) @binding(0) var<storage, read_write> out: array<f32>;
 var<workgroup> L: array<f16, 256>;
-@compute @workgroup_size(32)
+@compute @workgroup_size(${32 * sg})
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) tid: u32) {
-  for (var i = tid; i < 256u; i += 32u) { L[i] = f16(f32(i % 7u) * 0.001); }
+  for (var i = tid; i < 256u; i += ${32 * sg}u) { L[i] = f16(f32(i % 7u) * 0.001); }
   workgroupBarrier();
   let l = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&L, 0u, false, 16u);
   let r = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&L, 0u, false, 16u);
-  var a0 = subgroup_matrix_result<f32, 16, 16>();
-  var a1 = subgroup_matrix_result<f32, 16, 16>();
-  var a2 = subgroup_matrix_result<f32, 16, 16>();
-  var a3 = subgroup_matrix_result<f32, 16, 16>();
-  for (var i = 0u; i < ${ITER}u; i++) {
-    a0 = subgroupMatrixMultiplyAccumulate(l, r, a0);
-    a1 = subgroupMatrixMultiplyAccumulate(l, r, a1);
-    a2 = subgroupMatrixMultiplyAccumulate(l, r, a2);
-    a3 = subgroupMatrixMultiplyAccumulate(l, r, a3);
-  }
-  let base = wg.x * 1024u;
-  subgroupMatrixStore(&out, base, a0, false, 16u);
-  subgroupMatrixStore(&out, base + 256u, a1, false, 16u);
-  subgroupMatrixStore(&out, base + 512u, a2, false, 16u);
-  subgroupMatrixStore(&out, base + 768u, a3, false, 16u);
-}
+${decl}  for (var i = 0u; i < ${ITER}u; i++) {
+${body}  }
+  // Every subgroup holds the same values, so all store to the workgroup's slot (the offset must be uniform).
+  let base = wg.x * ${acc * 256}u;
+${store}}
 `;
-  const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code }), entryPoint: 'main' } });
-  const out = device.createBuffer({ size: WGS * 1024 * 4, usage: GPUBufferUsage.STORAGE });
-  const bind = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: out } }] });
-  const timed = await timePasses(device, (p) => {
-    p.setPipeline(pipeline);
-    p.setBindGroup(0, bind);
-    p.dispatchWorkgroups(WGS);
-  }, { runs });
-  const flops = WGS * ITER * 4 * 2 * 16 * 16 * 16;
-  const result = { workgroups: WGS, iterations: ITER, msPerDispatch: +timed.msPerPass.toFixed(4), tflops: +(flops / (timed.msPerPass / 1000) / 1e12).toFixed(2) };
-  out.destroy();
-  return result;
+    const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code }), entryPoint: 'main' } });
+    const out = device.createBuffer({ size: WGS * acc * 256 * 4, usage: GPUBufferUsage.STORAGE });
+    const bind = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: out } }] });
+    const timed = await timePasses(device, (p) => {
+      p.setPipeline(pipeline);
+      p.setBindGroup(0, bind);
+      p.dispatchWorkgroups(WGS);
+    }, { runs });
+    const flops = SUBGROUPS * ITER * acc * 2 * 16 * 16 * 16;
+    all.push({ subgroupsPerWorkgroup: sg, accumulators: acc, workgroups: WGS, iterations: ITER, msPerDispatch: +timed.msPerPass.toFixed(4), tflops: +(flops / (timed.msPerPass / 1000) / 1e12).toFixed(2) });
+    out.destroy();
+  }
+  const best = all.reduce((x, y) => (y.tflops > x.tflops ? y : x));
+  return { tflops: best.tflops, best: { sg: best.subgroupsPerWorkgroup, acc: best.accumulators }, variants: all };
 }

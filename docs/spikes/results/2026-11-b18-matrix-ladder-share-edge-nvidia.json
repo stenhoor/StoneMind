@@ -1,0 +1,5710 @@
+{
+  "kind": "gemm",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query",
+    "chromium-experimental-subgroup-matrix"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T18:30:00.511Z",
+  "batches": [
+    16,
+    64
+  ],
+  "repeat": 30,
+  "runs": 7,
+  "elem": "f16",
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "maxComputeWorkgroupStorageSize": 49152,
+  "mmaLadder": true,
+  "smallShapes": false,
+  "ladder": false,
+  "subgroupMatrixConfigs": [
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    }
+  ],
+  "cacheRead": [
+    {
+      "mib": 1,
+      "bytesRead": 805306368,
+      "ms": 0.603,
+      "minMs": 0.6023,
+      "maxMs": 0.6074,
+      "gbPerSecond": 1335.5
+    },
+    {
+      "mib": 2,
+      "bytesRead": 805306368,
+      "ms": 0.6257,
+      "minMs": 0.4826,
+      "maxMs": 0.6328,
+      "gbPerSecond": 1287.1
+    },
+    {
+      "mib": 64,
+      "bytesRead": 805306368,
+      "ms": 1.7709,
+      "minMs": 1.763,
+      "maxMs": 1.7872,
+      "gbPerSecond": 454.7
+    }
+  ],
+  "matrixPeak": {
+    "tflops": 43.6,
+    "best": {
+      "sg": 8,
+      "acc": 8
+    },
+    "variants": [
+      {
+        "subgroupsPerWorkgroup": 1,
+        "accumulators": 4,
+        "workgroups": 3072,
+        "iterations": 1024,
+        "msPerDispatch": 2.3893,
+        "tflops": 43.14
+      },
+      {
+        "subgroupsPerWorkgroup": 1,
+        "accumulators": 8,
+        "workgroups": 3072,
+        "iterations": 1024,
+        "msPerDispatch": 4.7341,
+        "tflops": 43.55
+      },
+      {
+        "subgroupsPerWorkgroup": 4,
+        "accumulators": 4,
+        "workgroups": 768,
+        "iterations": 1024,
+        "msPerDispatch": 2.3815,
+        "tflops": 43.28
+      },
+      {
+        "subgroupsPerWorkgroup": 4,
+        "accumulators": 8,
+        "workgroups": 768,
+        "iterations": 1024,
+        "msPerDispatch": 4.7329,
+        "tflops": 43.56
+      },
+      {
+        "subgroupsPerWorkgroup": 8,
+        "accumulators": 8,
+        "workgroups": 384,
+        "iterations": 1024,
+        "msPerDispatch": 4.7287,
+        "tflops": 43.6
+      }
+    ]
+  },
+  "reverse": false,
+  "warmUpMs": 2000,
+  "rows": [
+    {
+      "batch": 16,
+      "shape": "wino 192→192",
+      "M": 192,
+      "K": 192,
+      "N": 400,
+      "Z": 36,
+      "perNetwork": 62,
+      "gflop": 1.062,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.243,
+          "tflops": 4.37,
+          "passMedianMsPerDispatch": 0.2431,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1739,
+          "tflops": 6.1,
+          "passMedianMsPerDispatch": 0.1737,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.0884,
+          "tflops": 12.01,
+          "passMedianMsPerDispatch": 0.0882,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.426,
+          "tflops": 2.49,
+          "passMedianMsPerDispatch": 0.4259,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2393,
+          "tflops": 4.44,
+          "passMedianMsPerDispatch": 0.2391,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0227,
+          "tflops": 46.72,
+          "passMedianMsPerDispatch": 0.0228,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.1022,
+          "tflops": 10.39,
+          "passMedianMsPerDispatch": 0.1019,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.532,
+          "tflops": 2,
+          "passMedianMsPerDispatch": 0.5318,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2608,
+          "tflops": 4.07,
+          "passMedianMsPerDispatch": 0.2607,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0246,
+          "tflops": 43.08,
+          "passMedianMsPerDispatch": 0.0246,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.1,
+          "tflops": 10.62,
+          "passMedianMsPerDispatch": 0.0999,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5155,
+          "tflops": 2.06,
+          "passMedianMsPerDispatch": 0.5156,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2622,
+          "tflops": 4.05,
+          "passMedianMsPerDispatch": 0.2608,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.025,
+          "tflops": 42.48,
+          "passMedianMsPerDispatch": 0.0247,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.1016,
+          "tflops": 10.45,
+          "passMedianMsPerDispatch": 0.1017,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5916,
+          "tflops": 1.79,
+          "passMedianMsPerDispatch": 0.5917,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2295,
+          "tflops": 4.63,
+          "passMedianMsPerDispatch": 0.2294,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0202,
+          "tflops": 52.68,
+          "passMedianMsPerDispatch": 0.0201,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.1088,
+          "tflops": 9.76,
+          "passMedianMsPerDispatch": 0.1084,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6171,
+          "tflops": 1.72,
+          "passMedianMsPerDispatch": 0.6171,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2318,
+          "tflops": 4.58,
+          "passMedianMsPerDispatch": 0.2313,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0209,
+          "tflops": 50.76,
+          "passMedianMsPerDispatch": 0.0202,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.1141,
+          "tflops": 9.3,
+          "passMedianMsPerDispatch": 0.1141,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5464,
+          "tflops": 1.94,
+          "passMedianMsPerDispatch": 0.5457,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2338,
+          "tflops": 4.54,
+          "passMedianMsPerDispatch": 0.2338,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0226,
+          "tflops": 46.93,
+          "passMedianMsPerDispatch": 0.0226,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.1131,
+          "tflops": 9.39,
+          "passMedianMsPerDispatch": 0.113,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5994,
+          "tflops": 1.77,
+          "passMedianMsPerDispatch": 0.5983,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2446,
+          "tflops": 4.34,
+          "passMedianMsPerDispatch": 0.2446,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0223,
+          "tflops": 47.55,
+          "passMedianMsPerDispatch": 0.0223,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.1278,
+          "tflops": 8.31,
+          "passMedianMsPerDispatch": 0.1277,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1781,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.5793,
+          "tflops": 1.83,
+          "passMedianMsPerDispatch": 0.5795,
+          "maxAbsDiffFromV2": 171.828125,
+          "worstV2Ratio": 2907.7208,
+          "worstReferenceRatio": 2840.3586,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3124,
+          "tflops": 3.4,
+          "passMedianMsPerDispatch": 0.3123,
+          "maxAbsDiffFromV2": 449.31640625,
+          "worstV2Ratio": 37460.217,
+          "worstReferenceRatio": 29144.5798,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0275,
+          "tflops": 38.56,
+          "passMedianMsPerDispatch": 0.0275,
+          "maxAbsDiffFromV2": 24.546875,
+          "worstV2Ratio": 415.3887,
+          "worstReferenceRatio": 405.8391,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "shape": "1x1 384→192",
+      "M": 192,
+      "K": 384,
+      "N": 361,
+      "Z": 16,
+      "perNetwork": 18,
+      "gflop": 0.852,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.1692,
+          "tflops": 5.03,
+          "passMedianMsPerDispatch": 0.1692,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.116,
+          "tflops": 7.34,
+          "passMedianMsPerDispatch": 0.116,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.0618,
+          "tflops": 13.78,
+          "passMedianMsPerDispatch": 0.0618,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3715,
+          "tflops": 2.29,
+          "passMedianMsPerDispatch": 0.3707,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2368,
+          "tflops": 3.6,
+          "passMedianMsPerDispatch": 0.2367,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0167,
+          "tflops": 50.94,
+          "passMedianMsPerDispatch": 0.0167,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.0585,
+          "tflops": 14.57,
+          "passMedianMsPerDispatch": 0.0584,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3722,
+          "tflops": 2.29,
+          "passMedianMsPerDispatch": 0.3722,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1761,
+          "tflops": 4.84,
+          "passMedianMsPerDispatch": 0.1759,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0112,
+          "tflops": 76.27,
+          "passMedianMsPerDispatch": 0.0111,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.056,
+          "tflops": 15.21,
+          "passMedianMsPerDispatch": 0.0558,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3549,
+          "tflops": 2.4,
+          "passMedianMsPerDispatch": 0.3547,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1761,
+          "tflops": 4.84,
+          "passMedianMsPerDispatch": 0.1759,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0112,
+          "tflops": 76.21,
+          "passMedianMsPerDispatch": 0.0111,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.068,
+          "tflops": 12.53,
+          "passMedianMsPerDispatch": 0.0678,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4325,
+          "tflops": 1.97,
+          "passMedianMsPerDispatch": 0.431,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.173,
+          "tflops": 4.92,
+          "passMedianMsPerDispatch": 0.1728,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0092,
+          "tflops": 92.17,
+          "passMedianMsPerDispatch": 0.0092,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0696,
+          "tflops": 12.24,
+          "passMedianMsPerDispatch": 0.0694,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.429,
+          "tflops": 1.99,
+          "passMedianMsPerDispatch": 0.4287,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1729,
+          "tflops": 4.93,
+          "passMedianMsPerDispatch": 0.1728,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0092,
+          "tflops": 92.27,
+          "passMedianMsPerDispatch": 0.0092,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0639,
+          "tflops": 13.34,
+          "passMedianMsPerDispatch": 0.0638,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3901,
+          "tflops": 2.18,
+          "passMedianMsPerDispatch": 0.3889,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1772,
+          "tflops": 4.81,
+          "passMedianMsPerDispatch": 0.1765,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0109,
+          "tflops": 78.08,
+          "passMedianMsPerDispatch": 0.0109,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0699,
+          "tflops": 12.18,
+          "passMedianMsPerDispatch": 0.0699,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4274,
+          "tflops": 1.99,
+          "passMedianMsPerDispatch": 0.4273,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1734,
+          "tflops": 4.91,
+          "passMedianMsPerDispatch": 0.1734,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0094,
+          "tflops": 90.22,
+          "passMedianMsPerDispatch": 0.0094,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0705,
+          "tflops": 12.08,
+          "passMedianMsPerDispatch": 0.0705,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4181,
+          "tflops": 2.04,
+          "passMedianMsPerDispatch": 0.4181,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2375,
+          "tflops": 3.59,
+          "passMedianMsPerDispatch": 0.2375,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.018,
+          "tflops": 47.37,
+          "passMedianMsPerDispatch": 0.018,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "shape": "1x1 192→384",
+      "M": 384,
+      "K": 192,
+      "N": 361,
+      "Z": 16,
+      "perNetwork": 18,
+      "gflop": 0.852,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.1704,
+          "tflops": 5,
+          "passMedianMsPerDispatch": 0.1704,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1229,
+          "tflops": 6.93,
+          "passMedianMsPerDispatch": 0.1228,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.0761,
+          "tflops": 11.19,
+          "passMedianMsPerDispatch": 0.076,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3566,
+          "tflops": 2.39,
+          "passMedianMsPerDispatch": 0.3561,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1839,
+          "tflops": 4.63,
+          "passMedianMsPerDispatch": 0.1839,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0194,
+          "tflops": 43.89,
+          "passMedianMsPerDispatch": 0.0194,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.0715,
+          "tflops": 11.92,
+          "passMedianMsPerDispatch": 0.0714,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.358,
+          "tflops": 2.38,
+          "passMedianMsPerDispatch": 0.358,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1786,
+          "tflops": 4.77,
+          "passMedianMsPerDispatch": 0.1786,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0184,
+          "tflops": 46.21,
+          "passMedianMsPerDispatch": 0.0184,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0725,
+          "tflops": 11.74,
+          "passMedianMsPerDispatch": 0.0725,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3609,
+          "tflops": 2.36,
+          "passMedianMsPerDispatch": 0.3609,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1797,
+          "tflops": 4.74,
+          "passMedianMsPerDispatch": 0.1797,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0196,
+          "tflops": 43.49,
+          "passMedianMsPerDispatch": 0.0196,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.0772,
+          "tflops": 11.04,
+          "passMedianMsPerDispatch": 0.0771,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4319,
+          "tflops": 1.97,
+          "passMedianMsPerDispatch": 0.4319,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.178,
+          "tflops": 4.79,
+          "passMedianMsPerDispatch": 0.178,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0174,
+          "tflops": 49.05,
+          "passMedianMsPerDispatch": 0.0173,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.082,
+          "tflops": 10.39,
+          "passMedianMsPerDispatch": 0.0817,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4384,
+          "tflops": 1.94,
+          "passMedianMsPerDispatch": 0.4384,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1765,
+          "tflops": 4.82,
+          "passMedianMsPerDispatch": 0.1758,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0166,
+          "tflops": 51.18,
+          "passMedianMsPerDispatch": 0.0162,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0817,
+          "tflops": 10.43,
+          "passMedianMsPerDispatch": 0.0814,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3829,
+          "tflops": 2.22,
+          "passMedianMsPerDispatch": 0.3829,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1796,
+          "tflops": 4.74,
+          "passMedianMsPerDispatch": 0.1794,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0174,
+          "tflops": 49.08,
+          "passMedianMsPerDispatch": 0.017,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0825,
+          "tflops": 10.32,
+          "passMedianMsPerDispatch": 0.0823,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4365,
+          "tflops": 1.95,
+          "passMedianMsPerDispatch": 0.4364,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1766,
+          "tflops": 4.82,
+          "passMedianMsPerDispatch": 0.1764,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0171,
+          "tflops": 49.88,
+          "passMedianMsPerDispatch": 0.0168,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.0894,
+          "tflops": 9.53,
+          "passMedianMsPerDispatch": 0.0893,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3898,
+          "tflops": 2.19,
+          "passMedianMsPerDispatch": 0.3897,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2036,
+          "tflops": 4.18,
+          "passMedianMsPerDispatch": 0.2028,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0219,
+          "tflops": 38.83,
+          "passMedianMsPerDispatch": 0.0219,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "shape": "wino 192→192",
+      "M": 192,
+      "K": 192,
+      "N": 1600,
+      "Z": 36,
+      "perNetwork": 62,
+      "gflop": 4.247,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.8315,
+          "tflops": 5.11,
+          "passMedianMsPerDispatch": 0.8315
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.5708,
+          "tflops": 7.44,
+          "passMedianMsPerDispatch": 0.5712,
+          "maxAbsDiffFromV2": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.3329,
+          "tflops": 12.76,
+          "passMedianMsPerDispatch": 0.3306,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.4746,
+          "tflops": 2.88,
+          "passMedianMsPerDispatch": 1.4806,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.844,
+          "tflops": 5.03,
+          "passMedianMsPerDispatch": 0.8439,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0844,
+          "tflops": 50.3,
+          "passMedianMsPerDispatch": 0.084,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.3395,
+          "tflops": 12.51,
+          "passMedianMsPerDispatch": 0.3393,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7664,
+          "tflops": 2.4,
+          "passMedianMsPerDispatch": 1.7665,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8165,
+          "tflops": 5.2,
+          "passMedianMsPerDispatch": 0.8172,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0781,
+          "tflops": 54.39,
+          "passMedianMsPerDispatch": 0.0781,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3363,
+          "tflops": 12.63,
+          "passMedianMsPerDispatch": 0.3361,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.6852,
+          "tflops": 2.52,
+          "passMedianMsPerDispatch": 1.6852,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8166,
+          "tflops": 5.2,
+          "passMedianMsPerDispatch": 0.8172,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0782,
+          "tflops": 54.31,
+          "passMedianMsPerDispatch": 0.078,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.3548,
+          "tflops": 11.97,
+          "passMedianMsPerDispatch": 0.3546,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.1183,
+          "tflops": 2,
+          "passMedianMsPerDispatch": 2.1183,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8067,
+          "tflops": 5.26,
+          "passMedianMsPerDispatch": 0.8068,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0741,
+          "tflops": 57.32,
+          "passMedianMsPerDispatch": 0.074,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3925,
+          "tflops": 10.82,
+          "passMedianMsPerDispatch": 0.3928,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.154,
+          "tflops": 1.97,
+          "passMedianMsPerDispatch": 2.1539,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8067,
+          "tflops": 5.26,
+          "passMedianMsPerDispatch": 0.8068,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0748,
+          "tflops": 56.75,
+          "passMedianMsPerDispatch": 0.0748,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3841,
+          "tflops": 11.06,
+          "passMedianMsPerDispatch": 0.3827,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.8912,
+          "tflops": 2.25,
+          "passMedianMsPerDispatch": 1.8916,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8125,
+          "tflops": 5.23,
+          "passMedianMsPerDispatch": 0.8124,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0771,
+          "tflops": 55.05,
+          "passMedianMsPerDispatch": 0.0768,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3869,
+          "tflops": 10.98,
+          "passMedianMsPerDispatch": 0.3867,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 2.0947,
+          "tflops": 2.03,
+          "passMedianMsPerDispatch": 2.0893,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.8102,
+          "tflops": 5.24,
+          "passMedianMsPerDispatch": 0.8094,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0759,
+          "tflops": 55.93,
+          "passMedianMsPerDispatch": 0.0755,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.4272,
+          "tflops": 9.94,
+          "passMedianMsPerDispatch": 0.4255,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.8474,
+          "tflops": 2.3,
+          "passMedianMsPerDispatch": 1.8474,
+          "maxAbsDiffFromV2": 224.65625,
+          "worstV2Ratio": 3028.2224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.9146,
+          "tflops": 4.64,
+          "passMedianMsPerDispatch": 0.9146,
+          "maxAbsDiffFromV2": 492.177734375,
+          "worstV2Ratio": 37460.217
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0986,
+          "tflops": 43.09,
+          "passMedianMsPerDispatch": 0.0983,
+          "maxAbsDiffFromV2": 32.09375,
+          "worstV2Ratio": 432.6032
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "shape": "1x1 384→192",
+      "M": 192,
+      "K": 384,
+      "N": 361,
+      "Z": 64,
+      "perNetwork": 18,
+      "gflop": 3.407,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.6621,
+          "tflops": 5.15,
+          "passMedianMsPerDispatch": 0.6616
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.4307,
+          "tflops": 7.91,
+          "passMedianMsPerDispatch": 0.4306,
+          "maxAbsDiffFromV2": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.205,
+          "tflops": 16.62,
+          "passMedianMsPerDispatch": 0.205,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.2443,
+          "tflops": 2.74,
+          "passMedianMsPerDispatch": 1.2441,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6788,
+          "tflops": 5.02,
+          "passMedianMsPerDispatch": 0.6786,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0414,
+          "tflops": 82.39,
+          "passMedianMsPerDispatch": 0.0413,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.2348,
+          "tflops": 14.51,
+          "passMedianMsPerDispatch": 0.2348,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.5399,
+          "tflops": 2.21,
+          "passMedianMsPerDispatch": 1.5403,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6732,
+          "tflops": 5.06,
+          "passMedianMsPerDispatch": 0.6733,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0387,
+          "tflops": 88.05,
+          "passMedianMsPerDispatch": 0.0386,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.2353,
+          "tflops": 14.48,
+          "passMedianMsPerDispatch": 0.2353,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.452,
+          "tflops": 2.35,
+          "passMedianMsPerDispatch": 1.4276,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6731,
+          "tflops": 5.06,
+          "passMedianMsPerDispatch": 0.6734,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0369,
+          "tflops": 92.32,
+          "passMedianMsPerDispatch": 0.0369,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.267,
+          "tflops": 12.76,
+          "passMedianMsPerDispatch": 0.267,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7566,
+          "tflops": 1.94,
+          "passMedianMsPerDispatch": 1.7566,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6709,
+          "tflops": 5.08,
+          "passMedianMsPerDispatch": 0.6701,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0348,
+          "tflops": 98,
+          "passMedianMsPerDispatch": 0.0347,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.2708,
+          "tflops": 12.58,
+          "passMedianMsPerDispatch": 0.2708,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7172,
+          "tflops": 1.98,
+          "passMedianMsPerDispatch": 1.7172,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6702,
+          "tflops": 5.08,
+          "passMedianMsPerDispatch": 0.6701,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.035,
+          "tflops": 97.36,
+          "passMedianMsPerDispatch": 0.0351,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.2565,
+          "tflops": 13.28,
+          "passMedianMsPerDispatch": 0.2564,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.5833,
+          "tflops": 2.15,
+          "passMedianMsPerDispatch": 1.5835,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.674,
+          "tflops": 5.05,
+          "passMedianMsPerDispatch": 0.6741,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0362,
+          "tflops": 94.08,
+          "passMedianMsPerDispatch": 0.0361,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.2795,
+          "tflops": 12.19,
+          "passMedianMsPerDispatch": 0.2794,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7314,
+          "tflops": 1.97,
+          "passMedianMsPerDispatch": 1.7312,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6715,
+          "tflops": 5.07,
+          "passMedianMsPerDispatch": 0.671,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0359,
+          "tflops": 94.91,
+          "passMedianMsPerDispatch": 0.0358,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.2817,
+          "tflops": 12.09,
+          "passMedianMsPerDispatch": 0.2817,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.6279,
+          "tflops": 2.09,
+          "passMedianMsPerDispatch": 1.6319,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7182,
+          "tflops": 4.74,
+          "passMedianMsPerDispatch": 0.7182,
+          "maxAbsDiffFromV2": 1040.828125,
+          "worstV2Ratio": 75213.2415
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0388,
+          "tflops": 87.73,
+          "passMedianMsPerDispatch": 0.0388,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "shape": "1x1 192→384",
+      "M": 384,
+      "K": 192,
+      "N": 361,
+      "Z": 64,
+      "perNetwork": 18,
+      "gflop": 3.407,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.6504,
+          "tflops": 5.24,
+          "passMedianMsPerDispatch": 0.6499
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.4626,
+          "tflops": 7.36,
+          "passMedianMsPerDispatch": 0.4625,
+          "maxAbsDiffFromV2": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.2717,
+          "tflops": 12.54,
+          "passMedianMsPerDispatch": 0.2717,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.1948,
+          "tflops": 2.85,
+          "passMedianMsPerDispatch": 1.1947,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.683,
+          "tflops": 4.99,
+          "passMedianMsPerDispatch": 0.6829,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0697,
+          "tflops": 48.85,
+          "passMedianMsPerDispatch": 0.0699,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.2659,
+          "tflops": 12.81,
+          "passMedianMsPerDispatch": 0.2657,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.4276,
+          "tflops": 2.39,
+          "passMedianMsPerDispatch": 1.4218,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6863,
+          "tflops": 4.96,
+          "passMedianMsPerDispatch": 0.6866,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0752,
+          "tflops": 45.33,
+          "passMedianMsPerDispatch": 0.075,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.2835,
+          "tflops": 12.02,
+          "passMedianMsPerDispatch": 0.2835,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.418,
+          "tflops": 2.4,
+          "passMedianMsPerDispatch": 1.4179,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6867,
+          "tflops": 4.96,
+          "passMedianMsPerDispatch": 0.6867,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0717,
+          "tflops": 47.53,
+          "passMedianMsPerDispatch": 0.0713,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "msPerDispatch": 0.2886,
+          "tflops": 11.8,
+          "passMedianMsPerDispatch": 0.2888,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7049,
+          "tflops": 2,
+          "passMedianMsPerDispatch": 1.7049,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6905,
+          "tflops": 4.93,
+          "passMedianMsPerDispatch": 0.6913,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0665,
+          "tflops": 51.26,
+          "passMedianMsPerDispatch": 0.0662,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3122,
+          "tflops": 10.91,
+          "passMedianMsPerDispatch": 0.3126,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7093,
+          "tflops": 1.99,
+          "passMedianMsPerDispatch": 1.7094,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6929,
+          "tflops": 4.92,
+          "passMedianMsPerDispatch": 0.693,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0663,
+          "tflops": 51.36,
+          "passMedianMsPerDispatch": 0.0663,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3087,
+          "tflops": 11.04,
+          "passMedianMsPerDispatch": 0.3086,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.5164,
+          "tflops": 2.25,
+          "passMedianMsPerDispatch": 1.5166,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6862,
+          "tflops": 4.97,
+          "passMedianMsPerDispatch": 0.6861,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0657,
+          "tflops": 51.84,
+          "passMedianMsPerDispatch": 0.0657,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3091,
+          "tflops": 11.02,
+          "passMedianMsPerDispatch": 0.3092,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.7364,
+          "tflops": 1.96,
+          "passMedianMsPerDispatch": 1.7366,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.6779,
+          "tflops": 5.03,
+          "passMedianMsPerDispatch": 0.6781,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0642,
+          "tflops": 53.05,
+          "passMedianMsPerDispatch": 0.0643,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "msPerDispatch": 0.3329,
+          "tflops": 10.23,
+          "passMedianMsPerDispatch": 0.333,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 1.5099,
+          "tflops": 2.26,
+          "passMedianMsPerDispatch": 1.5101,
+          "maxAbsDiffFromV2": 178.28125,
+          "worstV2Ratio": 2925.641
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.7525,
+          "tflops": 4.53,
+          "passMedianMsPerDispatch": 0.7525,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.1271,
+          "tflops": 26.81,
+          "passMedianMsPerDispatch": 0.1271,
+          "maxAbsDiffFromV2": 25.46875,
+          "worstV2Ratio": 417.9487
+        }
+      ]
+    }
+  ],
+  "perNetwork": [
+    {
+      "batch": 16,
+      "ms": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "ms": 21.179
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "ms": 15.082
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "ms": 7.963
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "ms": 39.518
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 22.409
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "ms": 2.057
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "ms": 8.676
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "ms": 46.128
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 22.554
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "ms": 2.058
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 8.513
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 44.845
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 22.661
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 2.104
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "ms": 8.913
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "ms": 52.238
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 20.547
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "ms": 1.731
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 9.474
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 53.873
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 20.661
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 1.76
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 9.695
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 47.791
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 20.918
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 1.911
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 9.755
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 52.713
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 21.465
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 1.86
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "ms": 10.802
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 50.459
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 27.309
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 2.423
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "ms": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "ms": 75.178
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "ms": 51.469
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "ms": 29.22
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "ms": 135.329
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 76.84
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "ms": 7.233
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true
+          },
+          "ms": 30.062
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "ms": 162.932
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 75.094
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "ms": 6.892
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 30.189
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 156.142
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 75.106
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 6.803
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true
+          },
+          "ms": 31.998
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "kRepeat": 8
+          },
+          "ms": 193.642
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.521
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": true,
+            "stage": "fixed"
+          },
+          "ms": 6.418
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 34.829
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 195.225
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.551
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 2,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 6.461
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 33.988
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 173.049
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.859
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 1,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 6.614
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch"
+          },
+          "ms": 34.583
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 192.292
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 74.522
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 2,
+            "fn": 2,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 2,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 6.508
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch"
+          },
+          "ms": 37.549
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "kRepeat": 8
+          },
+          "ms": 171.019
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 83.178
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "sgm": 3,
+            "sgn": 1,
+            "share": "prefetch",
+            "stage": "fixed"
+          },
+          "ms": 9.099
+        }
+      ]
+    }
+  ],
+  "ok": true,
+  "model": "gemm",
+  "steps": [
+    "18:30:01.276 reads: 1 MiB 1335.5 GB/s, 2 MiB 1287.1 GB/s, 64 MiB 454.7 GB/s",
+    "18:30:02.287 matrix units: 1×4 43.14, 1×8 43.55, 4×4 43.28, 4×8 43.56, 8×8 43.6 TFLOPS",
+    "18:30:02.287 compiling 34 kernels",
+    "18:30:08.647 warming up for 2000 ms",
+    "18:30:10.751 batch 16, wino 192→192",
+    "18:30:23.695 batch 16, 1x1 384→192",
+    "18:30:33.153 batch 16, 1x1 192→384",
+    "18:30:44.277 batch 64, wino 192→192",
+    "18:31:08.975 batch 64, 1x1 384→192",
+    "18:31:26.576 batch 64, 1x1 192→384"
+  ]
+}

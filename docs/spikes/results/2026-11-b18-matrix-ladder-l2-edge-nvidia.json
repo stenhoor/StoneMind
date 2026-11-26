@@ -1,0 +1,650 @@
+{
+  "kind": "gemm",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query",
+    "chromium-experimental-subgroup-matrix"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T18:25:03.172Z",
+  "batches": [
+    16
+  ],
+  "repeat": 30,
+  "runs": 7,
+  "elem": "f16",
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "maxComputeWorkgroupStorageSize": 49152,
+  "mmaLadder": true,
+  "smallShapes": false,
+  "ladder": false,
+  "subgroupMatrixConfigs": [
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    }
+  ],
+  "cacheRead": [
+    {
+      "mib": 1,
+      "bytesRead": 805306368,
+      "ms": 0.6008,
+      "minMs": 0.598,
+      "maxMs": 0.6033,
+      "gbPerSecond": 1340.4
+    },
+    {
+      "mib": 2,
+      "bytesRead": 805306368,
+      "ms": 0.6255,
+      "minMs": 0.6065,
+      "maxMs": 0.6273,
+      "gbPerSecond": 1287.4
+    },
+    {
+      "mib": 64,
+      "bytesRead": 805306368,
+      "ms": 1.787,
+      "minMs": 1.7761,
+      "maxMs": 1.8109,
+      "gbPerSecond": 450.6
+    }
+  ],
+  "matrixPeak": {
+    "tflops": 43.9,
+    "best": {
+      "sg": 4,
+      "acc": 8
+    },
+    "variants": [
+      {
+        "subgroupsPerWorkgroup": 1,
+        "accumulators": 4,
+        "workgroups": 3072,
+        "iterations": 1024,
+        "msPerDispatch": 2.3654,
+        "tflops": 43.58
+      },
+      {
+        "subgroupsPerWorkgroup": 1,
+        "accumulators": 8,
+        "workgroups": 3072,
+        "iterations": 1024,
+        "msPerDispatch": 4.6983,
+        "tflops": 43.88
+      },
+      {
+        "subgroupsPerWorkgroup": 4,
+        "accumulators": 4,
+        "workgroups": 768,
+        "iterations": 1024,
+        "msPerDispatch": 2.3659,
+        "tflops": 43.57
+      },
+      {
+        "subgroupsPerWorkgroup": 4,
+        "accumulators": 8,
+        "workgroups": 768,
+        "iterations": 1024,
+        "msPerDispatch": 4.6965,
+        "tflops": 43.9
+      },
+      {
+        "subgroupsPerWorkgroup": 8,
+        "accumulators": 8,
+        "workgroups": 384,
+        "iterations": 1024,
+        "msPerDispatch": 4.6988,
+        "tflops": 43.87
+      }
+    ]
+  },
+  "reverse": false,
+  "warmUpMs": 2000,
+  "rows": [
+    {
+      "batch": 16,
+      "shape": "wino 192→192",
+      "M": 192,
+      "K": 192,
+      "N": 400,
+      "Z": 36,
+      "perNetwork": 62,
+      "gflop": 1.062,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.2437,
+          "tflops": 4.36,
+          "passMedianMsPerDispatch": 0.2435,
+          "worstReferenceRatio": 0.1734,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.177,
+          "tflops": 6,
+          "passMedianMsPerDispatch": 0.1769,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1734,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.0872,
+          "tflops": 12.17,
+          "passMedianMsPerDispatch": 0.0872,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1734,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.4057,
+          "tflops": 2.62,
+          "passMedianMsPerDispatch": 0.4056,
+          "maxAbsDiffFromV2": 172.15625,
+          "worstV2Ratio": 2908.6589,
+          "worstReferenceRatio": 2768.0629,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2391,
+          "tflops": 4.44,
+          "passMedianMsPerDispatch": 0.2391,
+          "maxAbsDiffFromV2": 447.12109375,
+          "worstV2Ratio": 38895.874,
+          "worstReferenceRatio": 32175.8574,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0229,
+          "tflops": 46.29,
+          "passMedianMsPerDispatch": 0.0229,
+          "maxAbsDiffFromV2": 24.59375,
+          "worstV2Ratio": 415.5227,
+          "worstReferenceRatio": 395.589,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "shape": "1x1 384→192",
+      "M": 192,
+      "K": 384,
+      "N": 361,
+      "Z": 16,
+      "perNetwork": 18,
+      "gflop": 0.852,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.1695,
+          "tflops": 5.02,
+          "passMedianMsPerDispatch": 0.1695,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1149,
+          "tflops": 7.41,
+          "passMedianMsPerDispatch": 0.1148,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.0626,
+          "tflops": 13.6,
+          "passMedianMsPerDispatch": 0.0625,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1843,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3767,
+          "tflops": 2.26,
+          "passMedianMsPerDispatch": 0.3772,
+          "maxAbsDiffFromV2": 248.0625,
+          "worstV2Ratio": 3067.2334,
+          "worstReferenceRatio": 3067.2334,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.2368,
+          "tflops": 3.6,
+          "passMedianMsPerDispatch": 0.2365,
+          "maxAbsDiffFromV2": 918.77734375,
+          "worstV2Ratio": 71238.4774,
+          "worstReferenceRatio": 62975.6309,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0167,
+          "tflops": 51.09,
+          "passMedianMsPerDispatch": 0.0166,
+          "maxAbsDiffFromV2": 35.4375,
+          "worstV2Ratio": 438.1762,
+          "worstReferenceRatio": 438.1762,
+          "matchesReference": false
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "shape": "1x1 192→384",
+      "M": 384,
+      "K": 192,
+      "N": 361,
+      "Z": 16,
+      "perNetwork": 18,
+      "gflop": 0.852,
+      "kernels": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "msPerDispatch": 0.1657,
+          "tflops": 5.14,
+          "passMedianMsPerDispatch": 0.1655,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "msPerDispatch": 0.1212,
+          "tflops": 7.03,
+          "passMedianMsPerDispatch": 0.121,
+          "maxAbsDiffFromV2": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "msPerDispatch": 0.0731,
+          "tflops": 11.66,
+          "passMedianMsPerDispatch": 0.0728,
+          "maxAbsDiffFromV2": 0,
+          "worstV2Ratio": 0,
+          "worstReferenceRatio": 0.1835,
+          "matchesReference": true
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.3445,
+          "tflops": 2.47,
+          "passMedianMsPerDispatch": 0.3459,
+          "maxAbsDiffFromV2": 161.546875,
+          "worstV2Ratio": 2876.739,
+          "worstReferenceRatio": 2861.6484,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "msPerDispatch": 0.1841,
+          "tflops": 4.63,
+          "passMedianMsPerDispatch": 0.1839,
+          "maxAbsDiffFromV2": 470.640625,
+          "worstV2Ratio": 42493.0689,
+          "worstReferenceRatio": 31906.7797,
+          "matchesReference": false
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "msPerDispatch": 0.0201,
+          "tflops": 42.45,
+          "passMedianMsPerDispatch": 0.02,
+          "maxAbsDiffFromV2": 23.078125,
+          "worstV2Ratio": 410.9627,
+          "worstReferenceRatio": 408.8984,
+          "matchesReference": false
+        }
+      ]
+    }
+  ],
+  "perNetwork": [
+    {
+      "batch": 16,
+      "ms": [
+        {
+          "kernel": "v2",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "arith": "f32"
+          },
+          "ms": 21.143
+        },
+        {
+          "kernel": "v3",
+          "config": {
+            "rm": 4,
+            "rn": 8,
+            "tk": 16,
+            "wy": 16
+          },
+          "ms": 15.224
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment"
+          },
+          "ms": 7.849
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "kRepeat": 8
+          },
+          "ms": 38.135
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "mmaOnly",
+            "kRepeat": 8
+          },
+          "ms": 22.4
+        },
+        {
+          "kernel": "mma",
+          "config": {
+            "fm": 4,
+            "fn": 4,
+            "direct": true,
+            "ta": true,
+            "overreadN": true,
+            "noCopy": true,
+            "epilogue": "fragment",
+            "stage": "fixed"
+          },
+          "ms": 2.082
+        }
+      ]
+    }
+  ],
+  "ok": true,
+  "model": "gemm",
+  "steps": [
+    "18:25:03.951 reads: 1 MiB 1340.4 GB/s, 2 MiB 1287.4 GB/s, 64 MiB 450.6 GB/s",
+    "18:25:04.920 matrix units: 1×4 43.58, 1×8 43.88, 4×4 43.57, 4×8 43.9, 8×8 43.87 TFLOPS",
+    "18:25:04.920 compiling 6 kernels",
+    "18:25:05.064 warming up for 2000 ms",
+    "18:25:07.111 batch 16, wino 192→192",
+    "18:25:09.151 batch 16, 1x1 384→192",
+    "18:25:10.916 batch 16, 1x1 192→384"
+  ]
+}

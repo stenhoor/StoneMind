@@ -1297,10 +1297,63 @@ export interface GemmMmaConfig {
    * K must be a multiple of 16·uk for the direct path.
    */
   uk?: 2 | 4 | 6 | 12;
+  /**
+   * Measurement only, direct path (the output is wrong): 'mmaOnly' loads the first step's matrices once, before the
+   * loop, and the loop does only the multiply-accumulates; 'fixed' runs no loop (the store and epilogue only).
+   */
+  stage?: 'mmaOnly' | 'fixed';
+  /** Measurement only, direct path: the loop runs over K × kRepeat, wrapping its addresses (default 1). */
+  kRepeat?: number;
+  /**
+   * Subgroups per workgroup along M and N (default 1 × 1), each computing its own fm × fn tile with the same loads
+   * as one subgroup would. Needs the \`subgroups\` feature (it uses \`subgroup_id\`) and 32-wide subgroups.
+   */
+  sgm?: 1 | 2 | 3 | 4;
+  sgn?: 1 | 2 | 3 | 4;
+  /**
+   * With \`direct\`: workgroups whose tile runs past N also take the direct path (default false). Their columns at or
+   * past N are computed from whatever follows in B and never written. The caller must make B readable to
+   * bBase + (K − 1)·bRow + N + (the workgroup's tile width) for every matrix.
+   */
+  overreadN?: boolean;
+  /**
+   * With \`direct\`: no copying path, and no As or Bs in workgroup memory (default false). Every workgroup takes the
+   * direct path, so the caller must make M a multiple of the workgroup's rows, K a multiple of 16·uk, and N a multiple
+   * of its columns or set overreadN.
+   */
+  noCopy?: boolean;
+  /**
+   * How the result reaches C (default 'tile'): 'tile' stores the workgroup's whole tile to workgroup memory, then
+   * writes it; 'fragment' stores one 16 × 16 accumulator at a time per subgroup (1 KB of workgroup memory each).
+   */
+  epilogue?: 'tile' | 'fragment';
+  /**
+   * With \`noCopy\` and more than one subgroup: each step's A and B matrices are loaded from global memory once per
+   * workgroup, spread over its subgroups, and staged in workgroup memory, where every subgroup reads the ones it
+   * needs (default false: each subgroup loads its own from global memory). 'prefetch': each subgroup also loads its
+   * share of the next step into registers before this step's multiply-accumulates.
+   */
+  share?: boolean | 'prefetch';
 }
 
+/**
+ * The matrix GEMM shapes \`GpuNetwork\` uses (option \`matrix\`), each for batches up to \`maxBatch\`: on the owner's
+ * RTX 3080 Laptop GPU (Edge with the matrix switch), the fastest of the shapes measured with A as GpuNetwork stores it,
+ * at batches 1, 2, 4, 8, 16, 32 and 64, for b18's Winograd GEMM and both 1×1 GEMMs
+ * (docs/spikes/results/2026-11-b18-matrix-ladder.md). Batches between those follow their range (not measured).
+ */
+export const MATRIX_GEMM_BY_BATCH: readonly { maxBatch: number; config: GemmMmaConfig }[] = [
+  { maxBatch: 1, config: { fm: 2, fn: 1, direct: true, overreadN: true, noCopy: true, epilogue: 'fragment' } },
+  { maxBatch: 8, config: { fm: 2, fn: 2, direct: true, overreadN: true, noCopy: true, epilogue: 'fragment' } },
+  { maxBatch: Infinity, config: { fm: 4, fn: 2, sgm: 3, sgn: 2, direct: true, overreadN: true, noCopy: true, epilogue: 'fragment', share: true } },
+];
+
+/** Whether a matrix GEMM shape can run an M × K GEMM: with noCopy, M must fill whole tiles and K whole steps. */
+export const matrixGemmFits = (c: GemmMmaConfig, M: number, K: number) =>
+  c.noCopy !== true || (M % gemmMmaTile(c).tm === 0 && K % (16 * (c.uk ?? 2)) === 0);
+
 /** The matrix GEMM's tile: rows (M) and columns (N) of C per workgroup. */
-export const gemmMmaTile = (c: GemmMmaConfig) => ({ tm: 16 * c.fm, tn: 16 * c.fn });
+export const gemmMmaTile = (c: GemmMmaConfig) => ({ tm: 16 * c.fm * (c.sgm ?? 1), tn: 16 * c.fn * (c.sgn ?? 1) });
 
 /** GEMM on subgroup matrices (needs the subgroup-matrix feature with an f16 → f32 16 × 16 × 16 configuration). */
 export const GEMM_MMA = (aT: Elem, bT: Elem, cT: Elem, config: GemmMmaConfig) => {
@@ -1309,21 +1362,34 @@ export const GEMM_MMA = (aT: Elem, bT: Elem, cT: Elem, config: GemmMmaConfig) =>
   const TN = 16 * fn;
   const TK = 32;
   const TA = config.ta === true;
+  const SGM = config.sgm ?? 1;
+  const SGN = config.sgn ?? 1;
+  const SG = SGM * SGN;
+  const WTM = TM * SGM; // the workgroup's tile (TM and TN in the WGSL comments below)
+  const WTN = TN * SGN;
+  const THREADS = 32 * SG;
+  const M0 = SG === 1 ? 'm0' : 'wm0'; // the workgroup's first row and column
+  const N0 = SG === 1 ? 'n0' : 'wn0';
+  const aso = SG === 1 ? '' : 'aso + '; // this subgroup's offsets in As, Bs and Cs
+  const bso = SG === 1 ? '' : 'bso + ';
+  const cso = SG === 1 ? '' : 'cso + ';
   let decl = '';
   for (let i = 0; i < fm; i++) for (let j = 0; j < fn; j++) decl += `  var acc${i}_${j} = subgroup_matrix_result<f32, 16, 16>();\n`;
   let inner = '';
   for (let kk = 0; kk < TK / 16; kk++) {
     inner += '    {\n';
     for (let i = 0; i < fm; i++)
-      inner += `      let l${i} = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&As, ${kk * 16 * TM + i * 16}u, true, ${TM}u);\n`;
+      inner += `      let l${i} = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&As, ${aso}${kk * 16 * WTM + i * 16}u, true, ${WTM}u);\n`;
     for (let j = 0; j < fn; j++)
-      inner += `      let r${j} = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&Bs, ${kk * 16 * TN + j * 16}u, false, ${TN}u);\n`;
+      inner += `      let r${j} = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&Bs, ${bso}${kk * 16 * WTN + j * 16}u, false, ${WTN}u);\n`;
     for (let i = 0; i < fm; i++)
       for (let j = 0; j < fn; j++) inner += `      acc${i}_${j} = subgroupMatrixMultiplyAccumulate(l${i}, r${j}, acc${i}_${j});\n`;
     inner += '    }\n';
   }
   const UK = config.uk ?? 2;
+  const KR = config.kRepeat ?? 1;
   let directInner = '';
+  let hoisted = '';
   for (let kk = 0; kk < UK; kk++) {
     for (let i = 0; i < fm; i++)
       directInner += TA
@@ -1332,23 +1398,137 @@ export const GEMM_MMA = (aT: Elem, bT: Elem, cT: Elem, config: GemmMmaConfig) =>
     for (let j = 0; j < fn; j++)
       directInner += `      let r${kk}_${j} = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&B, bBase + (k0 + ${kk * 16}u) * P.bRow + n0 + ${j * 16}u, false, P.bRow);\n`;
   }
+  if (config.stage === 'mmaOnly') {
+    // The loads, once, for k0 = 0 (outside the loop); the loop keeps only the multiply-accumulates.
+    hoisted = directInner.replace(/k0 \+ /g, '0u + ').replace(/^      /gm, '    ');
+    directInner = '';
+  }
   for (let kk = 0; kk < UK; kk++)
     for (let i = 0; i < fm; i++)
       for (let j = 0; j < fn; j++) directInner += `      acc${i}_${j} = subgroupMatrixMultiplyAccumulate(l${kk}_${i}, r${kk}_${j}, acc${i}_${j});\n`;
   const direct = config.direct === true && aT === 'f16' && bT === 'f16';
-  const directOpen = direct
-    ? `  let full = m0 + ${TM}u <= P.M && n0 + ${TN}u <= N && P.K % ${16 * UK}u == 0u;
-  if (full) {
-    for (var k0 = 0u; k0 < P.K; k0 += ${16 * UK}u) {
+  const loop = config.stage === 'fixed'
+    ? '    _ = A[0];\n    _ = B[0];\n' // keeps A and B in an 'auto' layout
+    : KR === 1 && config.stage === undefined
+      ? `    for (var k0 = 0u; k0 < P.K; k0 += ${16 * UK}u) {
 ${directInner}    }
-  } else {
+`
+      : `${hoisted}    for (var kr = 0u; kr < P.K * ${KR}u; kr += ${16 * UK}u) {
+      let k0 = kr % P.K;
+${directInner}    }
+`;
+  // share: global → workgroup memory, each fragment once per workgroup, then each subgroup's fragments from there.
+  const share = direct && config.noCopy === true && (config.share ?? false) !== false && SG > 1;
+  const FAM = WTM / 16;
+  const FBN = WTN / 16;
+  let sharedLoop = '';
+  if (share && config.stage === undefined) {
+    // Each subgroup owns A's matrices sgid, sgid + SG, … (index f = mi·UK + kk, at f·256 in Ash) and the same of B's
+    // (f = kk·FBN + nj, at f·256 in Bsh).
+    const NA = FAM * UK;
+    const NB = UK * FBN;
+    const pre = config.share === 'prefetch';
+    let setup = '';
+    const fetch: string[] = [];
+    const put: string[] = [];
+    const own = (n: number, kind: 'a' | 'b') => {
+      for (let j = 0; j < Math.ceil(n / SG); j++) {
+        const id = `${kind}${j}`;
+        const guard = (j + 1) * SG > n ? `if (f${id} < ${n}u) ` : '';
+        setup += `  let f${id} = ${j * SG}u + sgid;\n`;
+        if (kind === 'a')
+          setup += TA
+            ? `  let o${id} = aBase + (wm0 + (f${id} / ${UK}u) * 16u) * P.aRow + (f${id} % ${UK}u) * 16u;\n`
+            : `  let o${id} = aBase + (f${id} % ${UK}u) * 16u * P.aRow + wm0 + (f${id} / ${UK}u) * 16u;\n`;
+        else setup += `  let o${id} = bBase + (f${id} / ${FBN}u) * 16u * P.bRow + wn0 + (f${id} % ${FBN}u) * 16u;\n`;
+        const type = kind === 'a' ? 'subgroup_matrix_left' : 'subgroup_matrix_right';
+        const at = (k: string) => (kind === 'a' ? (TA ? `o${id} + ${k}, false, P.aRow` : `o${id} + ${k} * P.aRow, true, P.aRow`) : `o${id} + ${k} * P.bRow, false, P.bRow`);
+        if (pre) {
+          setup += `  var g${id} = ${type}<f16, 16, 16>();\n  ${guard}{ g${id} = subgroupMatrixLoad<${type}<f16, 16, 16>>(&${kind === 'a' ? 'A' : 'B'}, ${at('0u')}); }\n`;
+          fetch.push(`      ${guard}{ g${id} = subgroupMatrixLoad<${type}<f16, 16, 16>>(&${kind === 'a' ? 'A' : 'B'}, ${at('kn')}); }\n`);
+          put.push(`      ${guard}{ subgroupMatrixStore(&${kind === 'a' ? 'Ash' : 'Bsh'}, f${id} * 256u, g${id}, false, 16u); }\n`);
+        } else
+          put.push(`      ${guard}{ let g = subgroupMatrixLoad<${type}<f16, 16, 16>>(&${kind === 'a' ? 'A' : 'B'}, ${at('k0')}); subgroupMatrixStore(&${kind === 'a' ? 'Ash' : 'Bsh'}, f${id} * 256u, g, false, 16u); }\n`);
+      }
+    };
+    own(NA, 'a');
+    own(NB, 'b');
+    let body = put.join('') + '      workgroupBarrier();\n';
+    if (pre) body += `      let kn = (k0 + ${16 * UK}u) % P.K;\n` + fetch.join('');
+    for (let kk = 0; kk < UK; kk++) {
+      for (let i = 0; i < fm; i++)
+        body += `      let l${kk}_${i} = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&Ash, (sm * ${fm}u + ${i}u) * ${UK * 256}u + ${kk * 256}u, false, 16u);\n`;
+      for (let j = 0; j < fn; j++)
+        body += `      let r${kk}_${j} = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&Bsh, ${kk * FBN * 256}u + (sn * ${fn}u + ${j}u) * 256u, false, 16u);\n`;
+    }
+    for (let kk = 0; kk < UK; kk++)
+      for (let i = 0; i < fm; i++)
+        for (let j = 0; j < fn; j++) body += `      acc${i}_${j} = subgroupMatrixMultiplyAccumulate(l${kk}_${i}, r${kk}_${j}, acc${i}_${j});\n`;
+    body += '      workgroupBarrier();\n';
+    sharedLoop = setup + (KR === 1
+      ? `    for (var k0 = 0u; k0 < P.K; k0 += ${16 * UK}u) {\n${body}    }\n`
+      : `    for (var kr = 0u; kr < P.K * ${KR}u; kr += ${16 * UK}u) {\n      let k0 = kr % P.K;\n${body}    }\n`);
+  }
+  const directOpen = direct
+    ? `  let full = ${M0} + ${WTM}u <= P.M && ${config.overreadN === true ? '' : `${N0} + ${WTN}u <= N && `}P.K % ${16 * UK}u == 0u;
+  if (full) {
+${loop}  } else {
 `
     : '';
+  const write = (indent: string) => `${indent}if (m < P.M && n < N) {
+${indent}  var bias = 0.0;
+${indent}  if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }
+${indent}  let o = z * P.cBatch + m * P.cRow + n;
+${indent}  var v = Cs[e] + bias;
+${indent}  if ((P.flags & 1u) != 0u) { v += f32(C[o]); }
+${indent}  C[o] = ${cT}(v);
+${indent}}
+`;
+  const fragment = config.epilogue === 'fragment';
   let store = '';
-  for (let i = 0; i < fm; i++)
-    for (let j = 0; j < fn; j++) store += `  subgroupMatrixStore(&Cs, ${i * 16 * TN + j * 16}u, acc${i}_${j}, false, ${TN}u);\n`;
+  if (!fragment)
+    for (let i = 0; i < fm; i++)
+      for (let j = 0; j < fn; j++) store += `  subgroupMatrixStore(&Cs, ${cso}${i * 16 * WTN + j * 16}u, acc${i}_${j}, false, ${WTN}u);\n`;
+  const lane = SG === 1 ? 'tid' : 'lane';
+  const fso = SG === 1 ? '' : 'sgid * 256u + ';
+  let epilogue = '';
+  if (fragment)
+    for (let i = 0; i < fm; i++)
+      for (let j = 0; j < fn; j++)
+        epilogue += `  subgroupMatrixStore(&Cs, ${SG === 1 ? '0u' : 'sgid * 256u'}, acc${i}_${j}, false, 16u);
+  workgroupBarrier();
+  for (var f = ${lane}; f < 256u; f += 32u) {
+    let e = ${fso}f;
+    let m = m0 + ${i * 16}u + f / 16u;
+    let n = n0 + ${j * 16}u + f % 16u;
+${write('    ')}  }
+  workgroupBarrier();
+`;
+  else
+    epilogue = `  workgroupBarrier();
+  for (var e = tid; e < ${WTM * WTN}u; e += ${THREADS}u) {
+    let m = ${M0} + e / ${WTN}u;
+    let n = ${N0} + e % ${WTN}u;
+${write('    ')}  }
+`;
+  const noCopy = direct && config.noCopy === true;
+  const csSize = fragment ? 256 * SG : WTM * WTN;
+  const origin = SG === 1
+    ? `  let m0 = wg.y * ${TM}u;
+  let n0 = wg.x * ${TN}u;
+`
+    : `  let wm0 = wg.y * ${WTM}u;
+  let wn0 = wg.x * ${WTN}u;
+  let sm = sgid % ${SGM}u;
+  let sn = sgid / ${SGM}u;
+  let m0 = wm0 + sm * ${TM}u;
+  let n0 = wn0 + sn * ${TN}u;
+  let aso = sm * ${TM}u;
+  let bso = sn * ${TN}u;
+  let cso = sm * ${TM * WTN}u + sn * ${TN}u;
+`;
   return /* wgsl */ `enable f16;
-enable chromium_experimental_subgroup_matrix;
+${SG === 1 ? '' : 'enable subgroups;\n'}enable chromium_experimental_subgroup_matrix;
 ${DYN}
 struct Params {
   M: u32, K: u32, nFixed: u32, nPerBatch: u32,
@@ -1362,30 +1542,30 @@ struct Params {
 @group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
 @group(0) @binding(5) var<storage, read> nbias: array<f32>;
 
-var<workgroup> As: array<f16, ${TK * TM}>; // [TK][TM]
-var<workgroup> Bs: array<f16, ${TK * TN}>; // [TK][TN]
-var<workgroup> Cs: array<f32, ${TM * TN}>; // [TM][TN]
+${share ? `var<workgroup> Ash: array<f16, ${FAM * UK * 256}>; // A's matrices for one step, each 16 × 16 contiguous
+var<workgroup> Bsh: array<f16, ${UK * FBN * 256}>; // B's
+` : ''}${noCopy ? '' : `var<workgroup> As: array<f16, ${TK * WTM}>; // [TK][TM]
+var<workgroup> Bs: array<f16, ${TK * WTN}>; // [TK][TN]
+`}var<workgroup> Cs: array<f32, ${csSize}>; // ${fragment ? `one 16 × 16 accumulator per subgroup` : '[TM][TN]'}
 
-@compute @workgroup_size(32)
-fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) tid: u32) {
+@compute @workgroup_size(${THREADS})
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) tid: u32${SG === 1 ? '' : `, @builtin(subgroup_id) sgid: u32${fragment ? ', @builtin(subgroup_invocation_id) lane: u32' : ''}`}) {
   let z = wg.z;
-  let m0 = wg.y * ${TM}u;
-  let n0 = wg.x * ${TN}u;
-  var N = P.nFixed;
+${origin}  var N = P.nFixed;
   if (N == 0u) { N = dyn.n * P.nPerBatch; }
   let aBase = z * P.aBatch;
   let bBase = z * P.bBatch;
-${decl}${directOpen}  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
-    for (var i = tid; i < ${TK * TM}u; i += 32u) {
-      let k = k0 + i / ${TM}u;
-      let m = m0 + i % ${TM}u;
+${decl}${noCopy ? (sharedLoop || loop) : `${directOpen}  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
+    for (var i = tid; i < ${TK * WTM}u; i += ${THREADS}u) {
+      let k = k0 + i / ${WTM}u;
+      let m = ${M0} + i % ${WTM}u;
       var v = f16(0.0);
       if (k < P.K && m < P.M) { v = f16(A[aBase + ${TA ? 'm * P.aRow + k' : 'k * P.aRow + m'}]); }
       As[i] = v;
     }
-    for (var i = tid; i < ${TK * TN}u; i += 32u) {
-      let k = k0 + i / ${TN}u;
-      let n = n0 + i % ${TN}u;
+    for (var i = tid; i < ${TK * WTN}u; i += ${THREADS}u) {
+      let k = k0 + i / ${WTN}u;
+      let n = ${N0} + i % ${WTN}u;
       var v = f16(0.0);
       if (k < P.K && n < N) { v = f16(B[bBase + k * P.bRow + n]); }
       Bs[i] = v;
@@ -1393,20 +1573,7 @@ ${decl}${directOpen}  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
     workgroupBarrier();
 ${inner}    workgroupBarrier();
   }
-${direct ? '  }\n' : ''}${store}  workgroupBarrier();
-  for (var e = tid; e < ${TM * TN}u; e += 32u) {
-    let m = m0 + e / ${TN}u;
-    let n = n0 + e % ${TN}u;
-    if (m < P.M && n < N) {
-      var bias = 0.0;
-      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }
-      let o = z * P.cBatch + m * P.cRow + n;
-      var v = Cs[e] + bias;
-      if ((P.flags & 1u) != 0u) { v += f32(C[o]); }
-      C[o] = ${cT}(v);
-    }
-  }
-}
+${direct ? '  }\n' : ''}`}${store}${epilogue}}
 `;
 };
 
