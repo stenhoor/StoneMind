@@ -3,6 +3,7 @@
 //
 //   npm run build -w @stonemind/engine-webgpu
 //   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench [--batches 1,8,64]] [--tune] [--model <net.bin.gz> [--golden <goldens.json>]]
+//   node packages/engine-webgpu/scripts/gpu-check.mjs --search [--live-visits 2000] [--review-moves 250] [--review-visits 100] [--model ...]
 //   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...] [--out report.json]
 //     Serves the page to open in any browser. Each run's report is posted back and saved to --out
 //     (default gpu-check-report.json in the current directory).
@@ -65,6 +66,7 @@ if (golden) query.set('golden', '/golden.json');
 else if (model) query.set('golden', '/none.json');
 if (flag('--reference')) query.set('reference', '1');
 if (option('--variants')) query.set('variants', option('--variants'));
+if (option('--search-variant')) query.set('searchVariant', option('--search-variant'));
 const url = `http://127.0.0.1:${server.address().port}/test/gpu/index.html${query.size ? `?${query}` : ''}`;
 
 if (flag('--serve')) {
@@ -80,11 +82,17 @@ if (flag('--serve')) {
   await page.goto(url);
   const batches = option('--batches')?.split(',').map(Number);
   const tune = flag('--tune');
-  const report = await page.evaluate((opts) => window.runCheck(opts), {
-    bench: flag('--bench') || tune,
-    tune,
-    ...(batches ? { batches } : tune ? { batches: [16, 64] } : {}),
-  });
+  const report = flag('--search')
+    ? await page.evaluate((opts) => window.runSearchBench(opts), {
+        ...(option('--live-visits') ? { liveVisits: Number(option('--live-visits')) } : {}),
+        ...(option('--review-moves') ? { reviewMoves: Number(option('--review-moves')) } : {}),
+        ...(option('--review-visits') ? { reviewVisits: Number(option('--review-visits')) } : {}),
+      })
+    : await page.evaluate((opts) => window.runCheck(opts), {
+        bench: flag('--bench') || tune,
+        tune,
+        ...(batches ? { batches } : tune ? { batches: [16, 64] } : {}),
+      });
   console.log(JSON.stringify(report, null, 2));
   await browser.close();
   server.close();

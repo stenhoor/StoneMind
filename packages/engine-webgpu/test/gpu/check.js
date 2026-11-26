@@ -2,6 +2,7 @@
 // .bin.gz), or else the test network. Goldens: the `golden` parameter, or else ../goldens/<model name>.json.
 import {
   loadModel, encodePositionV7, gtpMove, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
+  buildHistory, Search, PASS_LOC,
 } from '../../dist/index.js';
 
 // The same tolerances as test/goldens.test.mjs.
@@ -418,8 +419,132 @@ const download = document.getElementById('download');
 const picker = document.getElementById('model');
 let lastReport = null;
 
+/**
+ * The search benchmark: visits per second on one position at several batch sizes ("live"), and a whole game reviewed at
+ * a fixed number of visits per move ("review"). The game is played by the search itself from an empty board (the
+ * most-visited move each turn), and its moves are in the report so native KataGo can review the same game.
+ * Network: Winograd fused, GEMM v2, fp16 storage where the device has shader-f16 (the fastest measured on the owner's
+ * NVIDIA GPU and iPad), or `?searchVariant=<GpuNetwork options JSON>`.
+ */
+export async function runSearchBench({ file = null, liveVisits = 2000, liveBatches = [16, 32, 64], reviewMoves = 250, reviewVisits = 100, reviewBatch = 64 } = {}) {
+  const report = { kind: 'search', modelUrl: file ? `file: ${file.name}` : modelUrl, userAgent: navigator.userAgent, date: new Date().toISOString() };
+  steps.length = 0;
+  step('requesting a WebGPU device');
+  const engine = await requestEngineDevice();
+  engine.device.lost.then((info) => {
+    report.deviceLost = { reason: info.reason, message: info.message };
+    step(`DEVICE LOST: reason ${info.reason}: ${info.message}`);
+  });
+  report.adapter = engine.adapterInfo;
+  report.features = [...engine.features];
+  const bytes = file ? await file.arrayBuffer() : await (await fetch(modelUrl)).arrayBuffer();
+  step(`loading the model (${bytes.byteLength} bytes)`);
+  const model = await loadModel(new Uint8Array(bytes));
+  report.model = model.name;
+  const variant = params.get('searchVariant')
+    ? JSON.parse(params.get('searchVariant'))
+    : { winograd: true, fuse: true, gemm: 'v2', precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
+  report.variant = variant;
+  step(`building the network ${JSON.stringify(variant)}`);
+  const maxBatch = Math.max(...liveBatches, reviewBatch);
+  const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch });
+  report.gemmConfig = net.gemmConfig;
+  const cols = 'ABCDEFGHJKLMNOPQRST';
+  const gtpOf = (board, loc) => (loc === PASS_LOC ? 'pass' : cols[board.x(loc)] + (board.ySize - board.y(loc)));
+  const statsOf = (search, ms) => {
+    const s = search.stats;
+    return {
+      visits: s.visits,
+      ms: +ms.toFixed(1),
+      visitsPerSecond: +((s.visits * 1000) / ms).toFixed(1),
+      nnEvals: s.nnEvals,
+      cacheHits: s.cacheHits,
+      terminalVisits: s.terminalVisits,
+      batches: s.batches,
+      meanBatch: s.batches ? +((s.nnEvals - 1) / s.batches).toFixed(1) : 0,
+      collisions: s.collisions,
+      nnMs: +s.nnMs.toFixed(1),
+      cpuMs: +s.cpuMs.toFixed(1),
+    };
+  };
+  try {
+    // Warm-up: the first network calls include one-off driver work.
+    const warm = buildHistory({ xSize: 19, ySize: 19, rules: 'tromp-taylor', komi: 7.5, moves: [] });
+    await new Search(model, net, warm, { batchSize: 64 }).run({ maxVisits: 200 });
+
+    // Live: one middle-game position (fight-19 from the goldens list), a fresh search per batch size.
+    const positions = (await getJson('../goldens/positions.json')).positions;
+    const pos = positions.find((p) => p.id === 'fight-19');
+    report.live = { position: pos.id, rules: pos.rules, komi: pos.komi, maxVisits: liveVisits, runs: [] };
+    for (const batchSize of liveBatches) {
+      step(`live: ${liveVisits} visits at batch ${batchSize}`);
+      const hist = buildHistory({ xSize: 19, ySize: 19, rules: pos.rules, komi: pos.komi, moves: pos.moves.map(([c, l]) => gtpMove(c, l, 19)) });
+      const search = new Search(model, net, hist, { batchSize });
+      const t0 = performance.now();
+      await search.run({ maxVisits: liveVisits });
+      const run = { batch: batchSize, ...statsOf(search, performance.now() - t0) };
+      const top = search.analysis().moveInfos[0];
+      run.bestMove = gtpOf(hist.board, top.loc);
+      run.bestMoveVisits = top.visits;
+      report.live.runs.push(run);
+      step(`  ${run.visitsPerSecond} visits/s (best ${run.bestMove})`);
+    }
+
+    // Review: a game played by the search, reviewMoves moves (or to the end), reviewVisits visits each.
+    step(`review: ${reviewMoves} moves × ${reviewVisits} visits`);
+    const hist = buildHistory({ xSize: 19, ySize: 19, rules: 'tromp-taylor', komi: 7.5, moves: [] });
+    const game = [];
+    const perMove = [];
+    const t0 = performance.now();
+    let visits = 0;
+    for (let t = 0; t < reviewMoves && !hist.isGameFinished; t++) {
+      const m0 = performance.now();
+      const search = new Search(model, net, hist, { batchSize: reviewBatch });
+      await search.run({ maxVisits: reviewVisits });
+      visits += search.stats.visits;
+      const top = search.analysis().moveInfos[0];
+      const pla = hist.nextPla === 1 ? 'B' : 'W';
+      game.push([pla, gtpOf(hist.board, top.loc)]);
+      perMove.push(+(performance.now() - m0).toFixed(1));
+      hist.play(top.loc, hist.nextPla);
+      if (t % 25 === 24) step(`  ${t + 1} moves, ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+    }
+    const totalMs = performance.now() - t0;
+    report.review = {
+      rules: 'tromp-taylor',
+      komi: 7.5,
+      visitsPerMove: reviewVisits,
+      batch: reviewBatch,
+      moves: game.length,
+      visits,
+      totalMs: +totalMs.toFixed(1),
+      visitsPerSecond: +((visits * 1000) / totalMs).toFixed(1),
+      minutesFor250Moves: +((totalMs / game.length) * 250 / 60000).toFixed(2),
+      perMoveMs: perMove,
+      game,
+    };
+    step(`  ${game.length} moves in ${(totalMs / 1000).toFixed(1)} s`);
+  } finally {
+    net.destroy();
+  }
+  report.steps = [...steps];
+  report.ok = !report.deviceLost;
+  return report;
+}
+
 /** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
 function summarise(r) {
+  if (r.kind === 'search') {
+    const lines = [`search benchmark · ok: ${r.ok} · model ${r.model} · adapter ${JSON.stringify(r.adapter)} · network ${JSON.stringify(r.variant)}`];
+    if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
+    for (const run of r.live?.runs ?? []) {
+      lines.push(`live (${r.live.position}), batch ${run.batch}: ${run.visitsPerSecond} visits/s (${run.visits} visits, mean batch ${run.meanBatch}, network ${run.nnMs} ms, other ${run.cpuMs} ms)`);
+    }
+    if (r.review) {
+      lines.push(`review: ${r.review.moves} moves × ${r.review.visitsPerMove} visits in ${(r.review.totalMs / 1000).toFixed(1)} s (${r.review.visitsPerSecond} visits/s; ${r.review.minutesFor250Moves} min for 250 moves)`);
+    }
+    return lines.join('\n');
+  }
   const lines = [`ok: ${r.ok} · model ${r.model} · adapter ${JSON.stringify(r.adapter)} · features ${r.features.join(', ') || 'none'}`];
   if (r.adapterFeatures) lines.push(`adapter offers: ${r.adapterFeatures.join(', ') || 'none'}`);
   if (r.f16) lines.push(`fp16: ${r.f16}`);
@@ -459,6 +584,18 @@ const run = (bench) => () => {
   });
 };
 document.getElementById('check').addEventListener('click', run(false));
+document.getElementById('search').addEventListener('click', () => {
+  summary.textContent = 'Running the search benchmark… (several minutes)';
+  out.textContent = '';
+  download.hidden = true;
+  const file = picker.files?.[0] ?? null;
+  runSearchBench({ file }).then(show, (e) => {
+    const error = describeError(e);
+    summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+    lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+    download.hidden = false;
+  });
+});
 document.getElementById('bench').addEventListener('click', run(true));
 document.getElementById('tune').addEventListener('click', () => {
   summary.textContent = 'Running…';
@@ -484,3 +621,4 @@ download.addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 });
 window.runCheck = runCheck;
+window.runSearchBench = runSearchBench;
