@@ -112,8 +112,7 @@ tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 
 search on the WebGPU network:
 - **Live:** visits per second on one 19×19 position (`fight-19`), 2000 visits, at batches 16, 32 and 64.
 - **Review:** the fixed 250-move game of `test/goldens/agreement-game.json` at 100 visits a turn, in three modes: one turn
-  at a time at batch 64, one at a time at batch 16, and two (native KataGo's `analysis_example.cfg`: 2 analysis threads
-  × 16 search threads) and four at once at batch 16 (`reviewGame`). The report includes the
+  at a time at batch 64, one at a time at batch 16, and four at once at batch 16 (`reviewGame`). The report includes the
   game and each mode's recommended moves.
 
 `scripts/native-search-bench.mjs` runs native KataGo's analysis engine on the same work from that report: the same

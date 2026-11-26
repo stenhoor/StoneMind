@@ -432,8 +432,7 @@ export async function runSearchBench({
   liveBatches = [16, 32, 64],
   reviewMoves = 250,
   reviewVisits = 100,
-  // 16 × 2 is native KataGo's analysis_example.cfg (numSearchThreadsPerAnalysisThread = 16, numAnalysisThreads = 2).
-  reviewModes = [{ batchSize: 64, concurrency: 1 }, { batchSize: 16, concurrency: 1 }, { batchSize: 16, concurrency: 2 }, { batchSize: 16, concurrency: 4 }],
+  reviewModes = [{ batchSize: 64, concurrency: 1 }, { batchSize: 16, concurrency: 1 }, { batchSize: 16, concurrency: 4 }],
 } = {}) {
   const report = { kind: 'search', modelUrl: file ? `file: ${file.name}` : modelUrl, userAgent: navigator.userAgent, date: new Date().toISOString() };
   steps.length = 0;
@@ -500,8 +499,7 @@ export async function runSearchBench({
 
     // Review: the fixed game of test/goldens/agreement-game.json (the first reviewMoves turns), reviewVisits visits a
     // turn, in each mode: turns one at a time at batch 64 (the first benchmark's setting), one at a time at batch 16,
-    // two at once at batch 16 (native KataGo's analysis config) and four at once, the concurrent searches' leaves combined
-    // into one network call. Every mode shares one
+    // and several at once at batch 16 with their leaves combined into one network call. Every mode shares one
     // evaluation cache across turns, as native KataGo's analysis does.
     const agreementGame = await getJson('../goldens/agreement-game.json');
     const game = agreementGame.moves.slice(0, reviewMoves);
