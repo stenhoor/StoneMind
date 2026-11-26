@@ -542,10 +542,13 @@ export const GEMM_DEFAULT: GemmConfig = { rm: 4, rn: 8, tk: 16, arith: 'f32' };
  *   arithmetic types, with f16 arithmetic ahead of f32 (124.8 against 116.6 evaluations/s); `GEMM_DEFAULT` gave 112.9.
  * - Everything else keeps `GEMM_DEFAULT`: on the owner's RTX 3080 Laptop GPU in Edge (issues #38 and #41) the four
  *   fastest shapes, the default among them, were within 1.4% of each other, and f16 arithmetic was slower.
+ * f16 arithmetic is only chosen for fp16 storage: an f32 network keeps f32 arithmetic, so it stays within the f32
+ * goldens tolerances (f16 arithmetic under f32 storage failed them on the iPad).
  * @param vendor The adapter's reported vendor (`GPUAdapterInfo.vendor`), if any.
+ * @param precision The network's storage precision ('f16' needs the device feature `shader-f16`).
  */
-export function defaultGemmConfig(vendor: string | undefined, hasShaderF16: boolean): GemmConfig {
-  if (vendor === 'apple') return { rm: 4, rn: 4, tk: 8, arith: hasShaderF16 ? 'f16' : 'f32' };
+export function defaultGemmConfig(vendor: string | undefined, precision: Elem): GemmConfig {
+  if (vendor === 'apple') return { rm: 4, rn: 4, tk: 8, arith: precision };
   return GEMM_DEFAULT;
 }
 

@@ -57,6 +57,28 @@ All 24 passed (`ok: true`).
 
 Each value comes from a single run.
 
+## Check and benchmark with the per-device GEMM default (after PR #46)
+
+These are evaluations per second at batch 64, all Winograd, from a single run. The default GEMM shape was used, which is
+4 × 4, chunk 8.
+
+| Variant | Fused | Unfused | `ok` |
+| --- | ---: | ---: | --- |
+| GEMM v1, f32 | 20.2 | 20.1 | true |
+| GEMM v2, f32 | 111.7 | 108.3 | **false** |
+| GEMM v2, f32, transforms v2 | 96.7 | 92.8 | **false** |
+| GEMM v2, f32, scale8 | 95.8 | | **false** |
+| GEMM v1, fp16 storage | 20.4 | 20.4 | true |
+| GEMM v2, fp16 storage | **124.8** | 108.5 | true |
+| GEMM v2, fp16 storage, transforms v2 | 113.9 | 103.9 | true |
+
+- **The f32 failures are a bug in PR #46.** For f32 networks too, `defaultGemmConfig` chose f16 arithmetic whenever the
+  device had `shader-f16`, so the f32 variants missed the f32 goldens tolerances. The fix gives f16 arithmetic only to
+  fp16 storage. The f32 numbers above are therefore f16-arithmetic numbers.
+- **Transforms v2 are slower on this device:** 113.9 against 124.8 fused, and 103.9 against 108.5 unfused, with fp16
+  storage.
+- **The implicit GEMM lost the device again,** as in the earlier runs.
+
 ## Not available
 
 - **Native comparison:** there's no native KataGo number for this device. KataGo's command line can't run on iPadOS.
