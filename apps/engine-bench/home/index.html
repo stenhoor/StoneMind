@@ -12,6 +12,12 @@
   <link rel="stylesheet" href="brand/tokens.css">
   <link rel="stylesheet" href="brand/components.css">
   <link rel="stylesheet" href="home.css">
+  <script>
+    // Light (Washi & Shu) by default, whatever the device's setting; a visitor's choice of Dark (Night) is remembered.
+    // Set before first paint, so the page never flashes the other mode.
+    try { document.documentElement.dataset.theme = localStorage.getItem('stonemind.theme') === 'night' ? 'night' : 'washi'; }
+    catch { document.documentElement.dataset.theme = 'washi'; }
+  </script>
 </head>
 <body class="sm-root">
   <div class="home">
@@ -20,6 +26,10 @@
         <img class="sm-logo-light" src="brand/logos/wordmark.svg" alt="StoneMind" width="200">
         <img class="sm-logo-dark" src="brand/logos/wordmark-on-dark.svg" alt="StoneMind" width="200">
       </a>
+      <div class="sm-segmented" role="group" aria-label="Colour mode">
+        <button type="button" data-theme-choice="washi" aria-pressed="true">Light</button>
+        <button type="button" data-theme-choice="night" aria-pressed="false">Dark</button>
+      </div>
     </header>
 
     <main>
@@ -65,5 +75,17 @@
       <span>Open source, MIT licence</span>
     </footer>
   </div>
+  <script>
+    // The colour-mode switch: set data-theme on <html>, mark the pressed button, remember the choice.
+    const buttons = document.querySelectorAll('[data-theme-choice]');
+    const show = (theme) => buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === theme)));
+    show(document.documentElement.dataset.theme);
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      const theme = b.dataset.themeChoice;
+      document.documentElement.dataset.theme = theme;
+      show(theme);
+      try { localStorage.setItem('stonemind.theme', theme); } catch {}
+    }));
+  </script>
 </body>
 </html>

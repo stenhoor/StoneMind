@@ -9,7 +9,9 @@ comparisons.
 
 **Home page** (`home/`): the site root, https://stonemind.org/ (the custom domain of the GitHub Pages site). A placeholder
 under construction: the goals from the charter, written as goals, with links to the charter, the repository and the
-developer pages. It uses its own copy of the brand files.
+developer pages. It uses its own copy of the brand files. A Light / Dark switch (the brand's SegmentedControl) sets
+the colour mode: Light (Washi & Shu) by default, whatever the device's setting, and a visitor's choice is remembered
+(`stonemind.theme`).
 
 ## Depends on
 
