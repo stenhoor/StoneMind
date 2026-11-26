@@ -74,11 +74,12 @@ for (const file of [
 }
 cpSync(join(app, 'ort-bench', 'ONNXRUNTIME-LICENSE.txt'), join(ortBench, 'vendor', 'LICENSE.txt'));
 
-// The site root: GitHub Pages serves the repository's site at /StoneMind/, so point it at the bench.
-writeFileSync(
-  join(site, 'index.html'),
-  '<!doctype html><meta charset="utf-8"><title>StoneMind</title>' +
-    '<meta http-equiv="refresh" content="0; url=engine-bench/"><a href="engine-bench/">StoneMind engine bench</a>\n',
-);
+// The site root (stonemind.org): a placeholder home page, under construction, linking to the developer pages. It uses
+// its own copy of the brand files, unchanged.
+cpSync(join(app, 'home', 'index.html'), join(site, 'index.html'));
+cpSync(join(app, 'home', 'home.css'), join(site, 'home.css'));
+cpSync(join(brand, 'tokens', 'tokens.css'), join(site, 'brand', 'tokens.css'));
+cpSync(join(brand, 'styles', 'components.css'), join(site, 'brand', 'components.css'));
+cpSync(join(brand, 'logos'), join(site, 'brand', 'logos'), { recursive: true });
 writeFileSync(join(site, '.nojekyll'), '');
 console.log(`assembled ${site}`);

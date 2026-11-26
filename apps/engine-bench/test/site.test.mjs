@@ -84,3 +84,11 @@ test('the onnxruntime-web baseline page and the files it loads are in the site',
   const page = readFileSync(join(ort, 'ort-bench.js'), 'utf8');
   for (const [, spec] of page.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(ort, spec)), `ort-bench.js imports missing ${spec}`);
 });
+
+test('the home page and every local file it links to are in the site', () => {
+  const site = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'site');
+  const home = readFileSync(join(site, 'index.html'), 'utf8');
+  const refs = [...home.matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|#|\.\/$)/.test(u));
+  assert.ok(refs.length >= 8);
+  for (const ref of refs) assert.ok(existsSync(join(site, ref)), `home page links to missing ${ref}`);
+});

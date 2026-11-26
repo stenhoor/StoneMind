@@ -7,6 +7,10 @@ https://stenhoor.github.io/StoneMind/engine-bench/.
 position and shows the top moves, with the visits/s measured in the page. Later phases add the browser engine and the
 comparisons.
 
+**Home page** (`home/`): the site root, https://stonemind.org/ (the custom domain of the GitHub Pages site). A placeholder
+under construction: the goals from the charter, written as goals, with links to the charter, the repository and the
+developer pages. It uses its own copy of the brand files.
+
 ## Depends on
 
 `@stonemind/engine` (loaded in the page through an import map) and `@stonemind/brand` (tokens, components and logos,
