@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>onnxruntime-web baseline</title>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; margin: 1rem; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>onnxruntime-web baseline</h1>
+  <p>Spike 0001's baseline: KataGo's own ONNX graph (<code>katago dumponnx</code>) run by onnxruntime-web, with its
+    WebGPU and WASM execution providers. It checks the outputs against native KataGo's goldens and measures evaluations
+    per second by batch size, the same way as the GPU check page measures the WebGPU engine. A developer page; the
+    product never loads onnxruntime-web.</p>
+  <p><label>ONNX graph (<code>.onnx</code>, from <code>katago dumponnx --skip-scale8</code>): <input id="onnx" type="file" accept=".onnx"></label><br>
+    <label>The same network's KataGo model file (<code>.bin.gz</code>), for its post-processing parameters: <input id="model" type="file"></label></p>
+  <p><button id="run" type="button">Check and benchmark</button> <button id="download" type="button" hidden>Download report</button></p>
+  <pre id="summary" aria-live="polite"></pre>
+  <details><summary>Steps</summary><pre id="steps"></pre></details>
+  <pre id="out"></pre>
+  <script type="module" src="./ort-bench.js"></script>
+</body>
+</html>

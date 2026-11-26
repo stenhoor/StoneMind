@@ -64,3 +64,21 @@ test('every relative import in the GPU check engine modules resolves to a file',
     }
   }
 });
+
+test('the onnxruntime-web baseline page and the files it loads are in the site', () => {
+  const ort = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'site', 'ort-bench');
+  for (const file of ['index.html', 'ort-bench.js', 'vendor/LICENSE.txt', 'vendor/ort.webgpu.min.mjs', 'vendor/ort.wasm.min.mjs']) {
+    assert.ok(existsSync(join(ort, file)), `missing ort-bench/${file}`);
+  }
+  // Each build's runtime, as its loader names it.
+  for (const loader of ['ort.webgpu.min.mjs', 'ort.wasm.min.mjs']) {
+    const source = readFileSync(join(ort, 'vendor', loader), 'utf8');
+    for (const [name] of source.matchAll(/ort-wasm-simd-threaded[a-z.]*\.mjs/g)) {
+      assert.ok(existsSync(join(ort, 'vendor', name)), `${loader} loads missing ${name}`);
+      assert.ok(existsSync(join(ort, 'vendor', name.replace(/\.mjs$/, '.wasm'))), `missing ${name.replace(/\.mjs$/, '.wasm')}`);
+    }
+  }
+  // The page imports the engine from the GPU check's copy.
+  const page = readFileSync(join(ort, 'ort-bench.js'), 'utf8');
+  for (const [, spec] of page.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(ort, spec)), `ort-bench.js imports missing ${spec}`);
+});
