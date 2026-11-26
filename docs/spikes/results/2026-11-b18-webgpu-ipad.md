@@ -106,6 +106,25 @@ These are evaluations per second at batch 64, all Winograd, from a single run. T
   101.3, and its order against transforms v2 reversed (124.8 against 113.9, then 101.3 against 107.0). Single runs on
   this device therefore can't rank variants that differ by less than about 20%. Why it varies hasn't been measured.
 
+## Search benchmark (after PR #52)
+
+Network: `{"winograd":true,"fuse":true,"gemm":"v2","precision":"f16"}` (the default GEMM shape). `ok: true`, no device
+loss. Single run.
+
+| Live (`fight-19`, 2000 visits) | Visits/s | Mean batch | Network ms | Other ms |
+| --- | ---: | ---: | ---: | ---: |
+| Batch 16 | 120.2 | 15.9 | 16445 | 198 |
+| Batch 32 | 128.1 | 31.5 | 15408 | 206 |
+| Batch 64 | 127.7 | 62.2 | 15466 | 190 |
+
+**Review:** 250 moves × 100 visits in 233.4 s (107.1 visits/s), which is 3.89 minutes for 250 moves.
+
+- **Where the time goes:** the network takes 98–99% of the live time; the search itself (selection, encoding, backup)
+  takes about 1%.
+- **Batch size:** batches 32 and 64 give about the same speed; batch 16 is about 6% slower.
+- **Against the spike's pass marks:** these are set on the owner's Linux + NVIDIA machine, not this device. For reference,
+  this device's live speed (128 visits/s) is below 200, and its review time (3.89 min) is under 5 minutes.
+
 ## Not available
 
 - **Native comparison:** there's no native KataGo number for this device. KataGo's command line can't run on iPadOS.
