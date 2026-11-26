@@ -201,7 +201,10 @@ same work for at least 300 ms, then the timed passes, all submitted at once with
 doesn't go idle and lower its clocks mid-measurement. The figure is the timed passes' whole GPU span divided by their
 number. On the GEMM benchmark, `?gemmBatches=16,64` runs only those batches and `?gemmReverse=1` measures the v3
 shapes in the opposite order. `?gemmShapes=small` measures narrower v3 tiles instead (`GemmV3Config.wx`, threads
-along N), for small batches.
+along N), for small batches. `?gemmLadder=1` measures v3 shapes whole and by stage (the main loop from workgroup memory and
+from registers, and the loads alone; `GemmV3Config.stage`), against the device's ceilings measured in the same session
+(`test/gpu/ceilings.js`); `?gemmLadderShapes=` and `?gemmLadderVariants=vload,blocks,prefetch,double` choose the shapes
+and the candidate fixes (`docs/spikes/results/2026-11-b18-gemm-ladder.md`).
 
 **The budget benchmark** (the page's "Budget benchmark" button, `test/gpu/budget-bench.js`) measures what each kind
 of work in the network costs on this device, against what the device can do. It measures the ceilings first: copy
