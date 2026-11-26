@@ -54,7 +54,7 @@ function reference(shape, A, B) {
   return C;
 }
 
-export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs = 7, warmUpMs = 2000, reverse = false, step = () => {} } = {}) {
+export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs = 7, warmUpMs = 2000, reverse = false, smallShapes = false, step = () => {} } = {}) {
   const engine = await requestEngineDevice();
   const { device } = engine;
   const report = { kind: 'gemm', adapter: engine.adapterInfo, features: [...engine.features], userAgent: navigator.userAgent, date: new Date().toISOString(), batches, repeat, runs };
@@ -70,12 +70,14 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
   const wgBytes = device.limits.maxComputeWorkgroupStorageSize;
   report.maxComputeWorkgroupStorageSize = wgBytes;
   // [rm, rn, tk, wy, double]: rows and columns per thread, the chunk, threads along M, and double buffering.
-  const shapesToTry = [
-    [4, 8, 16, 16], [4, 4, 16, 16], [4, 8, 8, 16], [4, 8, 32, 16], [8, 8, 16, 16],
-    [8, 8, 16, 8], [8, 4, 16, 8], [4, 8, 16, 16, true],
-  ];
-  for (const [rm, rn, tk, wy, double] of shapesToTry) {
-    const config = double ? { rm, rn, tk, wy, double } : { rm, rn, tk, wy };
+  // [rm, rn, tk, wy, wx, double]: rows and columns per thread, the chunk, threads along M and along N, and double
+  // buffering. smallShapes: narrower tiles, for small batches.
+  const shapesToTry = smallShapes
+    ? [[4, 8, 16, 16, 16], [4, 4, 16, 16, 16], [4, 4, 16, 16, 8], [4, 4, 16, 8, 8], [4, 4, 8, 8, 8], [4, 4, 16, 8, 16], [4, 4, 16, 16, 4], [4, 4, 32, 8, 8]]
+    : [[4, 8, 16, 16, 16], [4, 4, 16, 16, 16], [4, 8, 8, 16, 16], [4, 8, 32, 16, 16], [8, 8, 16, 16, 16], [8, 8, 16, 8, 16], [8, 4, 16, 8, 16], [4, 8, 16, 16, 16, true]];
+  report.smallShapes = smallShapes;
+  for (const [rm, rn, tk, wy, wx, double] of shapesToTry) {
+    const config = { rm, rn, tk, wy, ...(wx === 16 ? {} : { wx }), ...(double ? { double } : {}) };
     const tile = gemmV3Tile(config);
     if ((double ? 2 : 1) * tk * (tile.tm + tile.tn) * 4 > wgBytes) continue;
     kernels.push({ name: 'v3', config, code: GEMM_V3(elem, elem, elem, config), tile });
