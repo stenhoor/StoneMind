@@ -43,7 +43,7 @@ const copyJs = (from, to) => {
 };
 copyJs(join(webgpu, 'dist'), join(gpuCheck, 'dist'));
 mkdirSync(join(gpuCheck, 'test', 'gpu'), { recursive: true });
-for (const file of ['index.html', 'check.js', 'gemm-bench.js', 'transform-bench.js', 'dispatch-bench.js', 'timing.js']) cpSync(join(webgpu, 'test', 'gpu', file), join(gpuCheck, 'test', 'gpu', file));
+for (const file of ['index.html', 'check.js', 'gemm-bench.js', 'transform-bench.js', 'dispatch-bench.js', 'budget-bench.js', 'timing.js']) cpSync(join(webgpu, 'test', 'gpu', file), join(gpuCheck, 'test', 'gpu', file));
 mkdirSync(join(gpuCheck, 'test', 'goldens'), { recursive: true });
 for (const file of readdirSync(join(webgpu, 'test', 'goldens'))) {
   if (file.endsWith('.json') && !file.endsWith('-cuda.json')) cpSync(join(webgpu, 'test', 'goldens', file), join(gpuCheck, 'test', 'goldens', file));

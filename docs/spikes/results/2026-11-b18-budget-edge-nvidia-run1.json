@@ -1,0 +1,566 @@
+{
+  "kind": "budget",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T16:25:25.091Z",
+  "variant": {
+    "winograd": true,
+    "fuse": true,
+    "precision": "f16"
+  },
+  "batches": [
+    1,
+    4,
+    8,
+    16,
+    32,
+    64
+  ],
+  "maxBatch": 64,
+  "runs": 7,
+  "warmUpMs": 500,
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "ceilings": {
+    "copy": [
+      {
+        "mib": 8,
+        "bytesMoved": 16777216,
+        "ms": 0.2621,
+        "gbPerSecond": 64
+      },
+      {
+        "mib": 64,
+        "bytesMoved": 134217728,
+        "ms": 0.4213,
+        "gbPerSecond": 318.6
+      }
+    ],
+    "fmaf32": {
+      "workgroups": 6144,
+      "iterations": 1024,
+      "ms": 5.3833,
+      "tflops": 19.15
+    },
+    "fmaf16": {
+      "workgroups": 6144,
+      "iterations": 1024,
+      "ms": 5.8795,
+      "tflops": 17.53
+    },
+    "dispatch": {
+      "count": 500,
+      "msPerDispatch": 0.00105
+    }
+  },
+  "subgroupMatrixConfigs": [],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "gemm": "v3",
+  "gemmConfig": {
+    "rm": 4,
+    "rn": 8,
+    "tk": 16
+  },
+  "winoTransforms": {
+    "in": "v2",
+    "out": "v1"
+  },
+  "dispatches": 338,
+  "kinds": [
+    "matvec",
+    "winoIn",
+    "winoGemm",
+    "winoOut",
+    "bnAct",
+    "conv1x1",
+    "gpool"
+  ],
+  "network": [
+    {
+      "batch": 1,
+      "fullMs": 7.7145,
+      "fullPassMsMedian": 7.4711,
+      "kinds": [
+        {
+          "kind": "matvec",
+          "dispatches": 11,
+          "flops": 313920,
+          "bytes": 639352,
+          "withoutMs": 7.3681,
+          "shareMs": 0.3464,
+          "onlyMs": 0.2715
+        },
+        {
+          "kind": "winoIn",
+          "dispatches": 78,
+          "flops": 312897600,
+          "bytes": 36549576,
+          "withoutMs": 7.1528,
+          "shareMs": 0.5617,
+          "onlyMs": 0.8239
+        },
+        {
+          "kind": "winoGemm",
+          "dispatches": 78,
+          "flops": 4682188800,
+          "bytes": 238936752,
+          "withoutMs": 3.3611,
+          "shareMs": 4.3535,
+          "onlyMs": 3.9415
+        },
+        {
+          "kind": "winoOut",
+          "dispatches": 78,
+          "flops": 170496000,
+          "bytes": 40823040,
+          "withoutMs": 7.3119,
+          "shareMs": 0.4026,
+          "onlyMs": 0.2715
+        },
+        {
+          "kind": "bnAct",
+          "dispatches": 45,
+          "flops": 8097952,
+          "bytes": 16195904,
+          "withoutMs": 7.9299,
+          "shareMs": -0.2153,
+          "onlyMs": 0.3183
+        },
+        {
+          "kind": "conv1x1",
+          "dispatches": 41,
+          "flops": 1956365856,
+          "bytes": 26390508,
+          "withoutMs": 6.048,
+          "shareMs": 1.6665,
+          "onlyMs": 1.5167
+        },
+        {
+          "kind": "gpool",
+          "dispatches": 7,
+          "flops": 150176,
+          "bytes": 305344,
+          "withoutMs": 7.7801,
+          "shareMs": -0.0655,
+          "onlyMs": 0.0281
+        }
+      ]
+    },
+    {
+      "batch": 4,
+      "fullMs": 9.2874,
+      "fullPassMsMedian": 8.7818,
+      "kinds": [
+        {
+          "kind": "matvec",
+          "dispatches": 11,
+          "flops": 1255680,
+          "bytes": 673888,
+          "withoutMs": 8.5759,
+          "shareMs": 0.7115,
+          "onlyMs": 0.2621
+        },
+        {
+          "kind": "winoIn",
+          "dispatches": 78,
+          "flops": 1251590400,
+          "bytes": 146198304,
+          "withoutMs": 7.6583,
+          "shareMs": 1.629,
+          "onlyMs": 1.3107
+        },
+        {
+          "kind": "winoGemm",
+          "dispatches": 78,
+          "flops": 18728755200,
+          "bytes": 393884352,
+          "withoutMs": 4.6437,
+          "shareMs": 4.6437,
+          "onlyMs": 4.0445
+        },
+        {
+          "kind": "winoOut",
+          "dispatches": 78,
+          "flops": 681984000,
+          "bytes": 163292160,
+          "withoutMs": 8.4635,
+          "shareMs": 0.8239,
+          "onlyMs": 0.6179
+        },
+        {
+          "kind": "bnAct",
+          "dispatches": 45,
+          "flops": 32391808,
+          "bytes": 64783616,
+          "withoutMs": 9.0627,
+          "shareMs": 0.2247,
+          "onlyMs": 0.3277
+        },
+        {
+          "kind": "conv1x1",
+          "dispatches": 41,
+          "flops": 7825463424,
+          "bytes": 89304144,
+          "withoutMs": 6.8719,
+          "shareMs": 2.4155,
+          "onlyMs": 1.7788
+        },
+        {
+          "kind": "gpool",
+          "dispatches": 7,
+          "flops": 600704,
+          "bytes": 1221376,
+          "withoutMs": 8.6039,
+          "shareMs": 0.6834,
+          "onlyMs": 0.0281
+        }
+      ]
+    },
+    {
+      "batch": 8,
+      "fullMs": 14.109,
+      "fullPassMsMedian": 13.9592,
+      "kinds": [
+        {
+          "kind": "matvec",
+          "dispatches": 11,
+          "flops": 2511360,
+          "bytes": 719936,
+          "withoutMs": 13.9779,
+          "shareMs": 0.1311,
+          "onlyMs": 0.309
+        },
+        {
+          "kind": "winoIn",
+          "dispatches": 78,
+          "flops": 2503180800,
+          "bytes": 292396608,
+          "withoutMs": 13.1072,
+          "shareMs": 1.0018,
+          "onlyMs": 1.8818
+        },
+        {
+          "kind": "winoGemm",
+          "dispatches": 78,
+          "flops": 37457510400,
+          "bytes": 600481152,
+          "withoutMs": 7.8643,
+          "shareMs": 6.2446,
+          "onlyMs": 7.1715
+        },
+        {
+          "kind": "winoOut",
+          "dispatches": 78,
+          "flops": 1363968000,
+          "bytes": 326584320,
+          "withoutMs": 12.8263,
+          "shareMs": 1.2826,
+          "onlyMs": 1.938
+        },
+        {
+          "kind": "bnAct",
+          "dispatches": 45,
+          "flops": 64783616,
+          "bytes": 129567232,
+          "withoutMs": 13.5379,
+          "shareMs": 0.5711,
+          "onlyMs": 0.6647
+        },
+        {
+          "kind": "conv1x1",
+          "dispatches": 41,
+          "flops": 15650926848,
+          "bytes": 173188992,
+          "withoutMs": 11.6935,
+          "shareMs": 2.4155,
+          "onlyMs": 2.7525
+        },
+        {
+          "kind": "gpool",
+          "dispatches": 7,
+          "flops": 1201408,
+          "bytes": 2442752,
+          "withoutMs": 14.0902,
+          "shareMs": 0.0187,
+          "onlyMs": 0.0281
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "fullMs": 26.4297,
+      "fullPassMsMedian": 26.4765,
+      "kinds": [
+        {
+          "kind": "matvec",
+          "dispatches": 11,
+          "flops": 5022720,
+          "bytes": 812032,
+          "withoutMs": 25.7276,
+          "shareMs": 0.7022,
+          "onlyMs": 0.2715
+        },
+        {
+          "kind": "winoIn",
+          "dispatches": 78,
+          "flops": 5006361600,
+          "bytes": 584793216,
+          "withoutMs": 22.7504,
+          "shareMs": 3.6794,
+          "onlyMs": 3.8011
+        },
+        {
+          "kind": "winoGemm",
+          "dispatches": 78,
+          "flops": 74915020800,
+          "bytes": 1013674752,
+          "withoutMs": 13.3038,
+          "shareMs": 13.1259,
+          "onlyMs": 13.3319
+        },
+        {
+          "kind": "winoOut",
+          "dispatches": 78,
+          "flops": 2727936000,
+          "bytes": 653168640,
+          "withoutMs": 22.6474,
+          "shareMs": 3.7824,
+          "onlyMs": 3.3611
+        },
+        {
+          "kind": "bnAct",
+          "dispatches": 45,
+          "flops": 129567232,
+          "bytes": 259134464,
+          "withoutMs": 24.8381,
+          "shareMs": 1.5916,
+          "onlyMs": 1.3107
+        },
+        {
+          "kind": "conv1x1",
+          "dispatches": 41,
+          "flops": 31301853696,
+          "bytes": 340958688,
+          "withoutMs": 21.2243,
+          "shareMs": 5.2054,
+          "onlyMs": 165.675
+        },
+        {
+          "kind": "gpool",
+          "dispatches": 7,
+          "flops": 2402816,
+          "bytes": 4885504,
+          "withoutMs": 59.2165,
+          "shareMs": -32.7867,
+          "onlyMs": 0.0468
+        }
+      ]
+    },
+    {
+      "batch": 32,
+      "fullMs": 50.5563,
+      "fullPassMsMedian": 51.0525,
+      "kinds": [
+        {
+          "kind": "matvec",
+          "dispatches": 11,
+          "flops": 10045440,
+          "bytes": 996224,
+          "withoutMs": 52.2696,
+          "shareMs": -1.7133,
+          "onlyMs": 0.2902
+        },
+        {
+          "kind": "winoIn",
+          "dispatches": 78,
+          "flops": 10012723200,
+          "bytes": 1169586432,
+          "withoutMs": 46.4463,
+          "shareMs": 4.11,
+          "onlyMs": 7.1715
+        },
+        {
+          "kind": "winoGemm",
+          "dispatches": 78,
+          "flops": 149830041600,
+          "bytes": 1840061952,
+          "withoutMs": 28.4707,
+          "shareMs": 22.0856,
+          "onlyMs": 23.1997
+        },
+        {
+          "kind": "winoOut",
+          "dispatches": 78,
+          "flops": 5455872000,
+          "bytes": 1306337280,
+          "withoutMs": 47.2046,
+          "shareMs": 3.3517,
+          "onlyMs": 6.0668
+        },
+        {
+          "kind": "bnAct",
+          "dispatches": 45,
+          "flops": 259134464,
+          "bytes": 518268928,
+          "withoutMs": 50.5376,
+          "shareMs": 0.0187,
+          "onlyMs": 2.4529
+        },
+        {
+          "kind": "conv1x1",
+          "dispatches": 41,
+          "flops": 62603707392,
+          "bytes": 676498080,
+          "withoutMs": 40.623,
+          "shareMs": 9.9334,
+          "onlyMs": 10.5794
+        },
+        {
+          "kind": "gpool",
+          "dispatches": 7,
+          "flops": 4805632,
+          "bytes": 9771008,
+          "withoutMs": 47.7477,
+          "shareMs": 2.8087,
+          "onlyMs": 0.0749
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "fullMs": 106.6083,
+      "fullPassMsMedian": 108.0689,
+      "kinds": [
+        {
+          "kind": "matvec",
+          "dispatches": 11,
+          "flops": 20090880,
+          "bytes": 1364608,
+          "withoutMs": 109.1455,
+          "shareMs": -2.5372,
+          "onlyMs": 0.2715
+        },
+        {
+          "kind": "winoIn",
+          "dispatches": 78,
+          "flops": 20025446400,
+          "bytes": 2339172864,
+          "withoutMs": 86.2079,
+          "shareMs": 20.4004,
+          "onlyMs": 21.1307
+        },
+        {
+          "kind": "winoGemm",
+          "dispatches": 78,
+          "flops": 299660083200,
+          "bytes": 3492836352,
+          "withoutMs": 53.7582,
+          "shareMs": 52.8501,
+          "onlyMs": 47.0923
+        },
+        {
+          "kind": "winoOut",
+          "dispatches": 78,
+          "flops": 10911744000,
+          "bytes": 2612674560,
+          "withoutMs": 85.7211,
+          "shareMs": 20.8873,
+          "onlyMs": 14.3243
+        },
+        {
+          "kind": "bnAct",
+          "dispatches": 45,
+          "flops": 518268928,
+          "bytes": 1036537856,
+          "withoutMs": 92.7896,
+          "shareMs": 13.8187,
+          "onlyMs": 5.4301
+        },
+        {
+          "kind": "conv1x1",
+          "dispatches": 41,
+          "flops": 125207414784,
+          "bytes": 1347576864,
+          "withoutMs": 79.5982,
+          "shareMs": 27.0102,
+          "onlyMs": 21.758
+        },
+        {
+          "kind": "gpool",
+          "dispatches": 7,
+          "flops": 9611264,
+          "bytes": 19542016,
+          "withoutMs": 98.6036,
+          "shareMs": 8.0048,
+          "onlyMs": 0.1123
+        }
+      ]
+    }
+  ],
+  "ok": true,
+  "steps": [
+    "16:25:25.092 copy bandwidth",
+    "16:25:25.178 vector FMA throughput, f32",
+    "16:25:25.515 vector FMA throughput, f16",
+    "16:25:25.889 dispatch fixed cost",
+    "16:25:26.055 loading the model",
+    "16:25:26.637 building the network {\"winograd\":true,\"fuse\":true,\"precision\":\"f16\"} for maxBatch 64",
+    "16:25:29.617 network at batch 1",
+    "16:25:30.015 network at batch 1: matvec",
+    "16:25:30.555 network at batch 1: winoIn",
+    "16:25:31.062 network at batch 1: winoGemm",
+    "16:25:31.661 network at batch 1: winoOut",
+    "16:25:32.213 network at batch 1: bnAct",
+    "16:25:32.742 network at batch 1: conv1x1",
+    "16:25:33.465 network at batch 1: gpool",
+    "16:25:33.896 network at batch 4",
+    "16:25:34.366 network at batch 4: matvec",
+    "16:25:34.923 network at batch 4: winoIn",
+    "16:25:35.592 network at batch 4: winoGemm",
+    "16:25:36.358 network at batch 4: winoOut",
+    "16:25:36.918 network at batch 4: bnAct",
+    "16:25:37.436 network at batch 4: conv1x1",
+    "16:25:38.097 network at batch 4: gpool",
+    "16:25:38.535 network at batch 8",
+    "16:25:39.140 network at batch 8: matvec",
+    "16:25:39.745 network at batch 8: winoIn",
+    "16:25:40.498 network at batch 8: winoGemm",
+    "16:25:41.432 network at batch 8: winoOut",
+    "16:25:42.218 network at batch 8: bnAct",
+    "16:25:42.829 network at batch 8: conv1x1",
+    "16:25:43.728 network at batch 8: gpool",
+    "16:25:44.295 network at batch 16",
+    "16:25:44.999 network at batch 16: matvec",
+    "16:25:45.772 network at batch 16: winoIn",
+    "16:25:46.823 network at batch 16: winoGemm",
+    "16:25:47.930 network at batch 16: winoOut",
+    "16:25:48.863 network at batch 16: bnAct",
+    "16:25:49.747 network at batch 16: conv1x1",
+    "16:25:52.408 network at batch 16: gpool",
+    "16:25:53.393 network at batch 32",
+    "16:25:54.277 network at batch 32: matvec",
+    "16:25:55.255 network at batch 32: winoIn",
+    "16:25:56.600 network at batch 32: winoGemm",
+    "16:25:57.972 network at batch 32: winoOut",
+    "16:25:59.304 network at batch 32: bnAct",
+    "16:26:00.539 network at batch 32: conv1x1",
+    "16:26:01.961 network at batch 32: gpool",
+    "16:26:02.914 network at batch 64",
+    "16:26:04.299 network at batch 64: matvec",
+    "16:26:05.799 network at batch 64: winoIn",
+    "16:26:07.664 network at batch 64: winoGemm",
+    "16:26:09.510 network at batch 64: winoOut",
+    "16:26:11.298 network at batch 64: bnAct",
+    "16:26:13.047 network at batch 64: conv1x1",
+    "16:26:14.881 network at batch 64: gpool"
+  ]
+}

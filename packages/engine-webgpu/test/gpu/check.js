@@ -7,6 +7,7 @@ import {
 import { runGemmBench } from './gemm-bench.js';
 import { runTransformBench } from './transform-bench.js';
 import { runDispatchBench } from './dispatch-bench.js';
+import { runBudgetBench } from './budget-bench.js';
 
 // The same tolerances as test/goldens.test.mjs.
 const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
@@ -704,6 +705,16 @@ function summarise(r) {
     for (const n of r.network ?? []) lines.push(`network batch ${n.batch} (plan for ${n.planMaxBatch}): ${n.dispatches} dispatches, GPU pass ${n.gpuPassMs} ms (gemm ${n.gemm})`);
     return lines.join('\n');
   }
+  if (r.kind === 'budget') {
+    const lines = [`budget benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${JSON.stringify(r.variant)}`];
+    if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
+    lines.push(`ceilings: ${JSON.stringify(r.ceilings)}`);
+    for (const row of r.network ?? []) {
+      lines.push(`batch ${row.batch}: pass ${row.full.ms} ms`);
+      for (const k of row.kinds) lines.push(`  ${k.kind} ×${k.dispatches}: share ${k.shareMs} ms, alone ${k.only.ms} ms`);
+    }
+    return lines.join('\n');
+  }
   if (r.kind === 'transforms') {
     const lines = [`transform benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${r.elem} storage`];
     if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
@@ -854,6 +865,27 @@ document.getElementById('dispatch').addEventListener('click', () => {
   (file ? file.arrayBuffer() : fetch(modelUrl).then((res) => res.arrayBuffer()))
     .then((modelBytes) => runDispatchBench({ modelBytes, step, ...(params.has('networkWarmUpMs') ? { networkWarmUpMs: Number(params.get('networkWarmUpMs')) } : {}) }))
     .then((r) => show({ ...r, model: r.model ?? 'dispatch' }), (e) => {
+      const error = describeError(e);
+      summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+      lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+      download.hidden = false;
+    });
+});
+// ?budgetVariant=<GpuNetwork options JSON> (default: the search benchmark's network); ?budgetBatches=1,16.
+document.getElementById('budget').addEventListener('click', () => {
+  summary.textContent = 'Running…';
+  out.textContent = '';
+  download.hidden = true;
+  steps.length = 0;
+  const file = picker.files?.[0] ?? null;
+  (file ? file.arrayBuffer() : fetch(modelUrl).then((res) => res.arrayBuffer()))
+    .then((modelBytes) => runBudgetBench({
+      modelBytes,
+      step,
+      ...(params.has('budgetVariant') ? { variant: JSON.parse(params.get('budgetVariant')) } : {}),
+      ...(params.has('budgetBatches') ? { batches: params.get('budgetBatches').split(',').map(Number) } : {}),
+    }))
+    .then((r) => show({ ...r, model: r.model ?? 'budget' }), (e) => {
       const error = describeError(e);
       summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
       lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };

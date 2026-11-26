@@ -12,7 +12,7 @@ import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
 import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_MMA, gemmMmaTile, type GemmMmaConfig, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
-import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
+import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePassEncoder, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
   /** The plan's board size (default 19 × 19). Smaller boards fit in its top-left corner. */
@@ -89,6 +89,19 @@ interface OpSpec {
   code: string;
   buffers: GPUBuffer[];
   workgroups: (n: number) => [number, number] | [number, number, number];
+  /** The least work the op needs at batch n (measurement only, see {@link OpWork}). */
+  work: (n: number) => { flops: number; bytes: number };
+}
+
+/**
+ * The least work one dispatch needs at a batch size (measurement only): \`flops\` counts multiplies and adds as 2 per
+ * multiply-add (for the Winograd transforms, as dense 6×6 matrix products); \`bytes\` counts each input, weight and
+ * output element once, at its stored size (an accumulated output is read and written).
+ */
+export interface OpWork {
+  kind: string;
+  flops: number;
+  bytes: number;
 }
 
 /** Timings from {@link GpuNetwork.profile}. GPU times come from timestamp queries, in nanoseconds as the browser reports them. */
@@ -108,6 +121,7 @@ interface Op {
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
   workgroups: (n: number) => [number, number] | [number, number, number];
+  work: (n: number) => { flops: number; bytes: number };
 }
 
 interface OutputRegion {
@@ -358,6 +372,11 @@ export class GpuNetwork {
     return this.#elems.get(buffer) ?? 'f32';
   }
 
+  /** Bytes per element of a buffer. */
+  #eb(buffer: GPUBuffer): number {
+    return this.#elemOf(buffer) === 'f16' ? 2 : 4;
+  }
+
   #uniform(values: readonly number[]): GPUBuffer {
     const u = new Uint32Array(Math.ceil(values.length / 4) * 4);
     u.set(values);
@@ -392,7 +411,7 @@ export class GpuNetwork {
     }
     for (const spec of this.#specs) {
       const pipeline = await pipelines.get(spec.code)!;
-      this.#ops.push({ kind: spec.kind, pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups });
+      this.#ops.push({ kind: spec.kind, pipeline, bindGroup: this.#bind(pipeline, spec.buffers), workgroups: spec.workgroups, work: spec.work });
     }
   }
 
@@ -541,6 +560,11 @@ export class GpuNetwork {
       code: CONV(this.#elemOf(input), this.#elem, this.#elemOf(output)),
       buffers: [params, this.#dyn, input, weights, output, opts.nbias ?? this.#dummy],
       workgroups: (n) => [Math.ceil((n * area) / CONV_TILE_N), Math.ceil(layer.outChannels / CONV_TILE_M)],
+      work: (n) => ({
+        flops: 2 * n * area * layer.outChannels * K,
+        bytes: n * layer.inChannels * area * this.#eb(input) + K * layer.outChannels * this.#eb(weights) +
+          n * layer.outChannels * area * this.#eb(output) * (opts.accumulate ? 2 : 1),
+      }),
     });
   }
 
@@ -559,6 +583,10 @@ export class GpuNetwork {
         this.#dyn, weights, input, output, opts.nbias ?? this.#dummy,
       ],
       workgroups: (n) => [Math.ceil(area / kernel.tn), Math.ceil(oc / kernel.tm), n],
+      work: (n) => ({
+        flops: 2 * n * area * oc * ic,
+        bytes: n * ic * area * this.#eb(input) + ic * oc * this.#eb(weights) + n * oc * area * this.#eb(output) * (opts.accumulate ? 2 : 1),
+      }),
     });
   }
 
@@ -618,6 +646,10 @@ export class GpuNetwork {
       workgroups: this.#winoIn === 'v2'
         ? (n) => [Math.ceil(ic / winoTransformChannels('in', this.xSize, this.ySize)), n]
         : (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
+      work: (n) => ({
+        flops: n * tilesPerBoard * ic * 2 * (2 * 6 * 6 * 6),
+        bytes: n * ic * this.#area * this.#eb(input) + 36 * ic * n * tilesPerBoard * this.#eb(V),
+      }),
     });
     const mma = this.#winoGemmMma;
     if (mma) {
@@ -636,6 +668,10 @@ export class GpuNetwork {
           this.#dyn, Ut, V, M, this.#dummy,
         ],
         workgroups: (n) => [Math.ceil((n * tilesPerBoard) / tile.tn), Math.ceil(oc / tile.tm), 36],
+        work: (n: number) => ({
+          flops: 2 * 36 * oc * ic * n * tilesPerBoard,
+          bytes: 36 * ic * oc * this.#eb(Ut) + 36 * ic * n * tilesPerBoard * this.#eb(V) + 36 * oc * n * tilesPerBoard * this.#eb(M),
+        }),
       });
     } else if (this.#gemm !== 'v1') {
       const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
@@ -649,6 +685,10 @@ export class GpuNetwork {
           this.#dyn, U, V, M, this.#dummy,
         ],
         workgroups: (n) => [Math.ceil((n * tilesPerBoard) / kernel.tn), Math.ceil(oc / kernel.tm), 36],
+        work: (n: number) => ({
+          flops: 2 * 36 * oc * ic * n * tilesPerBoard,
+          bytes: 36 * ic * oc * this.#eb(U) + 36 * ic * n * tilesPerBoard * this.#eb(V) + 36 * oc * n * tilesPerBoard * this.#eb(M),
+        }),
       });
     } else {
       const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
@@ -657,6 +697,10 @@ export class GpuNetwork {
         code: WINO_GEMM(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),
         buffers: [this.#uniform([ic, oc, tilesPerBoard, tileStride]), this.#dyn, U, V, M],
         workgroups: (n) => [Math.ceil((n * tilesPerBoard) / 64), Math.ceil(oc / 64), 36],
+        work: (n: number) => ({
+          flops: 2 * 36 * oc * ic * n * tilesPerBoard,
+          bytes: 36 * ic * oc * this.#eb(U) + 36 * ic * n * tilesPerBoard * this.#eb(V) + 36 * oc * n * tilesPerBoard * this.#eb(M),
+        }),
       });
     }
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
@@ -672,6 +716,10 @@ export class GpuNetwork {
       workgroups: this.#winoOut === 'v2'
         ? (n) => [Math.ceil(oc / winoTransformChannels('out', this.xSize, this.ySize)), n]
         : (n) => [Math.ceil((n * tilesPerBoard) / 64), oc],
+      work: (n) => ({
+        flops: n * tilesPerBoard * oc * 2 * (4 * 6 * 6 + 4 * 4 * 6),
+        bytes: 36 * oc * n * tilesPerBoard * this.#eb(M) + n * oc * this.#area * this.#eb(output) * (opts.accumulate ? 2 : 1),
+      }),
     });
   }
 
@@ -685,6 +733,7 @@ export class GpuNetwork {
       code: BN_ACT(this.#elemOf(input), this.#elemOf(output)),
       buffers: [params, this.#dyn, input, this.#upload(sb), output, pre ?? this.#dummy, this.#input],
       workgroups: (n) => splitGroups(Math.ceil((n * C * area) / 256)),
+      work: (n) => ({ flops: 2 * n * C * area, bytes: n * C * area * (this.#eb(input) + this.#eb(output)) }),
     });
   }
 
@@ -696,6 +745,7 @@ export class GpuNetwork {
       code: GPOOL(this.#elemOf(input)),
       buffers: [params, this.#dyn, input, output, this.#input],
       workgroups: (n) => [channels, n],
+      work: (n) => ({ flops: n * channels * area, bytes: n * channels * area * this.#eb(input) + n * 3 * channels * 4 }),
     });
   }
 
@@ -715,6 +765,10 @@ export class GpuNetwork {
       code: MATVEC,
       buffers: [params, this.#dyn, input, this.#upload(layer.weights), output, bias ? this.#upload(bias.weights) : this.#dummy],
       workgroups: (n) => [Math.ceil(layer.outChannels / 64), n],
+      work: (n) => ({
+        flops: 2 * n * layer.inChannels * layer.outChannels,
+        bytes: layer.inChannels * layer.outChannels * 4 + n * (layer.inChannels + layer.outChannels) * 4,
+      }),
     });
   }
 
@@ -723,6 +777,28 @@ export class GpuNetwork {
   /** The number of compute dispatches in one evaluation. */
   get dispatchCount(): number {
     return this.#ops.length;
+  }
+
+  /** The least work of each dispatch at batch n, in plan order (measurement only, see {@link OpWork}). */
+  opWork(n: number): OpWork[] {
+    return this.#ops.map((op) => ({ kind: op.kind, ...op.work(n) }));
+  }
+
+  /**
+   * Encode the plan's dispatches for batch n into \`pass\`, leaving out the kinds in \`skip\` (measurement only: with
+   * kinds left out the outputs are meaningless). It sets the batch size for work submitted after this call, so it
+   * must not run while evaluations are in flight. For timing the plan, or its parts, back to back.
+   */
+  recordPass(pass: GPUComputePassEncoder, n: number, skip: ReadonlySet<string> = new Set()): void {
+    if (n < 1 || n > this.maxBatch) throw new Error(`batch ${n} is outside 1..${this.maxBatch}`);
+    this.device.queue.writeBuffer(this.#dyn, 0, new Uint32Array([n, 0, 0, 0]));
+    for (const op of this.#ops) {
+      if (skip.has(op.kind)) continue;
+      pass.setPipeline(op.pipeline);
+      pass.setBindGroup(0, op.bindGroup);
+      const [x, y, z = 1] = op.workgroups(n);
+      pass.dispatchWorkgroups(x, y, z);
+    }
   }
 
   /** Take `count` readback buffers, waiting behind earlier callers until they're free. */
