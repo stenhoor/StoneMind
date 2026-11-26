@@ -120,3 +120,18 @@ scoring only (owner decision, 2026-11-26): passes, two passes (or simple ko's sp
 area scoring with no group tax. Still refused with `UnsupportedPositionError`: the territory-scoring encore (Japanese
 and Korean games past the main phase), ending a game with a group tax (stone-scoring, ancient-territory), no-result long
 cycles, and rule sets with a button.
+
+## 13. Browser engine: network calls in flight (spike 0001)
+
+KataGo runs its search threads on the CPU while one neural-net server thread per model runs the GPU
+(`numNNServerThreadsPerModel`, 1 by default in `analysis_example.cfg`). The browser engine is a single JavaScript
+thread, so it gets the same CPU/GPU overlap by letting more than one network call be in flight. Decided in code, with
+no spec covering it:
+- **`GpuNetwork` allows 2 calls in flight by default** (`maxInFlight`). Each has its own readback buffer, and calls
+  are submitted in the order they're made.
+- **`SharedEvaluator` spreads requests across calls.** When two calls can start, requests that arrived together are
+  spread across them, each request whole, in arrival order. So two reviewed turns that asked together get two calls of
+  16 rather than one of 32. KataGo's server takes everything queued, up to `nnMaxBatchSize`, when it is free.
+
+Each search still has at most its batch of leaves in flight. Measured on the owner's laptop:
+`docs/spikes/results/2026-11-b18-inflight.md`.

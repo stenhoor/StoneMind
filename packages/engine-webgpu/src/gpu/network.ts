@@ -52,6 +52,15 @@ export interface GpuNetworkOptions {
    * (`WINO_IN_V2`, `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point.
    */
   winoTransforms?: 'v1' | 'v2';
+  /**
+   * How many {@link GpuNetwork.evaluate} calls may be in flight at once (default 2). While one call's outputs are read
+   * back, the next call's inputs are written and its work submitted, so the GPU doesn't wait for the page between calls.
+   * Each call in flight has its own readback buffer: a buffer being mapped can't be used by queued work (WebGPU,
+   * `GPUBuffer` "unavailable" while mapped). Every other buffer is shared: `writeBuffer` and `submit` both run their
+   * work on the queue timeline in the order they are called, so each call's work sees its own inputs. 1 runs one call
+   * at a time.
+   */
+  maxInFlight?: number;
 }
 
 /** An op as the plan builder records it, before its shader is compiled. */
@@ -166,8 +175,13 @@ export class GpuNetwork {
   #dyn!: GPUBuffer;
   #input!: GPUBuffer;
   #global!: GPUBuffer;
-  #staging!: GPUBuffer;
+  /** Readback buffers not in use, one per call that may be in flight. */
+  #stagings: GPUBuffer[] = [];
+  /** Calls waiting for readback buffers, first come first served. */
+  #waiting: { count: number; grant: (stagings: GPUBuffer[]) => void }[] = [];
   #stagingFloats = 0;
+  /** How many evaluations may be in flight at once (the option `maxInFlight`). */
+  readonly maxInFlight: number;
   readonly #specs: OpSpec[] = [];
   readonly #elems = new Map<GPUBuffer, Elem>();
   /** The model the plan runs: `model`, or its scale8 transform. */
@@ -188,11 +202,11 @@ export class GpuNetwork {
   #fuse = true;
   #wino?: { V: GPUBuffer; M: GPUBuffer; tilesX: number; tilesPerBoard: number; tileStride: number };
   #dummy!: GPUBuffer;
-  #busy: Promise<unknown> = Promise.resolve();
   #destroyed = false;
 
-  private constructor(device: GPUDevice, model: ModelDesc, xSize: number, ySize: number, maxBatch: number) {
+  private constructor(device: GPUDevice, model: ModelDesc, xSize: number, ySize: number, maxBatch: number, maxInFlight: number) {
     this.device = device;
+    this.maxInFlight = maxInFlight;
     this.model = model;
     this.xSize = xSize;
     this.ySize = ySize;
@@ -206,7 +220,9 @@ export class GpuNetwork {
    */
   static async create(engine: EngineDevice, model: ModelDesc, options: GpuNetworkOptions = {}): Promise<GpuNetwork> {
     if (model.trunk.sgfMetadataEncoder) throw new Error('models with an SGF metadata encoder are not supported yet');
-    const net = new GpuNetwork(engine.device, model, options.xSize ?? 19, options.ySize ?? 19, options.maxBatch ?? 1);
+    const maxInFlight = options.maxInFlight ?? 2;
+    if (!Number.isInteger(maxInFlight) || maxInFlight < 1) throw new Error(`maxInFlight must be a whole number ≥ 1, not ${maxInFlight}`);
+    const net = new GpuNetwork(engine.device, model, options.xSize ?? 19, options.ySize ?? 19, options.maxBatch ?? 1, maxInFlight);
     net.#winograd = options.winograd ?? true;
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
@@ -412,7 +428,7 @@ export class GpuNetwork {
       offset += B * perBatch;
     }
     this.#stagingFloats = offset;
-    this.#staging = this.#buffer(offset, BufferUsage.MAP_READ | BufferUsage.COPY_DST);
+    for (let i = 0; i < this.maxInFlight; i++) this.#stagings.push(this.#buffer(offset, BufferUsage.MAP_READ | BufferUsage.COPY_DST));
     await this.#compile();
   }
 
@@ -602,14 +618,32 @@ export class GpuNetwork {
     return this.#ops.length;
   }
 
+  /** Take `count` readback buffers, waiting behind earlier callers until they're free. */
+  #acquire(count: number): Promise<GPUBuffer[]> {
+    if (this.#waiting.length === 0 && this.#stagings.length >= count) return Promise.resolve(this.#stagings.splice(0, count));
+    return new Promise((grant) => this.#waiting.push({ count, grant }));
+  }
+
+  #release(stagings: GPUBuffer[]): void {
+    this.#stagings.push(...stagings);
+    while (this.#waiting.length > 0 && this.#stagings.length >= this.#waiting[0]!.count) {
+      const w = this.#waiting.shift()!;
+      w.grant(this.#stagings.splice(0, w.count));
+    }
+  }
+
   /**
-   * Evaluate a batch of positions (at most `maxBatch`, each no larger than the plan's board). Calls are queued, so
-   * one network evaluates one batch at a time.
+   * Evaluate a batch of positions (at most `maxBatch`, each no larger than the plan's board). Up to `maxInFlight`
+   * calls run at once, submitted in the order they're made; later calls wait their turn.
    */
   evaluate(inputs: readonly NetInput[]): Promise<RawOutputs[]> {
-    const run = this.#busy.then(() => this.#evaluate(inputs).then((r) => r.outputs));
-    this.#busy = run.catch(() => undefined);
-    return run;
+    return this.#acquire(1).then(async (stagings) => {
+      try {
+        return (await this.#evaluate(inputs, stagings[0]!)).outputs;
+      } finally {
+        this.#release(stagings);
+      }
+    });
   }
 
   /** Whether {@link profile} can run: the device has `timestamp-query`. */
@@ -625,31 +659,35 @@ export class GpuNetwork {
    */
   profile(inputs: readonly NetInput[], mode: 'pass' | 'ops'): Promise<GpuProfile> {
     if (!this.#timestamps) throw new Error('this device has no timestamp-query');
-    const run = this.#busy.then(async () => {
-      const t0 = performance.now();
-      const { timestamps } = await this.#evaluate(inputs, mode);
-      const wallMs = performance.now() - t0;
-      const ts = timestamps!;
-      const delta = (i: number) => Number(ts[2 * i + 1]! - ts[2 * i]!);
-      const result: GpuProfile = { batch: inputs.length, wallMs };
-      if (mode === 'pass') result.passNs = delta(0);
-      else result.ops = this.#ops.map((op, i) => ({ kind: op.kind, ns: delta(i) }));
-      return result;
+    // A profile runs alone: it takes every readback buffer, so no other call is in flight while it's timed.
+    return this.#acquire(this.maxInFlight).then(async (stagings) => {
+      try {
+        const t0 = performance.now();
+        const { timestamps } = await this.#evaluate(inputs, stagings[0]!, mode);
+        const wallMs = performance.now() - t0;
+        const ts = timestamps!;
+        const delta = (i: number) => Number(ts[2 * i + 1]! - ts[2 * i]!);
+        const result: GpuProfile = { batch: inputs.length, wallMs };
+        if (mode === 'pass') result.passNs = delta(0);
+        else result.ops = this.#ops.map((op, i) => ({ kind: op.kind, ns: delta(i) }));
+        return result;
+      } finally {
+        this.#release(stagings);
+      }
     });
-    this.#busy = run.catch(() => undefined);
-    return run;
   }
 
   /**
    * Wall-clock times of the parts of the last network call, in ms (measurement only; the call is the same either way):
    * packing the inputs, writing them to the GPU, encoding the dispatches, submitting, waiting until the outputs can be
-   * read (GPU work plus the readback's latency), copying them out, and unpacking them.
+   * read (GPU work plus the readback's latency), copying them out, and unpacking them. With other calls in flight, the
+   * wait also covers the GPU finishing the calls submitted before this one.
    */
   get lastCallTiming(): CallTiming | null {
     return this.#lastCallTiming;
   }
 
-  async #evaluate(inputs: readonly NetInput[], profile?: 'pass' | 'ops'): Promise<{ outputs: RawOutputs[]; timestamps?: BigUint64Array }> {
+  async #evaluate(inputs: readonly NetInput[], staging: GPUBuffer, profile?: 'pass' | 'ops'): Promise<{ outputs: RawOutputs[]; timestamps?: BigUint64Array }> {
     if (this.#destroyed) throw new Error('the network has been destroyed');
     const t0 = performance.now();
     const n = inputs.length;
@@ -711,7 +749,7 @@ export class GpuNetwork {
       for (const op of this.#ops) dispatch(pass, op);
       pass.end();
     }
-    for (const out of this.#outputs) encoder.copyBufferToBuffer(out.buffer, 0, this.#staging, out.stagingOffset * 4, n * out.perBatch * 4);
+    for (const out of this.#outputs) encoder.copyBufferToBuffer(out.buffer, 0, staging, out.stagingOffset * 4, n * out.perBatch * 4);
     if (query) {
       encoder.resolveQuerySet(query.set, 0, query.count, query.resolve, 0);
       encoder.copyBufferToBuffer(query.resolve, 0, query.read, 0, query.count * 8);
@@ -721,10 +759,10 @@ export class GpuNetwork {
     device.queue.submit([commands]);
     const tSubmitted = performance.now();
 
-    await this.#staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4);
+    await staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4);
     const tMapped = performance.now();
-    const data = new Float32Array(this.#staging.getMappedRange(0, this.#stagingFloats * 4).slice(0));
-    this.#staging.unmap();
+    const data = new Float32Array(staging.getMappedRange(0, this.#stagingFloats * 4).slice(0));
+    staging.unmap();
     // Undo scale8: every raw output came out 1/8 as large. Multiplying by 8 is exact in f32.
     if (this.#outputFactor !== 1) for (let i = 0; i < data.length; i++) data[i]! *= this.#outputFactor;
     const tRead = performance.now();

@@ -302,6 +302,11 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   report.gemmConfig = net.gemmConfig;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
+  // Calls in flight together (GpuNetwork's maxInFlight): the positions split across three calls made at once, so with
+  // two allowed in flight the third waits for a readback buffer. Each must give exactly the batched call's outputs.
+  const third = Math.ceil(cases.length / 3);
+  const parts = [0, 1, 2].map((k) => cases.slice(k * third, (k + 1) * third).map((c) => c.encoded.input)).filter((p) => p.length > 0);
+  const concurrent = (await Promise.all(parts.map((p) => net.evaluate(p)))).flat();
 
   report.positions = [];
   let ok = true;
@@ -337,6 +342,14 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
     report.positions.push(row);
   });
   report.batchOfOneMatchesBatched = maxAbsDiff(single[0].ownership, batched[0].ownership) === 0 && maxAbsDiff(single[0].policy[0], batched[0].policy[0]) === 0;
+  report.maxInFlight = net.maxInFlight;
+  report.concurrentCallsMatchBatched =
+    concurrent.length === batched.length &&
+    concurrent.every((c, i) => {
+      const b = batched[i];
+      return c.policy.every((p, ch) => maxAbsDiff(p, b.policy[ch]) === 0) && ['pass', 'value', 'scoreValue', 'ownership'].every((k) => maxAbsDiff(c[k], b[k]) === 0);
+    });
+  if (!report.concurrentCallsMatchBatched) ok = false;
   if (evaluated.length) {
     report.katagoErrorStats = katagoErrorStats(evaluated);
     if (variant.precision === 'f16' && !report.katagoErrorStats.fp16LimitsPass) ok = false;
@@ -440,7 +453,7 @@ export async function runSearchBench({
   liveBatches = [16, 32, 64],
   reviewMoves = 250,
   reviewVisits = 100,
-  reviewModes = [{ batchSize: 64, concurrency: 1 }, { batchSize: 16, concurrency: 1 }, { batchSize: 16, concurrency: 4 }],
+  reviewModes = [{ batchSize: 64, concurrency: 1 }, { batchSize: 16, concurrency: 1 }, { batchSize: 16, concurrency: 2 }, { batchSize: 16, concurrency: 4 }],
 } = {}) {
   const report = { kind: 'search', modelUrl: file ? `file: ${file.name}` : modelUrl, userAgent: navigator.userAgent, date: new Date().toISOString() };
   steps.length = 0;
@@ -464,6 +477,7 @@ export async function runSearchBench({
   const maxBatch = Math.max(...liveBatches, ...reviewModes.map((m) => m.batchSize * m.concurrency));
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch });
   report.gemmConfig = net.gemmConfig;
+  report.maxInFlight = net.maxInFlight;
   const cols = 'ABCDEFGHJKLMNOPQRST';
   const gtpOf = (board, loc) => (loc === PASS_LOC ? 'pass' : cols[board.x(loc)] + (board.ySize - board.y(loc)));
   const statsOf = (search, ms) => {
@@ -507,8 +521,9 @@ export async function runSearchBench({
 
     // Review: the fixed game of test/goldens/agreement-game.json (the first reviewMoves turns), reviewVisits visits a
     // turn, in each mode: turns one at a time at batch 64 (the first benchmark's setting), one at a time at batch 16,
-    // and several at once at batch 16 with their leaves combined into one network call. Every mode shares one
-    // evaluation cache across turns, as native KataGo's analysis does.
+    // and several at once at batch 16 (reviewGame's default is native KataGo's 2) with their leaves sent through a
+    // shared evaluator, up to the network's maxInFlight calls at once. Every mode shares one evaluation cache across
+    // turns, as native KataGo's analysis does.
     const agreementGame = await getJson('../goldens/agreement-game.json');
     const game = agreementGame.moves.slice(0, reviewMoves);
     const histories = [];

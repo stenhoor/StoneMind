@@ -32,13 +32,18 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
   small batch, sharing one evaluation cache across turns as KataGo's analysis engine does. The defaults are native
   KataGo's `analysis_example.cfg`: 2 turns at once, batch 16.
-  `SharedEvaluator` combines the concurrent searches' leaves into one network call of up to the network's batch size.
+  `SharedEvaluator` stands in for KataGo's neural-net server: it collects the concurrent searches' leaves into network
+  calls of up to the network's batch size, with up to the network's `maxInFlight` calls at once. When two calls can
+  start, searches that asked together are answered by separate calls, so one search picks its next leaves while the
+  other's call runs on the GPU. Each search still has at most its batch of leaves in flight.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
   - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.
   - `GpuNetwork.create(engine, model, { maxBatch })` uploads the weights and builds a plan for a 19×19 board (smaller
     boards sit in its top-left corner, masked, as in KataGo).
   - `evaluate(inputs)` runs a batch with one submit and one readback, and returns the same `RawOutputs` as the
-    reference forward pass.
+    reference forward pass. Up to `maxInFlight` calls (option, default 2) run at once, each with its own readback
+    buffer, so one call's inputs are written and its work submitted while another's outputs are read back. Calls are
+    submitted in the order they're made; `profile` runs alone.
   - Kernels: 3×3 convolutions by Winograd F(4×4,3×3) (an input transform, 36 batched GEMMs, an output transform that
     also adds the residual or bias); other sizes by a tiled implicit-GEMM convolution; batch norm with activation and
     mask; global pooling; small matrix-vector products.
@@ -112,8 +117,9 @@ tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 
 **Search benchmark.** The GPU check page's **Search benchmark** button (or `scripts/gpu-check.mjs --search`) runs the
 search on the WebGPU network:
 - **Live:** visits per second on one 19×19 position (`fight-19`), 2000 visits, at batches 16, 32 and 64.
-- **Review:** the fixed 250-move game of `test/goldens/agreement-game.json` at 100 visits a turn, in three modes: one turn
-  at a time at batch 64, one at a time at batch 16, and four at once at batch 16 (`reviewGame`). The report includes the
+- **Review:** the fixed 250-move game of `test/goldens/agreement-game.json` at 100 visits a turn, in four modes: one turn
+  at a time at batch 64, one at a time at batch 16, two at once at batch 16 (`reviewGame`'s default, native KataGo's
+  `analysis_example.cfg`), and four at once at batch 16. The report includes the
   game and each mode's recommended moves.
 
 `scripts/native-search-bench.mjs` runs native KataGo's analysis engine on the same work from that report: the same
@@ -139,7 +145,9 @@ KataGo version, the backend and the network's SHA-256.
 
 **The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
 WebGPU network on the golden positions in one batch (each variant: Winograd fused and unfused, implicit GEMM, fp32 with scale8, GEMM v2 fused and unfused, and fp16 fused and unfused with each GEMM where the device has `shader-f16`; `--variants <text>` or `?variants=` runs only those whose JSON contains the text), compares every output with the reference forward pass, and
-compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. `--bench`
+compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. It also
+evaluates the positions in three calls made at once (`maxInFlight` 2, so the third waits its turn) and requires
+exactly the batched call's outputs (`concurrentCallsMatchBatched`; a mismatch fails the variant). `--bench`
 adds evaluations per second by batch size.
 
 ```bash

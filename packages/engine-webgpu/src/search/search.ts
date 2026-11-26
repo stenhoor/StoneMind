@@ -29,6 +29,8 @@ import { expectedWhiteScoreValue, getScoreStdev, whiteScoreMeanSqOfScoreGridded 
 /** Something that evaluates a batch of network inputs: the WebGPU network, or the reference forward pass in tests. */
 export interface NetEvaluator {
   readonly maxBatch: number;
+  /** How many `evaluate` calls it runs at once (default 1). The WebGPU network allows 2 by default. */
+  readonly maxInFlight?: number;
   evaluate(inputs: readonly NetInput[]): Promise<RawOutputs[]>;
 }
 
