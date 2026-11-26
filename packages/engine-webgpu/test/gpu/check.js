@@ -351,14 +351,22 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
       const batch = Array.from({ length: n }, () => input);
       await net.evaluate(batch); // warm-up
       const times = [];
+      const parts = [];
       for (let r = 0; r < runs; r++) {
         const t0 = performance.now();
         await net.evaluate(batch);
         times.push(performance.now() - t0);
+        parts.push(net.lastCallTiming);
       }
       times.sort((a, b) => a - b);
       const median = times[times.length >> 1];
-      report.bench.push({ batch: n, medianMs: +median.toFixed(2), evalsPerSecond: +((n * 1000) / median).toFixed(1) });
+      // The median of each part of the call across the runs (GpuNetwork.lastCallTiming).
+      const callTiming = {};
+      for (const key of ['packMs', 'writeMs', 'encodeMs', 'submitMs', 'waitMs', 'readMs', 'unpackMs', 'totalMs']) {
+        const values = parts.map((p) => p[key]).sort((a, b) => a - b);
+        callTiming[key] = +values[values.length >> 1].toFixed(2);
+      }
+      report.bench.push({ batch: n, medianMs: +median.toFixed(2), evalsPerSecond: +((n * 1000) / median).toFixed(1), callTiming });
     }
     if (!tune) step('  profiling');
     if (tune) report.profile = 'skipped while tuning';

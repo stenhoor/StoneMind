@@ -140,6 +140,19 @@ function nestingDepth(blocks: readonly Block[]): number {
   return d;
 }
 
+/** See {@link GpuNetwork.lastCallTiming}. */
+export interface CallTiming {
+  batch: number;
+  packMs: number;
+  writeMs: number;
+  encodeMs: number;
+  submitMs: number;
+  waitMs: number;
+  readMs: number;
+  unpackMs: number;
+  totalMs: number;
+}
+
 export class GpuNetwork {
   readonly model: ModelDesc;
   readonly xSize: number;
@@ -164,6 +177,7 @@ export class GpuNetwork {
   #elem: Elem = 'f32';
   #gemm: 'v1' | 'v2' = 'v2';
   #gemmConfig: GemmConfig = GEMM_DEFAULT;
+  #lastCallTiming: CallTiming | null = null;
   /** The GEMM v2 shape the plan uses (the option, or the device's default). */
   get gemmConfig(): GemmConfig {
     return this.#gemmConfig;
@@ -626,8 +640,18 @@ export class GpuNetwork {
     return run;
   }
 
+  /**
+   * Wall-clock times of the parts of the last network call, in ms (measurement only; the call is the same either way):
+   * packing the inputs, writing them to the GPU, encoding the dispatches, submitting, waiting until the outputs can be
+   * read (GPU work plus the readback's latency), copying them out, and unpacking them.
+   */
+  get lastCallTiming(): CallTiming | null {
+    return this.#lastCallTiming;
+  }
+
   async #evaluate(inputs: readonly NetInput[], profile?: 'pass' | 'ops'): Promise<{ outputs: RawOutputs[]; timestamps?: BigUint64Array }> {
     if (this.#destroyed) throw new Error('the network has been destroyed');
+    const t0 = performance.now();
     const n = inputs.length;
     if (n === 0) return { outputs: [] };
     if (n > this.maxBatch) throw new Error(`batch of ${n} is larger than the plan's ${this.maxBatch}`);
@@ -651,9 +675,11 @@ export class GpuNetwork {
       }
       global.set(input.global, b * nGlobal);
     });
+    const tPacked = performance.now();
     device.queue.writeBuffer(this.#input, 0, spatial);
     device.queue.writeBuffer(this.#global, 0, global);
     device.queue.writeBuffer(this.#dyn, 0, new Uint32Array([n, 0, 0, 0]));
+    const tWritten = performance.now();
 
     const encoder = device.createCommandEncoder();
     let query: { set: GPUQuerySet; resolve: GPUBuffer; read: GPUBuffer; count: number } | undefined;
@@ -690,13 +716,18 @@ export class GpuNetwork {
       encoder.resolveQuerySet(query.set, 0, query.count, query.resolve, 0);
       encoder.copyBufferToBuffer(query.resolve, 0, query.read, 0, query.count * 8);
     }
-    device.queue.submit([encoder.finish()]);
+    const commands = encoder.finish();
+    const tEncoded = performance.now();
+    device.queue.submit([commands]);
+    const tSubmitted = performance.now();
 
     await this.#staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4);
+    const tMapped = performance.now();
     const data = new Float32Array(this.#staging.getMappedRange(0, this.#stagingFloats * 4).slice(0));
     this.#staging.unmap();
     // Undo scale8: every raw output came out 1/8 as large. Multiplying by 8 is exact in f32.
     if (this.#outputFactor !== 1) for (let i = 0; i < data.length; i++) data[i]! *= this.#outputFactor;
+    const tRead = performance.now();
     let timestamps: BigUint64Array | undefined;
     if (query) {
       await query.read.mapAsync(MapMode.READ);
@@ -730,6 +761,18 @@ export class GpuNetwork {
         ownership: crop(region('ownership', b), input),
       };
     });
+    const tDone = performance.now();
+    this.#lastCallTiming = {
+      batch: n,
+      packMs: tPacked - t0,
+      writeMs: tWritten - tPacked,
+      encodeMs: tEncoded - tWritten,
+      submitMs: tSubmitted - tEncoded,
+      waitMs: tMapped - tSubmitted,
+      readMs: tRead - tMapped,
+      unpackMs: tDone - tRead,
+      totalMs: tDone - t0,
+    };
     return { outputs, ...(timestamps ? { timestamps } : {}) };
   }
 
