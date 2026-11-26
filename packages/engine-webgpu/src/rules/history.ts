@@ -247,17 +247,43 @@ export class GameHistory {
     this.superKoBanned.fill(0);
     if (this.rules.koRule === 'SIMPLE') return;
     const b = this.board;
-    const keys = new Set(this._koKeys);
+    const pla = this.nextPla;
+    const o = opp(pla);
+    let keys: Set<string> | undefined;
+    // The position's key as characters, changed in place for each candidate move and put back after.
+    let chars: string[] | undefined;
+    const suffix = this.rules.koRule === 'POSITIONAL' ? '' : `|${o}`;
+    const idx = (loc: number) => b.y(loc) * b.xSize + b.x(loc);
     for (let y = 0; y < b.ySize; y++) {
       for (let x = 0; x < b.xSize; x++) {
         const loc = b.loc(x, y);
         if (b.colors[loc] !== EMPTY) continue;
         // KataGo: a new stone where no stone ever was makes a new position, unless the move is suicide.
-        if (!this._wasEverOccupiedOrPlayed[loc] && !b.isSuicide(loc, this.nextPla)) continue;
-        if (b.isIllegalSuicide(loc, this.nextPla, this.rules.multiStoneSuicideLegal) || loc === b.koLoc) continue;
-        const after = b.clone();
-        after.playMoveAssumeLegal(loc, this.nextPla);
-        if (keys.has(this._koKey(after, opp(this.nextPla)))) this.superKoBanned[loc] = 1;
+        if (!this._wasEverOccupiedOrPlayed[loc] && !b.isSuicide(loc, pla)) continue;
+        if (b.isIllegalSuicide(loc, pla, this.rules.multiStoneSuicideLegal) || loc === b.koLoc) continue;
+        keys ??= new Set(this._koKeys);
+        chars ??= Array.from(positionKey(b, null));
+        // The key after the move without playing it (as KataGo's getPosHashAfterMove): the new stone, minus the
+        // opponent chains it captures, or, for a suicide, minus its own chain.
+        const changed: number[] = [idx(loc)];
+        let captured = false;
+        for (const d of b.adj) {
+          const a = loc + d;
+          if (b.colors[a] === o && b.getNumLiberties(a) === 1) {
+            captured = true;
+            for (const s of b.chainStones(a)) changed.push(idx(s));
+          }
+        }
+        let after = String(pla);
+        if (!captured && b.isSuicide(loc, pla)) {
+          after = String(EMPTY);
+          for (const d of b.adj) if (b.colors[loc + d] === pla) for (const s of b.chainStones(loc + d)) changed.push(idx(s));
+        }
+        const saved = changed.map((i) => chars![i]!);
+        chars[changed[0]!] = after;
+        for (let i = 1; i < changed.length; i++) chars[changed[i]!] = String(EMPTY);
+        if (keys.has(chars.join('') + suffix)) this.superKoBanned[loc] = 1;
+        changed.forEach((i, j) => (chars![i] = saved[j]!));
       }
     }
   }

@@ -53,6 +53,37 @@ export interface InputOptions {
   enablePassingHacks?: boolean;
   /** KataGo `maxHistory`: the most past moves the inputs may show (default 5, all of them). */
   maxHistory?: number;
+  /**
+   * Ladder results already found, by board (see {@link LadderCache}). Not a KataGo option: the inputs are the same with
+   * or without it. A search passes one so that a node's board, laddered when the node was encoded, isn't searched again
+   * as its children's board one move ago and its grandchildren's two moves ago.
+   */
+  ladders?: LadderCache;
+}
+
+/**
+ * Ladder results by board: the key is the board's colours and ko point, the value every laddered stone with its
+ * working moves, in {@link iterLadders}' order. The ladder search reads only those two (and the chains, which the colours
+ * fix), so a board with the same key gives the same results.
+ */
+export type LadderCache = Map<string, readonly (readonly [number, readonly number[]])[]>;
+
+function ladderKey(board: Board): string {
+  return String.fromCharCode.apply(null, board.colors as unknown as number[]) + '|' + board.koLoc;
+}
+
+/** {@link iterLadders} through a cache, if one is given. */
+function iterLaddersCached(board: Board, cache: LadderCache | undefined, f: (loc: number, workingMoves: readonly number[]) => void): void {
+  if (!cache) return iterLadders(board, f);
+  const key = ladderKey(board);
+  let found = cache.get(key);
+  if (!found) {
+    const list: [number, readonly number[]][] = [];
+    iterLadders(board, (loc, working) => list.push([loc, working.slice()]));
+    cache.set(key, list);
+    found = list;
+  }
+  for (const [loc, working] of found) f(loc, working);
 }
 
 const stone = (p: Player): Stone => (p === 'B' ? BLACK : WHITE);
@@ -195,14 +226,15 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   }
 
   // Ladders: the current board, then the boards one and two moves ago (only as far back as history is included).
-  iterLadders(board, (loc, working) => {
+  const ladders = options.ladders;
+  iterLaddersCached(board, ladders, (loc, working) => {
     set(14, loc);
     if (board.colors[loc] === o && board.getNumLiberties(loc) > 1) for (const w of working) set(17, w);
   });
   const prev = numTurnsOfHistoryIncluded < 1 ? board : hist.recentBoard(1);
-  iterLadders(prev, (loc) => (spatial[15 * area + prev.y(loc) * xSize + prev.x(loc)] = 1));
+  iterLaddersCached(prev, ladders, (loc) => (spatial[15 * area + prev.y(loc) * xSize + prev.x(loc)] = 1));
   const prevPrev = numTurnsOfHistoryIncluded < 2 ? prev : hist.recentBoard(2);
-  iterLadders(prevPrev, (loc) => (spatial[16 * area + prevPrev.y(loc) * xSize + prevPrev.x(loc)] = 1));
+  iterLaddersCached(prevPrev, ladders, (loc) => (spatial[16 * area + prevPrev.y(loc) * xSize + prevPrev.x(loc)] = 1));
 
   // Globals.
   let selfKomi = hist.currentSelfKomi(pla);

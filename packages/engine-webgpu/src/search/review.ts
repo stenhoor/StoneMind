@@ -11,7 +11,21 @@ import type { ModelDesc } from '../model/types.js';
 import type { GameHistory } from '../rules/history.js';
 import { Search, type NetEvaluator, type SearchAnalysis, type SearchParams } from './search.js';
 
-type Request = { inputs: readonly NetInput[]; resolve: (o: RawOutputs[]) => void; reject: (e: unknown) => void };
+type Request = { inputs: readonly NetInput[]; source: number; queuedMs: number; resolve: (o: RawOutputs[]) => void; reject: (e: unknown) => void };
+
+/**
+ * One search request through a {@link SharedEvaluator} (measurement only), times in ms (performance.now()): which
+ * search asked (`source`), when it was queued, sent and answered, and which network call carried it (`call`, counting
+ * from 1 in the order calls were sent).
+ */
+export interface RequestTrace {
+  source: number;
+  queuedMs: number;
+  sentMs: number;
+  resolvedMs: number;
+  call: number;
+  inputs: number;
+}
 
 /**
  * A `NetEvaluator` for several concurrent searches, standing in for KataGo's neural-net server: the searches' requests
@@ -29,6 +43,7 @@ export class SharedEvaluator implements NetEvaluator {
   readonly maxBatch: number;
   readonly maxInFlight: number;
   readonly #net: NetEvaluator;
+  readonly #trace: RequestTrace[] | undefined;
   #queue: Request[] = [];
   #inFlight = 0;
   #scheduled = false;
@@ -36,16 +51,19 @@ export class SharedEvaluator implements NetEvaluator {
   calls = 0;
   inputs = 0;
 
-  constructor(net: NetEvaluator) {
+  /** @param trace If given, every request's queued and sent times are added to it (measurement only). */
+  constructor(net: NetEvaluator, trace?: RequestTrace[]) {
     this.#net = net;
+    this.#trace = trace;
     this.maxBatch = net.maxBatch;
     this.maxInFlight = Math.max(1, net.maxInFlight ?? 1);
   }
 
-  evaluate(inputs: readonly NetInput[]): Promise<RawOutputs[]> {
+  /** @param source Which search asks, for the trace only. */
+  evaluate(inputs: readonly NetInput[], source = 0): Promise<RawOutputs[]> {
     if (inputs.length > this.maxBatch) return Promise.reject(new Error(`batch of ${inputs.length} is larger than ${this.maxBatch}`));
     return new Promise((resolve, reject) => {
-      this.#queue.push({ inputs, resolve, reject });
+      this.#queue.push({ inputs, source, queuedMs: performance.now(), resolve, reject });
       this.#schedule();
     });
   }
@@ -78,6 +96,12 @@ export class SharedEvaluator implements NetEvaluator {
 
   #send(requests: Request[]): void {
     const all = requests.flatMap((q) => q.inputs);
+    const traced: RequestTrace[] = [];
+    if (this.#trace) {
+      const sentMs = performance.now();
+      for (const q of requests) traced.push({ source: q.source, queuedMs: q.queuedMs, sentMs, resolvedMs: 0, call: this.calls + 1, inputs: q.inputs.length });
+      this.#trace.push(...traced);
+    }
     this.calls += 1;
     this.inputs += all.length;
     this.#inFlight += 1;
@@ -89,10 +113,11 @@ export class SharedEvaluator implements NetEvaluator {
       (outputs) => {
         done();
         let i = 0;
-        for (const q of requests) {
+        requests.forEach((q, j) => {
           q.resolve(outputs.slice(i, i + q.inputs.length));
           i += q.inputs.length;
-        }
+          if (traced[j]) traced[j].resolvedMs = performance.now();
+        });
       },
       (e) => {
         done();
@@ -114,6 +139,8 @@ export interface ReviewOptions {
   /** Called as each turn's search finishes. */
   onTurn?: (turn: number, analysis: SearchAnalysis) => void;
   signal?: AbortSignal;
+  /** If given, every request to the shared evaluator is recorded here (measurement only). */
+  trace?: RequestTrace[];
 }
 
 /**
@@ -123,19 +150,21 @@ export interface ReviewOptions {
 export async function reviewGame(model: ModelDesc, net: NetEvaluator, histories: readonly GameHistory[], options: ReviewOptions): Promise<SearchAnalysis[]> {
   const batchSize = Math.max(1, Math.min(options.batchSize ?? 16, net.maxBatch));
   const concurrency = Math.max(1, options.concurrency ?? 2);
-  const shared = new SharedEvaluator(net);
+  const shared = new SharedEvaluator(net, options.trace);
   const cache = new Map<string, Evaluation>();
   const results: SearchAnalysis[] = new Array(histories.length);
   let next = 0;
-  const worker = async () => {
+  const worker = async (id: number) => {
+    // Traced, each search's requests say which of these loops made them.
+    const evaluator: NetEvaluator = options.trace ? { maxBatch: shared.maxBatch, evaluate: (inputs) => shared.evaluate(inputs, id) } : shared;
     while (next < histories.length && !options.signal?.aborted) {
       const turn = next++;
-      const search = new Search(model, shared, histories[turn]!, { ...options.params, batchSize }, cache);
+      const search = new Search(model, evaluator, histories[turn]!, { ...options.params, batchSize }, cache);
       await search.run({ maxVisits: options.visits, ...(options.signal ? { signal: options.signal } : {}) });
       results[turn] = search.analysis();
       options.onTurn?.(turn, results[turn]);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(concurrency, histories.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(concurrency, histories.length) }, (_, id) => worker(id)));
   return results;
 }

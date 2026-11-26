@@ -23,7 +23,10 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   a position (setup stones and moves, `[player, 'pass']` for a pass; `gtpMove` converts GTP moves), following
   `NNInputs::fillRowV7`, passes included (the pass-history globals, the pass-ends-phase flag, and history hidden under
   friendly-pass rules). `encodeHistoryV7` encodes a `GameHistory` directly, with KataGo's conservative-pass and
-  passing-hack options. The earlier simple encoder
+  passing-hack options. Its `ladders` option, not a KataGo option, reuses ladder results by board: KataGo searches
+  ladders on the current board and the two before it for every input, and a search passes a cache so that a node's
+  board, already searched when the node was encoded, isn't searched again for its children and grandchildren. The
+  inputs are the same either way (`test/ladder-cache.test.mjs`). The earlier simple encoder
   (`src/features/simple.ts`), for positions with no captures, ko, ladders or one-colour regions, is still exported.
 - **Search** (`src/search/`): `Search`, an asynchronous port of the core of KataGo's search that keeps a batch of
   leaves in flight for the GPU with virtual losses, as KataGo's search threads do. It covers KataGo's PUCT (log-growing
@@ -238,7 +241,15 @@ rounds with their stream kernel (`docs/spikes/results/2026-11-b18-transform-ladd
 **Call trace:** `GpuNetwork.startTrace()` / `stopTrace()` record every network call's wall-clock times, the network
 code's own JavaScript parts and its compute pass's GPU timestamps (carried back in the call's own readback, so tracing
 adds no wait). The search benchmark reports each review mode's `trace`: GPU busy time, calls, inputs per call, and GPU
-time by call size.
+time by call size. With `reviewGame`'s `trace` option (measurement only), each search request's queued, sent and
+answered times are recorded too, and `trace.offGpu` splits the GPU's idle time by cause: by what was happening at the
+time, and along the path of the call that ends each gap (`docs/spikes/results/2026-11-b18-off-gpu.md`). `?traceRaw=1`
+adds every call and request to the report.
+
+**Search CPU benchmark:** `scripts/search-cpu-bench.mjs --model <b18 .bin.gz>` times the search's own JavaScript in
+Node, with no GPU: the review's turns, one at a time at batch 16, with a stand-in network whose outputs are a fixed
+function of its inputs, so every build that gives the same results grows the same trees. `--dist` points it at another
+build to compare, and `--profile` writes a CPU profile of the timed searches.
 
 **Kernel timing** in the GEMM, transform and dispatch benchmarks goes through `test/gpu/timing.js`: a warm-up of the
 same work for at least 300 ms, then the timed passes, all submitted at once with no waiting between them, so the GPU

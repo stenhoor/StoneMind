@@ -575,10 +575,13 @@ export async function runSearchBench({
       step(`review: ${game.length} turns × ${reviewVisits} visits, batch ${mode.batchSize}, ${mode.concurrency} at once`);
       const tracing = net.canProfile;
       if (tracing) net.startTrace();
+      const requests = [];
       const t0 = performance.now();
-      const results = await reviewGame(model, net, histories, { visits: reviewVisits, batchSize: mode.batchSize, concurrency: mode.concurrency });
-      const totalMs = performance.now() - t0;
-      const trace = tracing ? summariseTrace(net.stopTrace(), totalMs) : null;
+      const results = await reviewGame(model, net, histories, { visits: reviewVisits, batchSize: mode.batchSize, concurrency: mode.concurrency, ...(tracing ? { trace: requests } : {}) });
+      const tEnd = performance.now();
+      const totalMs = tEnd - t0;
+      const rawCalls = tracing ? net.stopTrace() : [];
+      const trace = tracing ? summariseTrace(rawCalls, totalMs, { t0, tEnd, requests, maxInFlight: net.maxInFlight }) : null;
       const visits = results.reduce((sum, r) => sum + r.rootVisits, 0);
       const run = {
         ...mode,
@@ -589,6 +592,8 @@ export async function runSearchBench({
         bestMoves: results.map((r) => gtpOf(histories[0].board, r.moveInfos[0].loc)),
       };
       if (trace) run.trace = trace;
+      // ?traceRaw=1: every call and request of the mode, for looking at the timeline (measurement only).
+      if (tracing && params.get('traceRaw') === '1') run.traceRaw = { calls: rawCalls, requests };
       report.review.modes.push(run);
       step(`  ${(totalMs / 1000).toFixed(1)} s (${run.visitsPerSecond} visits/s)`);
     }
@@ -606,7 +611,7 @@ export async function runSearchBench({
  * code's own JavaScript time (packing, writing, encoding, submitting, reading and unpacking), and the time each call
  * waited for its outputs. All in ms.
  */
-function summariseTrace(calls, wallMs) {
+function summariseTrace(calls, wallMs, timeline = null) {
   const union = (intervals) => {
     const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
     let total = 0;
@@ -642,6 +647,7 @@ function summariseTrace(calls, wallMs) {
       submitMs: r(sum((c) => c.submitMs)), readMs: r(sum((c) => c.readMs)), unpackMs: r(sum((c) => c.unpackMs)),
     },
     waitMs: r(sum((c) => c.waitMs)),
+    ...(timeline ? { offGpu: offGpuTime(calls, timeline) } : {}),
     // Calls by their number of inputs: how many, and their compute passes' mean GPU time. With more than one call in
     // flight a pass's interval can include waiting for the one before, so the means are the GPU's own time only when
     // calls run one at a time.
@@ -651,6 +657,140 @@ function summariseTrace(calls, wallMs) {
       e.passMs += (c.gpuEndNs - c.gpuBeginNs) / 1e6;
       return m;
     }, {})).map((e) => ({ batch: e.batch, calls: e.calls, meanPassMs: +(e.passMs / e.calls).toFixed(3) })),
+  };
+}
+
+/**
+ * Where the GPU sat idle during a review (measurement only), in ms of wall time, each moment counted once, under the
+ * first of these that holds:
+ * - `submitted`: a call was submitted and its compute pass hadn't begun;
+ * - `encoding`: a call was being packed, written, encoded or submitted;
+ * - `queuedFree`: a search's request was waiting to be sent while fewer than `maxInFlight` calls were in flight;
+ * - `queuedFull`: a request was waiting while every call slot was taken;
+ * - `mapWait`: a call's compute pass had ended and its readback buffer wasn't mapped yet (the GPU's copy to it, and
+ *   the browser telling the page it's ready);
+ * - `unpack`: a call's buffer was mapped and its outputs hadn't been returned yet (reading and unpacking);
+ * - `search`: none of these: the searches' own work, or nothing at all.
+ * The GPU timestamps are placed on the performance.now() clock at the earliest offset consistent with every call: no
+ * pass begins before its call was submitted. `alignMs` is the range of offsets consistent with every call (begin
+ * after submit, end before the outputs could be read): the width is the uncertainty of the placement.
+ * `perCall` gives each call's median, 90th percentile and mean, in ms: `submitToBegin` (only for calls submitted while
+ * the GPU was idle), `endToMapped` and `mappedToDone`; and per request, `searchJs`: from a search's previous request
+ * being answered to its next being queued (the search's own work, and any wait for the thread).
+ *
+ * `byPath` splits the same idle time another way: each gap between compute passes is put down to the path of the call
+ * that ends it. That call's first-queued request came from a search; the search's previous request was answered by an
+ * earlier call P. The gap is split along P's pass end → P mapped (`mapWait`) → P unpacked (`unpack`) → the search
+ * given its outputs (`deliver`) → the search's next request queued (`search`) → sent (`queued`) → submitted
+ * (`encoding`) → its pass begins (`submitted`). A search's first request has no P: the gap up to it is `first`. The
+ * time after the last pass is `end`. `byEndingBatch` gives the gaps' total time and count by the size of the call that
+ * ends them (1, 2–15, 16 or more inputs).
+ */
+function offGpuTime(calls, { t0, tEnd, requests, maxInFlight }) {
+  if (calls.length === 0) return null;
+  const lo = Math.max(...calls.map((c) => c.submittedMs - c.gpuBeginNs / 1e6));
+  const hi = Math.min(...calls.map((c) => c.mappedMs - c.gpuEndNs / 1e6));
+  const g = (ns) => ns / 1e6 + lo;
+  const kinds = ['gpu', 'submitted', 'encoding', 'queued', 'inFlight', 'mapWait', 'unpack'];
+  const events = [];
+  const add = (kind, a, b) => { if (b > a) events.push([a, kind, 1], [b, kind, -1]); };
+  for (const c of calls) {
+    add('gpu', g(c.gpuBeginNs), g(c.gpuEndNs));
+    add('submitted', c.submittedMs, g(c.gpuBeginNs));
+    add('encoding', c.startMs, c.submittedMs);
+    add('inFlight', c.startMs, c.doneMs);
+    add('mapWait', g(c.gpuEndNs), c.mappedMs);
+    add('unpack', c.mappedMs, c.doneMs);
+  }
+  for (const q of requests) add('queued', q.queuedMs, q.sentMs);
+  events.sort((a, b) => a[0] - b[0]);
+  const n = Object.fromEntries(kinds.map((k) => [k, 0]));
+  const out = { submitted: 0, encoding: 0, queuedFree: 0, queuedFull: 0, mapWait: 0, unpack: 0, search: 0 };
+  let t = t0;
+  const credit = (until) => {
+    const d = Math.min(until, tEnd) - Math.max(t, t0);
+    if (d <= 0) return;
+    if (n.gpu > 0) return;
+    if (n.submitted > 0) out.submitted += d;
+    else if (n.encoding > 0) out.encoding += d;
+    else if (n.queued > 0) out[n.inFlight < maxInFlight ? 'queuedFree' : 'queuedFull'] += d;
+    else if (n.mapWait > 0) out.mapWait += d;
+    else if (n.unpack > 0) out.unpack += d;
+    else out.search += d;
+  };
+  for (const [at, kind, delta] of events) {
+    credit(at);
+    t = Math.max(t, at);
+    n[kind] += delta;
+  }
+  credit(tEnd);
+  const r = (x) => +x.toFixed(1);
+  const stats = (xs) => {
+    const s = [...xs].sort((a, b) => a - b);
+    const q = (f) => +(s[Math.min(s.length - 1, Math.floor(f * s.length))] ?? 0).toFixed(3);
+    return { n: s.length, median: q(0.5), p90: q(0.9), mean: s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(3) : 0 };
+  };
+  // By path.
+  const bySent = [...calls].sort((a, b) => a.startMs - b.startMs);
+  const reqsOf = new Map();
+  const bySource = new Map();
+  for (const q of requests) {
+    (reqsOf.get(q.call) ?? reqsOf.set(q.call, []).get(q.call)).push(q);
+    (bySource.get(q.source) ?? bySource.set(q.source, []).get(q.source)).push(q);
+  }
+  for (const list of bySource.values()) list.sort((a, b) => a.queuedMs - b.queuedMs);
+  const path = { first: 0, mapWait: 0, unpack: 0, deliver: 0, search: 0, queued: 0, encoding: 0, submitted: 0, end: 0, unmatched: 0 };
+  const passes = calls.map((c, i) => [g(c.gpuBeginNs), g(c.gpuEndNs), c]).sort((a, b) => a[0] - b[0]);
+  const byEndingBatch = { '1': { ms: 0, gaps: 0 }, '2-15': { ms: 0, gaps: 0 }, '16+': { ms: 0, gaps: 0 } };
+  let busyEnd = t0;
+  const clip = (a, b, e, f) => Math.max(0, Math.min(b, f) - Math.max(a, e));
+  for (const [begin, end, c] of passes) {
+    if (begin > busyEnd) {
+      const e = busyEnd;
+      const f = begin;
+      const bucket = byEndingBatch[c.batch === 1 ? '1' : c.batch < 16 ? '2-15' : '16+'];
+      bucket.ms += f - e;
+      bucket.gaps += 1;
+      const k = bySent.indexOf(c) + 1;
+      const reqs = reqsOf.get(k) ?? [];
+      const r = reqs.reduce((m, q) => (!m || q.queuedMs < m.queuedMs ? q : m), null);
+      if (!r) path.unmatched += f - e;
+      else {
+        const list = bySource.get(r.source);
+        const prev = list[list.indexOf(r) - 1];
+        const P = prev ? bySent[prev.call - 1] : null;
+        if (!P) {
+          path.first += clip(e, r.queuedMs, e, f);
+        } else {
+          path.mapWait += clip(g(P.gpuEndNs), P.mappedMs, e, f);
+          path.unpack += clip(P.mappedMs, P.doneMs, e, f);
+          path.deliver += clip(P.doneMs, prev.resolvedMs, e, f);
+          path.search += clip(prev.resolvedMs, r.queuedMs, e, f);
+          path.unmatched += clip(e, Math.min(g(P.gpuEndNs), f), e, f);
+        }
+        path.queued += clip(r.queuedMs, r.sentMs, e, f);
+        path.encoding += clip(r.sentMs, c.submittedMs, e, f);
+        path.submitted += clip(c.submittedMs, begin, e, f);
+      }
+    }
+    busyEnd = Math.max(busyEnd, end);
+  }
+  path.end += Math.max(0, tEnd - busyEnd);
+  const byEnd = [...calls].sort((a, b) => a.gpuEndNs - b.gpuEndNs);
+  const idleAtSubmit = calls.filter((c) => !byEnd.some((o) => o !== c && g(o.gpuBeginNs) <= c.submittedMs && g(o.gpuEndNs) > c.submittedMs));
+  return {
+    ...Object.fromEntries(Object.entries(out).map(([k, v]) => [k, r(v)])),
+    totalMs: r(Object.values(out).reduce((a, b) => a + b, 0)),
+    alignMs: [r(0), r(hi - lo)],
+    requests: requests.length,
+    byPath: Object.fromEntries(Object.entries(path).map(([k, v]) => [k, r(v)])),
+    byEndingBatch: Object.fromEntries(Object.entries(byEndingBatch).map(([k, v]) => [k, { ms: r(v.ms), gaps: v.gaps }])),
+    perCall: {
+      submitToBegin: stats(idleAtSubmit.map((c) => g(c.gpuBeginNs) - c.submittedMs)),
+      endToMapped: stats(calls.map((c) => c.mappedMs - g(c.gpuEndNs))),
+      mappedToDone: stats(calls.map((c) => c.doneMs - c.mappedMs)),
+      searchJs: stats([...bySource.values()].flatMap((list) => list.slice(1).map((q, i) => q.queuedMs - list[i].resolvedMs))),
+    },
   };
 }
 
