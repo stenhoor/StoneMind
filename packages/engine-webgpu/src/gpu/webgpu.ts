@@ -12,6 +12,17 @@ export interface GPUAdapterInfo {
   architecture: string;
   device: string;
   description: string;
+  /** With `chromium-experimental-subgroup-matrix`: the matrix shapes and types the device supports. */
+  subgroupMatrixConfigs?: readonly GPUSubgroupMatrixConfig[];
+}
+
+/** One supported subgroup-matrix shape (Chromium's experimental subgroup matrices). */
+export interface GPUSubgroupMatrixConfig {
+  componentType: string;
+  resultComponentType: string;
+  M: number;
+  N: number;
+  K: number;
 }
 
 export interface GPUAdapter {

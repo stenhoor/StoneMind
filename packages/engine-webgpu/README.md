@@ -73,6 +73,11 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     16) and the arithmetic (`arith`: `f32`; or, where the device has `shader-f16`, `f16` or `f16x2`, the latter on pairs
     of output columns as `vec2<f16>`; both sum each chunk in f16 and add it into f32 accumulators). The default is chosen per device by `defaultGemmConfig`: on Apple GPUs 4 × 4, chunks of 8, with f16 arithmetic
     when `precision` is `'f16'` (fastest on the owner's iPad) and f32 arithmetic otherwise; elsewhere `GEMM_DEFAULT`, 4 × 8, chunks of 16, f32.
+  - **Matrix hardware (experimental)** (`winoGemm: 'mma'`, off by default): the Winograd GEMMs on subgroup matrices
+    (`GEMM_MMA`, 16 × 16 × 16, f16 in, f32 sums), with the Winograd weights stored transposed. Browsers offer the
+    feature (`chromium-experimental-subgroup-matrix`) only behind a switch today; on the owner's laptop, Edge with
+    `--enable-unsafe-webgpu` offers it. The device requests it when offered. Results:
+    `docs/spikes/results/2026-11-b18-matrix.md`.
   - **Winograd transforms v2** (`winoIn`, default `'v2'`; `winoOut`, default `'v1'`; `winoTransforms` sets both): the
     v2 input transform was faster than v1 in every steady measurement, the output transforms in neither order
     consistently (`docs/spikes/results/2026-11-b18-steady.md`). Each workgroup copies a few

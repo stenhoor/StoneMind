@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_MMA, gemmMmaTile, type GemmMmaConfig, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -51,6 +51,14 @@ export interface GpuNetworkOptions {
   gemmConfig?: GemmConfig;
   /** GEMM v3's shape (default `GEMM_V3_DEFAULT`, 4 × 8 per thread, chunks of 16). */
   gemmV3Config?: GemmV3Config;
+  /**
+   * Experimental: 'mma' runs the Winograd GEMMs on matrix hardware (\`GEMM_MMA\`, with the weights stored transposed).
+   * It needs \`precision: 'f16'\` and the device feature \`chromium-experimental-subgroup-matrix\` with an f16 → f32
+   * 16 × 16 × 16 shape, which browsers offer only behind a switch today. Other GEMMs keep \`gemm\`.
+   */
+  winoGemm?: 'mma';
+  /** The matrix GEMM's shape for \`winoGemm: 'mma'\` (default 2 × 1 accumulators, direct loads). */
+  winoGemmMmaConfig?: GemmMmaConfig;
   /**
    * The Winograd input and output transforms together. 'v2' stages each board through workgroup memory (`WINO_IN_V2`,
    * `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point. `winoIn` and `winoOut`
@@ -225,6 +233,11 @@ export class GpuNetwork {
   get gemmConfig(): GemmConfig {
     return this.#gemmConfig;
   }
+  #winoGemmMma: GemmMmaConfig | null = null;
+  /** The matrix GEMM's shape when the Winograd GEMMs run on matrix hardware (\`winoGemm: 'mma'\`), otherwise null. */
+  get winoGemmMma(): GemmMmaConfig | null {
+    return this.#winoGemmMma;
+  }
   #winoIn: 'v1' | 'v2' = 'v2';
   #winoOut: 'v1' | 'v2' = 'v1';
   /** The Winograd input and output transforms the plan uses. */
@@ -267,6 +280,12 @@ export class GpuNetwork {
     net.#winoOut = options.winoOut ?? options.winoTransforms ?? 'v1';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
+    if (options.winoGemm === 'mma') {
+      const has = engine.subgroupMatrixConfigs.some((c) => c.componentType === 'f16' && c.resultComponentType === 'f32' && c.M === 16 && c.N === 16 && c.K === 16);
+      if (!has) throw new Error("winoGemm 'mma' needs subgroup matrices with an f16 → f32 16 × 16 × 16 shape");
+      if (net.#elem !== 'f16') throw new Error("winoGemm 'mma' needs precision 'f16'");
+      net.#winoGemmMma = { ...(options.winoGemmMmaConfig ?? { fm: 2, fn: 1, direct: true }), ta: true };
+    }
     const scale8 = options.scale8 ?? net.#elem === 'f16';
     net.#desc = scale8 ? applyScale8(model) : model;
     net.#outputFactor = scale8 ? 8 : 1;
@@ -569,8 +588,26 @@ export class GpuNetwork {
         ? (n) => [Math.ceil(ic / winoTransformChannels('in', this.xSize, this.ySize)), n]
         : (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
-    const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
-    if (this.#gemm !== 'v1') {
+    const mma = this.#winoGemmMma;
+    if (mma) {
+      // M[e][oc][t] = Σ_ic U[e][oc][ic] · V[e][ic][t] on matrix hardware, with U stored transposed ([e][oc][ic]).
+      const u = winogradWeights(layer.weights, ic, oc);
+      const ut = new Float32Array(u.length);
+      for (let e = 0; e < 36; e++)
+        for (let i = 0; i < ic; i++) for (let o = 0; o < oc; o++) ut[e * ic * oc + o * ic + i] = u[e * ic * oc + i * oc + o]!;
+      const Ut = this.#upload(ut, this.#elem);
+      const tile = gemmMmaTile(mma);
+      this.#specs.push({
+        kind: 'winoGemm',
+        code: GEMM_MMA(this.#elemOf(Ut), this.#elemOf(V), this.#elemOf(M), mma),
+        buffers: [
+          this.#uniform([oc, ic, 0, tilesPerBoard, ic * oc, ic, ic * tileStride, tileStride, oc * tileStride, tileStride, 0, 0]),
+          this.#dyn, Ut, V, M, this.#dummy,
+        ],
+        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / tile.tn), Math.ceil(oc / tile.tm), 36],
+      });
+    } else if (this.#gemm !== 'v1') {
+      const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
       // M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t], as GEMM v2 or v3 with z = e.
       const kernel = this.#gemmKernel(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M));
       this.#specs.push({
@@ -583,6 +620,7 @@ export class GpuNetwork {
         workgroups: (n) => [Math.ceil((n * tilesPerBoard) / kernel.tn), Math.ceil(oc / kernel.tm), 36],
       });
     } else {
+      const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
       this.#specs.push({
         kind: 'winoGemm',
         code: WINO_GEMM(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M)),

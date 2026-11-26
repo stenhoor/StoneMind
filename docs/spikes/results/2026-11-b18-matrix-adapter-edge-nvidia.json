@@ -1,0 +1,183 @@
+{
+  "modelUrl": "/model.bin.gz",
+  "referenceCompared": false,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T14:56:30.835Z",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query",
+    "chromium-experimental-subgroup-matrix"
+  ],
+  "adapterFeatures": [
+    "atomic-vec2u-min-max",
+    "bgra8unorm-storage",
+    "chromium-experimental-multi-draw-indirect",
+    "chromium-experimental-sampling-resource-table",
+    "chromium-experimental-subgroup-matrix",
+    "chromium-experimental-timestamp-query-inside-passes",
+    "clip-distances",
+    "core-features-and-limits",
+    "depth-clip-control",
+    "depth32float-stencil8",
+    "dual-source-blending",
+    "float32-blendable",
+    "float32-filterable",
+    "indirect-first-instance",
+    "primitive-index",
+    "rg11b10ufloat-renderable",
+    "shader-f16",
+    "subgroup-size-control",
+    "subgroups",
+    "texture-component-swizzle",
+    "texture-compression-bc",
+    "texture-compression-bc-sliced-3d",
+    "texture-compression-unaligned",
+    "texture-formats-tier1",
+    "texture-formats-tier2",
+    "timestamp-query"
+  ],
+  "subgroupMatrixConfigs": [
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    }
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "goldenUrl": "/golden.json",
+  "activations": {
+    "ok": true,
+    "maxError": {
+      "identity": 0,
+      "relu": 0,
+      "mish": 1.591954282162815e-7,
+      "silu": 1.3881428386509228e-7,
+      "mish_scale8": 1.591954282162815e-7
+    },
+    "worstAt": {
+      "identity": {
+        "x": -30,
+        "gpu": -30,
+        "want": -30
+      },
+      "relu": {
+        "x": -30,
+        "gpu": 0,
+        "want": 0
+      },
+      "mish": {
+        "x": 8.75,
+        "gpu": 8.750000953674316,
+        "want": 8.74999956071439
+      },
+      "silu": {
+        "x": 2.5859375,
+        "gpu": 2.404794931411743,
+        "want": 2.4047952652316757
+      },
+      "mish_scale8": {
+        "x": 1.09375,
+        "gpu": 1.0937501192092896,
+        "want": 1.0937499450892987
+      }
+    }
+  },
+  "variants": [],
+  "goldensCompared": true,
+  "ok": true,
+  "steps": [
+    "14:56:30.835 requesting a WebGPU device",
+    "14:56:30.925 device: {\"vendor\":\"nvidia\",\"architecture\":\"ampere\",\"device\":\"\",\"description\":\"\"}, features shader-f16, subgroups, timestamp-query, chromium-experimental-subgroup-matrix",
+    "14:56:30.925 adapter offers: atomic-vec2u-min-max, bgra8unorm-storage, chromium-experimental-multi-draw-indirect, chromium-experimental-sampling-resource-table, chromium-experimental-subgroup-matrix, chromium-experimental-timestamp-query-inside-passes, clip-distances, core-features-and-limits, depth-clip-control, depth32float-stencil8, dual-source-blending, float32-blendable, float32-filterable, indirect-first-instance, primitive-index, rg11b10ufloat-renderable, shader-f16, subgroup-size-control, subgroups, texture-component-swizzle, texture-compression-bc, texture-compression-bc-sliced-3d, texture-compression-unaligned, texture-formats-tier1, texture-formats-tier2, timestamp-query",
+    "14:56:31.063 loading the model (97898094 bytes)",
+    "14:56:31.619 model kata1-b18c384nbt-s9996604416-d4316597426",
+    "14:56:31.644 checking activations",
+    "14:56:31.668 activations ok: true"
+  ]
+}

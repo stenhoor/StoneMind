@@ -136,3 +136,15 @@ time. Decided in code, with no spec covering it:
 
 Each search still has at most its batch of leaves in flight. Measured on the owner's laptop:
 `docs/spikes/results/2026-11-b18-inflight.md`.
+
+## 14. Browser engine: matrix hardware behind a browser switch (spike 0001)
+
+Native KataGo's CUDA build can use the GPU's matrix hardware. In the browser it's reachable only through Chromium's
+experimental `chromium-experimental-subgroup-matrix`, which Edge 158 on the owner's laptop offers only with
+`--enable-unsafe-webgpu`. Decided in code, with no spec covering it:
+- **The engine requests the feature whenever the adapter offers it**, and records the supported shapes.
+- **`GpuNetwork` runs the Winograd GEMMs on it only when asked** (`winoGemm: 'mma'`, off by default). Nothing
+  depends on it.
+
+Open: whether StoneMind should ever use it before browsers ship it without a switch. Measured on the owner's laptop:
+`docs/spikes/results/2026-11-b18-matrix.md`.
