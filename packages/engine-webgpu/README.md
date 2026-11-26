@@ -1,5 +1,10 @@
 # @stonemind/engine-webgpu
 
+**What this engine is for.** It runs KataGo's networks and search in the browser, for players who don't want to, or
+can't, install or build KataGo natively. It aims to get the most performance a browser allows. It is not a way to get
+maximum performance: native KataGo on the same machine is faster. In very limited testing (one laptop GPU, one
+browser), a game review took about 1.4 to 1.9 times as long as native KataGo, depending on browser settings.
+
 The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser-katago-webgpu.md). **Phases 2 to 4** (phase 4 in progress):
 
 - **Model loader** (`src/model/`): parses official KataGo `.bin.gz` / `.txt.gz` files (model versions 8–17;
