@@ -1,0 +1,44 @@
+{
+  "kind": "native-search",
+  "katagoVersion": "KataGo v1.18.2",
+  "config": "/home/stenhoor/katago/analysis_example.cfg",
+  "override": null,
+  "model": "/home/stenhoor/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+  "browserReport": {
+    "date": "2026-11-26T02:03:19.474Z",
+    "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0"
+  },
+  "live": {
+    "position": "fight-19",
+    "maxVisits": 2000,
+    "runs": [
+      {
+        "visits": 2015,
+        "ms": 1729.6,
+        "visitsPerSecond": 1165,
+        "bestMove": "B7"
+      },
+      {
+        "visits": 2010,
+        "ms": 1625.6,
+        "visitsPerSecond": 1236.5,
+        "bestMove": "B7"
+      },
+      {
+        "visits": 2014,
+        "ms": 1635.2,
+        "visitsPerSecond": 1231.7,
+        "bestMove": "B7"
+      }
+    ]
+  },
+  "review": {
+    "moves": 250,
+    "visitsPerMove": 100,
+    "visits": 27565,
+    "totalMs": 16340.2,
+    "visitsPerSecond": 1686.9,
+    "minutesFor250Moves": 0.27
+  }
+}
