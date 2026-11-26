@@ -10,10 +10,15 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   the WGSL kernels in phase 4.
 - **Rules engine** (`src/rules/`): a port of the parts of KataGo's `Board` and `BoardHistory` that the network's inputs
   depend on: captures, suicide, simple ko, positional and situational superko, the ladder search, pass-alive area, the
-  named rule sets, territory scoring's per-stone adjustment and the white handicap bonus. Passes, the territory-scoring
-  encore and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
+  named rule sets, territory scoring's per-stone adjustment and the white handicap bonus, and passes: consecutive
+  ending passes, simple ko's spight-like ending, and the end and score of an area-scored game. The territory-scoring
+  encore (a pass that would end the main phase under territory scoring), ending a game with a group tax, no-result long
+  cycles and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
 - **V7 input encoder** (`src/features/v7.ts`): `encodePositionV7` builds KataGo's 22 spatial planes and 19 globals from
-  a position (setup stones and moves), following `NNInputs::fillRowV7`. The earlier simple encoder
+  a position (setup stones and moves, `[player, 'pass']` for a pass; `gtpMove` converts GTP moves), following
+  `NNInputs::fillRowV7`, passes included (the pass-history globals, the pass-ends-phase flag, and history hidden under
+  friendly-pass rules). `encodeHistoryV7` encodes a `GameHistory` directly, with KataGo's conservative-pass and
+  passing-hack options. The earlier simple encoder
   (`src/features/simple.ts`), for positions with no captures, ko, ladders or one-colour regions, is still exported.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
   - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.

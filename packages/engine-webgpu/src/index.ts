@@ -18,7 +18,7 @@ export { Board, BLACK, WHITE, EMPTY, PASS_LOC, NULL_LOC } from './rules/board.js
 export { calculateArea } from './rules/area.js';
 export { GameHistory, UnsupportedPositionError, IllegalMoveError } from './rules/history.js';
 export { parseRules, type Rules } from './rules/rules.js';
-export { encodePositionV7, buildHistory, type EncodedPositionV7, type PositionSpec } from './features/v7.js';
+export { encodePositionV7, encodeHistoryV7, buildHistory, gtpMove, type EncodedPositionV7, type PositionSpec, type SpecMove, type InputOptions } from './features/v7.js';
 export { requestEngineDevice, getGpu, WebGpuUnavailableError, OPTIONAL_FEATURES, type EngineDevice, type OptionalFeature } from './gpu/device.js';
 export { GpuNetwork, type GpuNetworkOptions, type GpuProfile } from './gpu/network.js';
 export { ACT, ACTIVATION_PROBE, GEMM_DEFAULT, defaultGemmConfig, type Elem, type GemmConfig } from './gpu/kernels.js';

@@ -22,6 +22,16 @@
     { "id": "opening-13", "boardSize": 13, "rules": "tromp-taylor", "komi": 7.5,
       "moves": [["B","K10"],["W","D4"],["B","K4"]], "covers": "13x13 board" },
     { "id": "opening-9-japanese", "boardSize": 9, "rules": "japanese", "komi": 6.5,
-      "moves": [["B","E5"],["W","G4"]], "covers": "9x9, territory scoring" }
+      "moves": [["B","E5"],["W","G4"]], "covers": "9x9, territory scoring" },
+    { "id": "pass-19", "boardSize": 19, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","Q16"],["W","pass"],["B","D4"]], "covers": "a pass two moves back (global 1); White to move" },
+    { "id": "pass-ends-9", "boardSize": 9, "rules": "tromp-taylor", "komi": 7.5,
+      "moves": [["B","E5"],["W","C3"],["B","G7"],["W","pass"]],
+      "covers": "the last move a pass (global 0) and a pass by Black would end the game (global 14), no friendly passes" },
+    { "id": "pass-ends-9-chinese", "boardSize": 9, "rules": "chinese", "komi": 7.5,
+      "moves": [["B","E5"],["W","C3"],["B","G7"],["W","pass"]],
+      "covers": "as pass-ends-9 under friendly-pass rules: history and global 14 hidden" },
+    { "id": "pass-9-japanese", "boardSize": 9, "rules": "japanese", "komi": 6.5,
+      "moves": [["B","E5"],["W","pass"],["B","C3"]], "covers": "a pass under territory scoring, main phase" }
   ]
 }
