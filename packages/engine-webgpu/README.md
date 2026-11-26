@@ -102,6 +102,27 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
     include WebGPU yet.
 
+## Browser flags for more speed
+
+**Use these at your own risk.** They change how the browser treats your GPU, for every site, not only StoneMind.
+StoneMind takes no responsibility for any stability, performance or hardware problems they cause. The engine works
+without them.
+
+These are command-line flags for Chromium-based browsers. They were measured only in Microsoft Edge 158 on the owner's
+Linux laptop (RTX 3080 Laptop GPU, alongside a second GPU); other browsers, systems and GPUs may behave differently.
+
+- **`--use-webgpu-power-preference=force-high-performance`**: makes WebGPU use the high-performance GPU on a computer
+  with two. The engine already asks for it (`powerPreference: 'high-performance'` in `src/gpu/device.ts`), but on the
+  owner's laptop Edge used the NVIDIA GPU only when started with this flag.
+- **`--enable-unsafe-webgpu`**: turns on WebGPU features that browsers consider experimental or unsafe, and with them
+  matrix hardware (`chromium-experimental-subgroup-matrix`, offered on the owner's laptop only with this flag). The
+  engine then uses it automatically (`matrix: 'auto'`). With it, on the owner's laptop, the batch-16 network pass took
+  22–25% less time and a 250-move review 16–19% less (`docs/spikes/results/2026-11-b18-matrix-ladder.md`). The flag
+  also turns off WebGPU safety restrictions for every site the browser visits.
+
+Every measurement on the owner's laptop was also made with `--ignore-gpu-blocklist`, which overrides the browser's
+list of GPUs and drivers it considers unreliable. Whether WebGPU or matrix hardware needs it there hasn't been tested.
+
 ## Verification
 
 `test/tiny-board.test.mjs` reproduces KataGo's own `runnnontinyboardtest` (g170-b6c96, symmetry 3). The parameter
