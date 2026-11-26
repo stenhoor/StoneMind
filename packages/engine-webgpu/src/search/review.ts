@@ -72,9 +72,9 @@ export class SharedEvaluator implements NetEvaluator {
 export interface ReviewOptions {
   /** Visits per turn (KataGo's maxVisits). */
   visits: number;
-  /** Each search's batch (default 16). */
+  /** Each search's batch (default 16, native KataGo's `numSearchThreadsPerAnalysisThread` in `analysis_example.cfg`). */
   batchSize?: number;
-  /** Turns searched at once (default: the network's maxBatch / batchSize, at least 1). */
+  /** Turns searched at once (default 2, native KataGo's `numAnalysisThreads` in its `analysis_example.cfg`). */
   concurrency?: number;
   /** Search parameters for every turn's search. */
   params?: Partial<SearchParams>;
@@ -89,7 +89,7 @@ export interface ReviewOptions {
  */
 export async function reviewGame(model: ModelDesc, net: NetEvaluator, histories: readonly GameHistory[], options: ReviewOptions): Promise<SearchAnalysis[]> {
   const batchSize = Math.max(1, Math.min(options.batchSize ?? 16, net.maxBatch));
-  const concurrency = Math.max(1, options.concurrency ?? Math.floor(net.maxBatch / batchSize));
+  const concurrency = Math.max(1, options.concurrency ?? 2);
   const shared = new SharedEvaluator(net);
   const cache = new Map<string, Evaluation>();
   const results: SearchAnalysis[] = new Array(histories.length);

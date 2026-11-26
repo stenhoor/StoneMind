@@ -30,7 +30,8 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   passing hacks, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
   the reference forward pass.
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
-  small batch (16 by default), sharing one evaluation cache across turns as KataGo's analysis engine does.
+  small batch, sharing one evaluation cache across turns as KataGo's analysis engine does. The defaults are native
+  KataGo's `analysis_example.cfg`: 2 turns at once, batch 16.
   `SharedEvaluator` combines the concurrent searches' leaves into one network call of up to the network's batch size.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
   - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.
