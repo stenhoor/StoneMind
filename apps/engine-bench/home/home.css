@@ -1,0 +1,55 @@
+/* Layout for the placeholder home page. Colours and type come from the brand tokens and classes. */
+body { margin: 0; min-height: 100vh; }
+
+.home {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 var(--space-6) var(--space-8);
+  box-sizing: border-box;
+}
+
+.home-header { padding: var(--space-6) 0; }
+.home-logo { display: inline-flex; min-height: 44px; align-items: center; }
+.home-logo img { height: auto; max-width: 60vw; }
+
+main { display: flex; flex-direction: column; gap: 56px; }
+
+.home-hero { display: flex; flex-direction: column; gap: var(--space-5); padding-top: var(--space-8); }
+.home-hero .display { margin: 0; font-size: clamp(44px, 8vw, 72px); }
+.home-status { margin: 0; color: var(--text-2); text-transform: uppercase; }
+.home-lead { margin: 0; font-size: 20px; line-height: 1.55; max-width: 62ch; color: var(--text); }
+.home-note { margin: 0; max-width: 62ch; color: var(--text-2); }
+.home-actions { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.home-actions .sm-btn { text-decoration: none; }
+
+.h2 { margin: 0 0 var(--space-4); }
+
+.home-goals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+.home-goals li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+.home-goals .h3 { margin: 0 0 var(--space-2); }
+.home-goals .body { margin: 0; color: var(--text-2); }
+
+.home-links { margin: var(--space-3) 0 0; padding-left: var(--space-5); }
+.home-links li { padding: var(--space-2) 0; }
+
+.home-footer {
+  margin-top: 56px;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-8);
+  color: var(--text-2);
+}
