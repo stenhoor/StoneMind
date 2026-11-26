@@ -1,0 +1,194 @@
+{
+  "kind": "transforms",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T14:04:37.051Z",
+  "batches": [
+    16,
+    32,
+    64
+  ],
+  "repeat": 30,
+  "runs": 7,
+  "channels": 192,
+  "elem": "f16",
+  "act": 4,
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "warmUpMs": 2000,
+  "rows": [
+    {
+      "batch": 16,
+      "transform": "in",
+      "minBytes": 7747584,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.0562,
+          "gbPerSecond": 137.9
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0468,
+          "gbPerSecond": 165.5,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "minBytes": 9965568,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.049,
+          "gbPerSecond": 203.4
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0593,
+          "gbPerSecond": 168.1,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 32,
+      "transform": "in",
+      "minBytes": 15495168,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.1108,
+          "gbPerSecond": 139.9
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0911,
+          "gbPerSecond": 170,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 32,
+      "transform": "out",
+      "minBytes": 19931136,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.102,
+          "gbPerSecond": 195.3
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0958,
+          "gbPerSecond": 208,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "minBytes": 30990336,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.2022,
+          "gbPerSecond": 153.2
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.1588,
+          "gbPerSecond": 195.1,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "minBytes": 39862272,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.1916,
+          "gbPerSecond": 208
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.1885,
+          "gbPerSecond": 211.5,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    }
+  ],
+  "copy": [
+    {
+      "batch": 16,
+      "bytes": 7747584,
+      "msPerDispatch": 0.0312,
+      "gbPerSecond": 248.3
+    },
+    {
+      "batch": 32,
+      "bytes": 15495168,
+      "msPerDispatch": 0.0527,
+      "gbPerSecond": 293.8
+    },
+    {
+      "batch": 64,
+      "bytes": 30990336,
+      "msPerDispatch": 0.0974,
+      "gbPerSecond": 318.3
+    }
+  ],
+  "perNetwork": [
+    {
+      "batch": 16,
+      "in v1": 4.384,
+      "in v2": 3.65,
+      "out v1": 3.822,
+      "out v2": 4.625
+    },
+    {
+      "batch": 32,
+      "in v1": 8.642,
+      "in v2": 7.106,
+      "out v1": 7.956,
+      "out v2": 7.472
+    },
+    {
+      "batch": 64,
+      "in v1": 15.772,
+      "in v2": 12.386,
+      "out v1": 14.945,
+      "out v2": 14.703
+    }
+  ],
+  "ok": true,
+  "model": "transforms",
+  "steps": [
+    "14:04:37.176 compiling 4 kernels",
+    "14:04:37.240 warming up for 2000 ms",
+    "14:04:39.248 batch 16, input transform",
+    "14:04:39.766 batch 16, output transform",
+    "14:04:40.402 batch 32, input transform",
+    "14:04:41.137 batch 32, output transform",
+    "14:04:41.958 batch 64, input transform",
+    "14:04:43.037 batch 64, output transform",
+    "14:04:43.891 copy baseline"
+  ]
+}

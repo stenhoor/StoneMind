@@ -47,7 +47,7 @@ test('the GPU check page, its modules and its data are in the site', () => {
   for (const [, ref] of gpuHtml.matchAll(/(?:href|src)="(\.[^"]+)"/g)) assert.ok(existsSync(join(page, ref)), `missing ${ref}`);
   const check = readFileSync(join(page, 'check.js'), 'utf8');
   for (const [, spec] of check.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(page, spec)), `check.js imports missing ${spec}`);
-  for (const module of ['gemm-bench.js', 'transform-bench.js', 'dispatch-bench.js']) {
+  for (const module of ['gemm-bench.js', 'transform-bench.js', 'dispatch-bench.js', 'timing.js']) {
     const source = readFileSync(join(page, module), 'utf8');
     for (const [, spec] of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(page, spec)), `${module} imports missing ${spec}`);
   }
