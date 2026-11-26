@@ -1,7 +1,7 @@
 // The GPU check page's logic. The model comes from the file picker, or the `model` query parameter (a URL of the
 // .bin.gz), or else the test network. Goldens: the `golden` parameter, or else ../goldens/<model name>.json.
 import {
-  loadModel, encodePositionV7, parseGtp, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
+  loadModel, encodePositionV7, gtpMove, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
 } from '../../dist/index.js';
 
 // The same tolerances as test/goldens.test.mjs.
@@ -96,7 +96,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
 
   const cases = positions.map((position) => {
     const size = position.boardSize;
-    const moves = position.moves.map(([color, loc]) => [color, ...parseGtp(loc, size)]);
+    const moves = position.moves.map(([color, loc]) => gtpMove(color, loc, size));
     const encoded = encodePositionV7({ xSize: size, ySize: size, rules: position.rules, komi: position.komi, moves }, model.preferPassAliveUnderSuicideRules);
     return { position, size, encoded };
   });
@@ -329,6 +329,9 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
       if (fails.length) row.failures = fails.slice(0, 5);
       // fp16 is judged by KataGo's own fp16 limits (below), not by the strict fp32 tolerances.
       if (fails.length && variant.precision !== 'f16') ok = false;
+    } else if (golden) {
+      row.matchesKataGo = null;
+      row.note = 'no native golden captured for this position yet';
     }
     report.positions.push(row);
   });

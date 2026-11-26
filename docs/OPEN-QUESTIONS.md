@@ -110,3 +110,13 @@ optional. It also adds `DataDisclosure` and consent enforcement (SDK Rule 4, Cha
 
 The roadmap lists Governance as a Milestone 0 deliverable. There is no
 CONTRIBUTING or governance document yet.
+
+# Engines
+
+## 12. Browser engine: passes and the end of the game (spike 0001)
+
+The browser engine's rules engine follows KataGo's `BoardHistory`. The first version of the search supports area
+scoring only (owner decision, 2026-11-26): passes, two passes (or simple ko's spight-like repeat) ending the game, and
+area scoring with no group tax. Still refused with `UnsupportedPositionError`: the territory-scoring encore (Japanese
+and Korean games past the main phase), ending a game with a group tax (stone-scoring, ancient-territory), no-result long
+cycles, and rule sets with a button.

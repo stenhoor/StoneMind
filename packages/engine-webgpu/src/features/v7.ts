@@ -1,13 +1,14 @@
 /**
  * KataGo's V7 network inputs (22 spatial planes, 19 globals), ported from `NNInputs::fillRowV7` and `iterLadders` in
- * KataGo's `cpp/neuralnet/nninputs.cpp` (KataGo 1.18, MIT, © David J Wu), for main-phase positions with no passes.
+ * KataGo's `cpp/neuralnet/nninputs.cpp` (KataGo 1.18, MIT, © David J Wu), for main-phase positions, passes included.
  * Defaults match `MiscNNInputParams` as `kata-raw-nn` uses them: no playout-doubling advantage, draws worth half a win,
  * no conservative-pass or passing hacks.
  */
 import { calculateArea } from '../rules/area.js';
-import { BLACK, Board, WHITE, opp, type Stone } from '../rules/board.js';
+import { BLACK, Board, PASS_LOC, WHITE, opp, type Stone } from '../rules/board.js';
 import { GameHistory, UnsupportedPositionError } from '../rules/history.js';
 import { parseRules } from '../rules/rules.js';
+import { parseGtp } from './simple.js';
 import type { NetInput } from '../reference/forward.js';
 import type { Player } from '../reference/postprocess.js';
 
@@ -28,10 +29,30 @@ export interface PositionSpec {
   komi: number;
   /** Stones on the board before any move: [player, x, y], y = 0 the top row. */
   initialStones?: readonly (readonly [Player, number, number])[];
-  /** Moves in order: [player, x, y]. */
-  moves?: readonly (readonly [Player, number, number])[];
+  /** Moves in order: [player, x, y], or [player, 'pass']. */
+  moves?: readonly SpecMove[];
   /** Who moves first when there are no moves (default Black). */
   initialPlayer?: Player;
+}
+
+/** A move in a {@link PositionSpec}. */
+export type SpecMove = readonly [Player, number, number] | readonly [Player, 'pass'];
+
+/** A GTP move (a coordinate such as "Q16", or "pass") as a {@link SpecMove}. */
+export function gtpMove(player: Player, location: string, ySize: number): SpecMove {
+  return location.trim().toLowerCase() === 'pass' ? [player, 'pass'] : [player, ...parseGtp(location, ySize)];
+}
+
+/** KataGo `MiscNNInputParams` options that change the inputs (all off for `kata-raw-nn`). */
+export interface InputOptions {
+  /** The model's `preferPassAliveUnderSuicideRules` flag (model version 15+). Default false. */
+  preferPassAliveUnderSuicideRules?: boolean;
+  /** KataGo `conservativePassAndIsRoot`: at the root, behave as if a pass would not end the game. Default false. */
+  conservativePassAndIsRoot?: boolean;
+  /** KataGo `enablePassingHacks`. Default false. */
+  enablePassingHacks?: boolean;
+  /** KataGo `maxHistory`: the most past moves the inputs may show (default 5, all of them). */
+  maxHistory?: number;
 }
 
 const stone = (p: Player): Stone => (p === 'B' ? BLACK : WHITE);
@@ -72,7 +93,7 @@ export function buildHistory(spec: PositionSpec): GameHistory {
   const moves = spec.moves ?? [];
   const first = moves[0]?.[0] ?? spec.initialPlayer ?? 'B';
   const hist = new GameHistory(board, stone(first), rules, spec.komi);
-  for (const [p, x, y] of moves) hist.play(board.loc(x, y), stone(p));
+  for (const m of moves) hist.play(m[1] === 'pass' ? PASS_LOC : board.loc(m[1], m[2]!), stone(m[0]));
   return hist;
 }
 
@@ -81,7 +102,12 @@ export function buildHistory(spec: PositionSpec): GameHistory {
  * @param preferPassAliveUnderSuicideRules The model's flag (model version 15+); false for older models.
  */
 export function encodePositionV7(spec: PositionSpec, preferPassAliveUnderSuicideRules = false): EncodedPositionV7 {
-  const hist = buildHistory(spec);
+  return encodeHistoryV7(buildHistory(spec), { preferPassAliveUnderSuicideRules });
+}
+
+/** Encode a game history's current position as KataGo's V7 network input, for the player to move. */
+export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): EncodedPositionV7 {
+  const preferPassAliveUnderSuicideRules = options.preferPassAliveUnderSuicideRules ?? false;
   const board = hist.board;
   const { xSize, ySize } = board;
   const area = xSize * ySize;
@@ -119,28 +145,53 @@ export function encodePositionV7(spec: PositionSpec, preferPassAliveUnderSuicide
   }
 
   // Area planes (18–19). In the main phase only area scoring with no tax has them.
+  let finalPhaseAndGameEndWouldNotBeWin = false;
   if (rules.scoringRule === 'AREA' && rules.taxRule === 'NONE') {
     const suicideLegalForPassAlive = rules.multiStoneSuicideLegal || preferPassAliveUnderSuicideRules;
     const areaMap = calculateArea(board, true, true, true, suicideLegalForPassAlive);
+    let boardScoreForPla = 0;
     for (let y = 0; y < ySize; y++) {
       for (let x = 0; x < xSize; x++) {
         const loc = board.loc(x, y);
-        if (areaMap[loc] === pla) set(18, loc);
-        else if (areaMap[loc] === o) set(19, loc);
+        if (areaMap[loc] === pla) {
+          set(18, loc);
+          boardScoreForPla += 1;
+        } else if (areaMap[loc] === o) {
+          set(19, loc);
+          boardScoreForPla -= 1;
+        }
       }
     }
+    finalPhaseAndGameEndWouldNotBeWin = boardScoreForPla + hist.currentSelfKomi(pla) <= 0;
   } else if (rules.scoringRule === 'AREA') {
     throw new UnsupportedPositionError('area scoring with a group tax is not supported yet');
   }
 
-  // History: the last five moves, while they alternate back from the opponent's.
+  // History: the last five moves, while they alternate back from the opponent's. A pass sets global k - 1 instead of
+  // plane 8 + k. History is hidden when a pass would end the game but the net is to behave as if it won't.
+  let maxTurnsOfHistoryToInclude = 5;
+  let suppressPassWouldEndPhase = false;
+  if (
+    hist.passWouldEndGame(pla) &&
+    ((options.conservativePassAndIsRoot ?? false) ||
+      hist.shouldSuppressEndGameFromFriendlyPass(pla) ||
+      ((options.enablePassingHacks ?? false) && finalPhaseAndGameEndWouldNotBeWin))
+  ) {
+    maxTurnsOfHistoryToInclude = 0;
+    suppressPassWouldEndPhase = true;
+  } else if (hist.isGameFinished) {
+    maxTurnsOfHistoryToInclude = 1;
+  }
+  maxTurnsOfHistoryToInclude = Math.min(maxTurnsOfHistoryToInclude, options.maxHistory ?? 5);
   let numTurnsOfHistoryIncluded = 0;
   const ms = hist.moves;
-  for (let k = 1; k <= Math.min(5, ms.length); k++) {
+  const amountOfHistoryToTryToUse = Math.min(maxTurnsOfHistoryToInclude, hist.numApproxValidTurnsThisPhase, ms.length);
+  for (let k = 1; k <= amountOfHistoryToTryToUse; k++) {
     const m = ms[ms.length - k]!;
     if (m.pla !== (k % 2 === 1 ? o : pla)) break;
     numTurnsOfHistoryIncluded = k;
-    set(8 + k, m.loc);
+    if (m.loc === PASS_LOC) global[k - 1] = 1;
+    else set(8 + k, m.loc);
   }
 
   // Ladders: the current board, then the boards one and two moves ago (only as far back as history is included).
@@ -166,6 +217,7 @@ export function encodePositionV7(spec: PositionSpec, preferPassAliveUnderSuicide
     global[7] = -0.5;
   }
   if (rules.multiStoneSuicideLegal) global[8] = 1;
+  if (!suppressPassWouldEndPhase && hist.passWouldEndPhase(pla)) global[14] = 1;
   if (rules.scoringRule === 'TERRITORY') global[9] = 1;
   if (rules.taxRule === 'SEKI') global[10] = 1;
   else if (rules.taxRule === 'ALL') {

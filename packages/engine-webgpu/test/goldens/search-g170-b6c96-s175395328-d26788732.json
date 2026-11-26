@@ -1,0 +1,1644 @@
+{
+ "capturedWith": {
+  "katagoVersion": "KataGo v1.18.2",
+  "overrides": [
+   "numAnalysisThreads=1",
+   "numSearchThreadsPerAnalysisThread=1",
+   "nnRandomize=false",
+   "useGraphSearch=false",
+   "useNoisePruning=false",
+   "valueWeightExponent=0",
+   "useUncertainty=false",
+   "subtreeValueBiasFactor=0",
+   "useLcbForSelection=false",
+   "policyOptimism=0",
+   "rootPolicyOptimism=0",
+   "wideRootNoise=0",
+   "enablePassingHacks=false",
+   "enableMorePassingHacks=false",
+   "rootEndingBonusPoints=0",
+   "rootSymmetryPruning=false",
+   "rootNumSymmetriesToSample=1",
+   "useFP16=false",
+   "reportAnalysisWinratesAs=SIDETOMOVE"
+  ],
+  "modelFile": "g170-b6c96-s175395328-d26788732.bin.gz",
+  "modelSha256": "f5d32604e3675c480c7c8f6aa579a1ea857135628a0afccc8fa56330fbacd38d",
+  "date": "2026-11-26T01:36:04.121Z"
+ },
+ "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
+ "queries": [
+  {
+   "id": "opening-9",
+   "moves": [
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "C3"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 120,
+   "komi": 7.5,
+   "rootVisits": 120,
+   "moveInfos": [
+    {
+     "move": "F3",
+     "visits": 43,
+     "winrate": 0.459803055,
+     "scoreLead": -0.198580789,
+     "pv": [
+      "F3",
+      "C6",
+      "D6",
+      "C7",
+      "D7",
+      "G5",
+      "C5"
+     ]
+    },
+    {
+     "move": "D4",
+     "visits": 37,
+     "winrate": 0.451257595,
+     "scoreLead": -0.166258809,
+     "pv": [
+      "D4",
+      "D3",
+      "F3",
+      "C5",
+      "C4",
+      "B4",
+      "B3"
+     ]
+    },
+    {
+     "move": "C5",
+     "visits": 17,
+     "winrate": 0.431786601,
+     "scoreLead": -0.564968174,
+     "pv": [
+      "C5",
+      "F3",
+      "F4",
+      "G3",
+      "E3",
+      "E2",
+      "G4"
+     ]
+    },
+    {
+     "move": "E3",
+     "visits": 10,
+     "winrate": 0.423175469,
+     "scoreLead": -0.708393013,
+     "pv": [
+      "E3",
+      "C6",
+      "D6",
+      "C7",
+      "D7",
+      "G4",
+      "G6"
+     ]
+    },
+    {
+     "move": "C6",
+     "visits": 8,
+     "winrate": 0.438154858,
+     "scoreLead": -0.723087591,
+     "pv": [
+      "C6",
+      "F3",
+      "F4"
+     ]
+    },
+    {
+     "move": "G6",
+     "visits": 1,
+     "winrate": 0.41440767,
+     "scoreLead": -1.13992763,
+     "pv": [
+      "G6"
+     ]
+    },
+    {
+     "move": "F7",
+     "visits": 1,
+     "winrate": 0.421805799,
+     "scoreLead": -1.12461877,
+     "pv": [
+      "F7"
+     ]
+    },
+    {
+     "move": "C4",
+     "visits": 1,
+     "winrate": 0.405741528,
+     "scoreLead": -1.11990559,
+     "pv": [
+      "C4"
+     ]
+    },
+    {
+     "move": "E7",
+     "visits": 1,
+     "winrate": 0.433527589,
+     "scoreLead": -1.02511168,
+     "pv": [
+      "E7"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "late-9",
+   "moves": [
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D6"
+    ],
+    [
+     "W",
+     "G4"
+    ],
+    [
+     "B",
+     "G3"
+    ],
+    [
+     "W",
+     "D7"
+    ],
+    [
+     "B",
+     "C7"
+    ],
+    [
+     "W",
+     "E7"
+    ],
+    [
+     "B",
+     "F4"
+    ],
+    [
+     "W",
+     "C6"
+    ],
+    [
+     "B",
+     "C5"
+    ],
+    [
+     "W",
+     "B6"
+    ],
+    [
+     "B",
+     "B5"
+    ],
+    [
+     "W",
+     "D5"
+    ],
+    [
+     "B",
+     "D4"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "B7"
+    ],
+    [
+     "W",
+     "H3"
+    ],
+    [
+     "B",
+     "H2"
+    ],
+    [
+     "W",
+     "G2"
+    ],
+    [
+     "B",
+     "F3"
+    ],
+    [
+     "W",
+     "J2"
+    ],
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "H1"
+    ],
+    [
+     "B",
+     "G7"
+    ],
+    [
+     "W",
+     "F8"
+    ],
+    [
+     "B",
+     "D8"
+    ],
+    [
+     "W",
+     "C8"
+    ],
+    [
+     "B",
+     "B8"
+    ],
+    [
+     "W",
+     "E8"
+    ],
+    [
+     "B",
+     "F2"
+    ],
+    [
+     "W",
+     "D9"
+    ],
+    [
+     "B",
+     "B9"
+    ],
+    [
+     "W",
+     "E6"
+    ],
+    [
+     "B",
+     "A6"
+    ],
+    [
+     "W",
+     "F1"
+    ],
+    [
+     "B",
+     "E1"
+    ],
+    [
+     "W",
+     "G1"
+    ],
+    [
+     "B",
+     "D2"
+    ],
+    [
+     "W",
+     "C9"
+    ],
+    [
+     "B",
+     "F5"
+    ],
+    [
+     "W",
+     "F9"
+    ],
+    [
+     "B",
+     "C6"
+    ],
+    [
+     "W",
+     "F7"
+    ],
+    [
+     "B",
+     "E2"
+    ],
+    [
+     "W",
+     "G8"
+    ],
+    [
+     "B",
+     "A8"
+    ],
+    [
+     "W",
+     "H7"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "pass",
+     "visits": 18,
+     "winrate": 0.0000233209686,
+     "scoreLead": -6.07534756,
+     "pv": [
+      "pass",
+      "G6",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "D5",
+     "visits": 7,
+     "winrate": 0.0000283402469,
+     "scoreLead": -5.8282342,
+     "pv": [
+      "D5",
+      "G6",
+      "C3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "C4",
+     "visits": 6,
+     "winrate": 0.000043971315,
+     "scoreLead": -5.68436273,
+     "pv": [
+      "C4",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "C3",
+     "visits": 6,
+     "winrate": 0.0000430503424,
+     "scoreLead": -5.70641104,
+     "pv": [
+      "C3",
+      "G6",
+      "C4",
+      "pass"
+     ]
+    },
+    {
+     "move": "D3",
+     "visits": 6,
+     "winrate": 0.000043314613,
+     "scoreLead": -5.64916269,
+     "pv": [
+      "D3",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "E3",
+     "visits": 5,
+     "winrate": 0.0000358831412,
+     "scoreLead": -5.79433737,
+     "pv": [
+      "E3",
+      "G6",
+      "C3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "B4",
+     "visits": 5,
+     "winrate": 0.0000394824105,
+     "scoreLead": -5.76426992,
+     "pv": [
+      "B4",
+      "G6",
+      "C3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "C2",
+     "visits": 5,
+     "winrate": 0.0000376828279,
+     "scoreLead": -5.65514946,
+     "pv": [
+      "C2",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "B2",
+     "visits": 5,
+     "winrate": 0.0000440084954,
+     "scoreLead": -5.63041553,
+     "pv": [
+      "B2",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "B3",
+     "visits": 4,
+     "winrate": 0.00004527792,
+     "scoreLead": -5.62066805,
+     "pv": [
+      "B3",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "D1",
+     "visits": 4,
+     "winrate": 0.0000457679864,
+     "scoreLead": -5.62377739,
+     "pv": [
+      "D1",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "A5",
+     "visits": 4,
+     "winrate": 0.000045056516,
+     "scoreLead": -5.66400397,
+     "pv": [
+      "A5",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "C1",
+     "visits": 4,
+     "winrate": 0.0000464423304,
+     "scoreLead": -5.56948328,
+     "pv": [
+      "C1",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "A7",
+     "visits": 4,
+     "winrate": 0.0000448873875,
+     "scoreLead": -5.70664811,
+     "pv": [
+      "A7",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "A9",
+     "visits": 4,
+     "winrate": 0.0000439440486,
+     "scoreLead": -5.67243302,
+     "pv": [
+      "A9",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "A4",
+     "visits": 4,
+     "winrate": 0.0000490288287,
+     "scoreLead": -5.59990215,
+     "pv": [
+      "A4",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "B6",
+     "visits": 4,
+     "winrate": 0.0000456826908,
+     "scoreLead": -5.71854353,
+     "pv": [
+      "B6",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "H4",
+     "visits": 4,
+     "winrate": 0.000094402913,
+     "scoreLead": -5.88044584,
+     "pv": [
+      "H4",
+      "H5",
+      "pass"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "late-9-after-pass",
+   "moves": [
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D6"
+    ],
+    [
+     "W",
+     "G4"
+    ],
+    [
+     "B",
+     "G3"
+    ],
+    [
+     "W",
+     "D7"
+    ],
+    [
+     "B",
+     "C7"
+    ],
+    [
+     "W",
+     "E7"
+    ],
+    [
+     "B",
+     "F4"
+    ],
+    [
+     "W",
+     "C6"
+    ],
+    [
+     "B",
+     "C5"
+    ],
+    [
+     "W",
+     "B6"
+    ],
+    [
+     "B",
+     "B5"
+    ],
+    [
+     "W",
+     "D5"
+    ],
+    [
+     "B",
+     "D4"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "B7"
+    ],
+    [
+     "W",
+     "H3"
+    ],
+    [
+     "B",
+     "H2"
+    ],
+    [
+     "W",
+     "G2"
+    ],
+    [
+     "B",
+     "F3"
+    ],
+    [
+     "W",
+     "J2"
+    ],
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "H1"
+    ],
+    [
+     "B",
+     "G7"
+    ],
+    [
+     "W",
+     "F8"
+    ],
+    [
+     "B",
+     "D8"
+    ],
+    [
+     "W",
+     "C8"
+    ],
+    [
+     "B",
+     "B8"
+    ],
+    [
+     "W",
+     "E8"
+    ],
+    [
+     "B",
+     "F2"
+    ],
+    [
+     "W",
+     "D9"
+    ],
+    [
+     "B",
+     "B9"
+    ],
+    [
+     "W",
+     "E6"
+    ],
+    [
+     "B",
+     "A6"
+    ],
+    [
+     "W",
+     "F1"
+    ],
+    [
+     "B",
+     "E1"
+    ],
+    [
+     "W",
+     "G1"
+    ],
+    [
+     "B",
+     "D2"
+    ],
+    [
+     "W",
+     "C9"
+    ],
+    [
+     "B",
+     "F5"
+    ],
+    [
+     "W",
+     "F9"
+    ],
+    [
+     "B",
+     "C6"
+    ],
+    [
+     "W",
+     "F7"
+    ],
+    [
+     "B",
+     "E2"
+    ],
+    [
+     "W",
+     "G8"
+    ],
+    [
+     "B",
+     "A8"
+    ],
+    [
+     "W",
+     "H7"
+    ],
+    [
+     "B",
+     "pass"
+    ],
+    [
+     "W",
+     "G6"
+    ],
+    [
+     "B",
+     "pass"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "pass",
+     "visits": 89,
+     "winrate": 0.999963159,
+     "scoreLead": 6.47748047,
+     "pv": [
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "H2",
+     "visits": 3,
+     "winrate": 0.999962208,
+     "scoreLead": 5.84010092,
+     "pv": [
+      "H2",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "H4",
+     "visits": 3,
+     "winrate": 0.999970512,
+     "scoreLead": 5.90463432,
+     "pv": [
+      "H4",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "J3",
+     "visits": 2,
+     "winrate": 0.999949907,
+     "scoreLead": 5.65543842,
+     "pv": [
+      "J3",
+      "pass"
+     ]
+    },
+    {
+     "move": "J4",
+     "visits": 2,
+     "winrate": 0.999947573,
+     "scoreLead": 5.67339778,
+     "pv": [
+      "J4",
+      "pass"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "late-9-game-over",
+   "moves": [
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D6"
+    ],
+    [
+     "W",
+     "G4"
+    ],
+    [
+     "B",
+     "G3"
+    ],
+    [
+     "W",
+     "D7"
+    ],
+    [
+     "B",
+     "C7"
+    ],
+    [
+     "W",
+     "E7"
+    ],
+    [
+     "B",
+     "F4"
+    ],
+    [
+     "W",
+     "C6"
+    ],
+    [
+     "B",
+     "C5"
+    ],
+    [
+     "W",
+     "B6"
+    ],
+    [
+     "B",
+     "B5"
+    ],
+    [
+     "W",
+     "D5"
+    ],
+    [
+     "B",
+     "D4"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "B7"
+    ],
+    [
+     "W",
+     "H3"
+    ],
+    [
+     "B",
+     "H2"
+    ],
+    [
+     "W",
+     "G2"
+    ],
+    [
+     "B",
+     "F3"
+    ],
+    [
+     "W",
+     "J2"
+    ],
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "H1"
+    ],
+    [
+     "B",
+     "G7"
+    ],
+    [
+     "W",
+     "F8"
+    ],
+    [
+     "B",
+     "D8"
+    ],
+    [
+     "W",
+     "C8"
+    ],
+    [
+     "B",
+     "B8"
+    ],
+    [
+     "W",
+     "E8"
+    ],
+    [
+     "B",
+     "F2"
+    ],
+    [
+     "W",
+     "D9"
+    ],
+    [
+     "B",
+     "B9"
+    ],
+    [
+     "W",
+     "E6"
+    ],
+    [
+     "B",
+     "A6"
+    ],
+    [
+     "W",
+     "F1"
+    ],
+    [
+     "B",
+     "E1"
+    ],
+    [
+     "W",
+     "G1"
+    ],
+    [
+     "B",
+     "D2"
+    ],
+    [
+     "W",
+     "C9"
+    ],
+    [
+     "B",
+     "F5"
+    ],
+    [
+     "W",
+     "F9"
+    ],
+    [
+     "B",
+     "C6"
+    ],
+    [
+     "W",
+     "F7"
+    ],
+    [
+     "B",
+     "E2"
+    ],
+    [
+     "W",
+     "G8"
+    ],
+    [
+     "B",
+     "A8"
+    ],
+    [
+     "W",
+     "H7"
+    ],
+    [
+     "B",
+     "pass"
+    ],
+    [
+     "W",
+     "G6"
+    ],
+    [
+     "B",
+     "pass"
+    ],
+    [
+     "W",
+     "pass"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 60,
+   "komi": 7.5,
+   "rootVisits": 60,
+   "moveInfos": [
+    {
+     "move": "pass",
+     "visits": 10,
+     "winrate": 0.00000287174717,
+     "scoreLead": -6.38432751,
+     "pv": [
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "C3",
+     "visits": 6,
+     "winrate": 0.0000297901135,
+     "scoreLead": -6.13256232,
+     "pv": [
+      "C3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "D5",
+     "visits": 5,
+     "winrate": 0.0000280613498,
+     "scoreLead": -6.02250195,
+     "pv": [
+      "D5",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "B3",
+     "visits": 4,
+     "winrate": 0.0000236164867,
+     "scoreLead": -6.2194742,
+     "pv": [
+      "B3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "C4",
+     "visits": 4,
+     "winrate": 0.0000231870695,
+     "scoreLead": -6.17311358,
+     "pv": [
+      "C4",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "D3",
+     "visits": 4,
+     "winrate": 0.0000228127947,
+     "scoreLead": -6.1250397,
+     "pv": [
+      "D3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "B4",
+     "visits": 4,
+     "winrate": 0.0000510710356,
+     "scoreLead": -5.9039737,
+     "pv": [
+      "B4",
+      "pass",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "C2",
+     "visits": 3,
+     "winrate": 0.0000302561869,
+     "scoreLead": -6.08071772,
+     "pv": [
+      "C2",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "E3",
+     "visits": 3,
+     "winrate": 0.0000309090283,
+     "scoreLead": -6.05371443,
+     "pv": [
+      "E3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "C1",
+     "visits": 3,
+     "winrate": 0.0000318673074,
+     "scoreLead": -6.01272027,
+     "pv": [
+      "C1",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "B2",
+     "visits": 3,
+     "winrate": 0.000039711734,
+     "scoreLead": -5.98040024,
+     "pv": [
+      "B2",
+      "pass",
+      "C3"
+     ]
+    },
+    {
+     "move": "A5",
+     "visits": 3,
+     "winrate": 0.0000325971259,
+     "scoreLead": -6.03706201,
+     "pv": [
+      "A5",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "D1",
+     "visits": 3,
+     "winrate": 0.0000318890934,
+     "scoreLead": -6.05973705,
+     "pv": [
+      "D1",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "H4",
+     "visits": 2,
+     "winrate": 0.00006857683,
+     "scoreLead": -6.56755853,
+     "pv": [
+      "H4",
+      "J4"
+     ]
+    },
+    {
+     "move": "A4",
+     "visits": 2,
+     "winrate": 0.0000543622791,
+     "scoreLead": -5.72969723,
+     "pv": [
+      "A4",
+      "pass"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "late-9-chinese-after-pass",
+   "moves": [
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D6"
+    ],
+    [
+     "W",
+     "G4"
+    ],
+    [
+     "B",
+     "G3"
+    ],
+    [
+     "W",
+     "D7"
+    ],
+    [
+     "B",
+     "C7"
+    ],
+    [
+     "W",
+     "E7"
+    ],
+    [
+     "B",
+     "F4"
+    ],
+    [
+     "W",
+     "C6"
+    ],
+    [
+     "B",
+     "C5"
+    ],
+    [
+     "W",
+     "B6"
+    ],
+    [
+     "B",
+     "B5"
+    ],
+    [
+     "W",
+     "D5"
+    ],
+    [
+     "B",
+     "D4"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "B7"
+    ],
+    [
+     "W",
+     "H3"
+    ],
+    [
+     "B",
+     "H2"
+    ],
+    [
+     "W",
+     "G2"
+    ],
+    [
+     "B",
+     "F3"
+    ],
+    [
+     "W",
+     "J2"
+    ],
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "H1"
+    ],
+    [
+     "B",
+     "G7"
+    ],
+    [
+     "W",
+     "F8"
+    ],
+    [
+     "B",
+     "D8"
+    ],
+    [
+     "W",
+     "C8"
+    ],
+    [
+     "B",
+     "B8"
+    ],
+    [
+     "W",
+     "E8"
+    ],
+    [
+     "B",
+     "F2"
+    ],
+    [
+     "W",
+     "D9"
+    ],
+    [
+     "B",
+     "B9"
+    ],
+    [
+     "W",
+     "E6"
+    ],
+    [
+     "B",
+     "A6"
+    ],
+    [
+     "W",
+     "F1"
+    ],
+    [
+     "B",
+     "E1"
+    ],
+    [
+     "W",
+     "G1"
+    ],
+    [
+     "B",
+     "D2"
+    ],
+    [
+     "W",
+     "C9"
+    ],
+    [
+     "B",
+     "F5"
+    ],
+    [
+     "W",
+     "F9"
+    ],
+    [
+     "B",
+     "C6"
+    ],
+    [
+     "W",
+     "F7"
+    ],
+    [
+     "B",
+     "E2"
+    ],
+    [
+     "W",
+     "G8"
+    ],
+    [
+     "B",
+     "A8"
+    ],
+    [
+     "W",
+     "H7"
+    ],
+    [
+     "B",
+     "pass"
+    ],
+    [
+     "W",
+     "G6"
+    ],
+    [
+     "B",
+     "pass"
+    ]
+   ],
+   "rules": "chinese",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "pass",
+     "visits": 83,
+     "winrate": 0.999970636,
+     "scoreLead": 6.18293027,
+     "pv": [
+      "pass",
+      "C3",
+      "pass",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "H2",
+     "visits": 4,
+     "winrate": 0.999943832,
+     "scoreLead": 5.858042,
+     "pv": [
+      "H2",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "H4",
+     "visits": 4,
+     "winrate": 0.999957489,
+     "scoreLead": 5.96484613,
+     "pv": [
+      "H4",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "J3",
+     "visits": 4,
+     "winrate": 0.999953269,
+     "scoreLead": 6.00249517,
+     "pv": [
+      "J3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "J4",
+     "visits": 4,
+     "winrate": 0.999952569,
+     "scoreLead": 6.04567027,
+     "pv": [
+      "J4",
+      "pass",
+      "pass"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "opening-19",
+   "moves": [
+    [
+     "B",
+     "Q16"
+    ],
+    [
+     "W",
+     "D4"
+    ],
+    [
+     "B",
+     "Q4"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 19,
+   "maxVisits": 30,
+   "komi": 7.5,
+   "rootVisits": 30,
+   "moveInfos": [
+    {
+     "move": "D17",
+     "visits": 13,
+     "winrate": 0.510985183,
+     "scoreLead": 0.0871351877,
+     "pv": [
+      "D17",
+      "C15",
+      "C16",
+      "D15",
+      "F16"
+     ]
+    },
+    {
+     "move": "C16",
+     "visits": 10,
+     "winrate": 0.512286676,
+     "scoreLead": 0.121772872,
+     "pv": [
+      "C16",
+      "E17",
+      "R17",
+      "D15"
+     ]
+    },
+    {
+     "move": "D16",
+     "visits": 6,
+     "winrate": 0.513654801,
+     "scoreLead": 0.444835757,
+     "pv": [
+      "D16",
+      "C3",
+      "D3",
+      "C4"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "opening-19-aga",
+   "moves": [
+    [
+     "B",
+     "Q16"
+    ],
+    [
+     "W",
+     "D4"
+    ]
+   ],
+   "rules": "aga",
+   "size": 19,
+   "maxVisits": 30,
+   "komi": 7.5,
+   "rootVisits": 30,
+   "moveInfos": [
+    {
+     "move": "Q3",
+     "visits": 7,
+     "winrate": 0.496382726,
+     "scoreLead": -0.0277137065,
+     "pv": [
+      "Q3",
+      "D17",
+      "Q5",
+      "D15"
+     ]
+    },
+    {
+     "move": "C16",
+     "visits": 7,
+     "winrate": 0.497400277,
+     "scoreLead": 0.0442600325,
+     "pv": [
+      "C16",
+      "Q3",
+      "E16",
+      "Q5"
+     ]
+    },
+    {
+     "move": "D17",
+     "visits": 7,
+     "winrate": 0.496496122,
+     "scoreLead": 0.0625386398,
+     "pv": [
+      "D17",
+      "Q3",
+      "D15",
+      "Q5"
+     ]
+    },
+    {
+     "move": "R4",
+     "visits": 6,
+     "winrate": 0.494563719,
+     "scoreLead": -0.165920656,
+     "pv": [
+      "R4",
+      "D17",
+      "P4",
+      "D15"
+     ]
+    },
+    {
+     "move": "Q4",
+     "visits": 2,
+     "winrate": 0.491081722,
+     "scoreLead": -0.123149484,
+     "pv": [
+      "Q4",
+      "D17"
+     ]
+    }
+   ]
+  }
+ ]
+}

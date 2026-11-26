@@ -10,11 +10,25 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   the WGSL kernels in phase 4.
 - **Rules engine** (`src/rules/`): a port of the parts of KataGo's `Board` and `BoardHistory` that the network's inputs
   depend on: captures, suicide, simple ko, positional and situational superko, the ladder search, pass-alive area, the
-  named rule sets, territory scoring's per-stone adjustment and the white handicap bonus. Passes, the territory-scoring
-  encore and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
+  named rule sets, territory scoring's per-stone adjustment and the white handicap bonus, and passes: consecutive
+  ending passes, simple ko's spight-like ending, and the end and score of an area-scored game. The territory-scoring
+  encore (a pass that would end the main phase under territory scoring), ending a game with a group tax, no-result long
+  cycles and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
 - **V7 input encoder** (`src/features/v7.ts`): `encodePositionV7` builds KataGo's 22 spatial planes and 19 globals from
-  a position (setup stones and moves), following `NNInputs::fillRowV7`. The earlier simple encoder
+  a position (setup stones and moves, `[player, 'pass']` for a pass; `gtpMove` converts GTP moves), following
+  `NNInputs::fillRowV7`, passes included (the pass-history globals, the pass-ends-phase flag, and history hidden under
+  friendly-pass rules). `encodeHistoryV7` encodes a `GameHistory` directly, with KataGo's conservative-pass and
+  passing-hack options. The earlier simple encoder
   (`src/features/simple.ts`), for positions with no captures, ko, ladders or one-colour regions, is still exported.
+- **Search** (`src/search/`): `Search`, an asynchronous port of the core of KataGo's search that keeps a batch of
+  leaves in flight for the GPU with virtual losses, as KataGo's search threads do. It covers KataGo's PUCT (log-growing
+  exploration constant, parent-utility-stdev factor), first-play urgency, win/loss and score utility (`scorevalue.ts`,
+  KataGo's `ScoreValue` table), stats recomputed from children, terminal values, the evaluation cache (keyed as KataGo
+  keys it, without move history), random or fixed symmetries, and the analysis engine's `ignorePreRootHistory` and
+  `conservativePass`. Area scoring only for now. Not yet ported, each to be added and measured: graph search, noise
+  pruning, value weighting, uncertainty weighting, subtree value bias, LCB ordering, policy optimism, wide root noise,
+  passing hacks, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
+  the reference forward pass.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
   - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.
   - `GpuNetwork.create(engine, model, { maxBatch })` uploads the weights and builds a plan for a 19×19 board (smaller
@@ -79,7 +93,17 @@ divided by 8; post-processed outputs match the goldens). Only b18c384nbt uses Mi
 it runs when `STONEMIND_B18_MODEL` is set. `test/f16.test.mjs` checks the fp32 → fp16 conversion exhaustively.
 
 `test/rules.test.mjs` checks the rules engine on hand-built positions: captures, suicide, simple ko, a triple-ko cycle
-under positional, situational and simple ko, a ladder with and without a ladder breaker, and pass-alive area.
+under positional, situational and simple ko, a ladder with and without a ladder breaker, and pass-alive area. It also
+plays random games on 5×5 and 9×9 and checks the board's incremental chains (stones, liberties, heads) against a flood
+fill after every move and undo. `test/passes.test.mjs` checks passes: the end and score of area-scored games, the
+territory encore refused, and the pass inputs. The goldens include four positions with passes.
+
+`test/search.test.mjs` checks the search against native KataGo's analysis engine (CPU build, captured with
+`scripts/capture-search-goldens.mjs`): both run one search thread, symmetry 0, and the features this search doesn't
+have yet switched off, on 9×9 and 19×19 positions under tromp-taylor, Chinese (friendly passes, simple ko) and AGA
+(situational superko) rules, including a root after a pass and a root after the end of the game. The same moves get
+exactly the same visits, with the same principal variations, and win rates and leads within the network goldens'
+tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
 
 **Capturing goldens** for another network (for example b18c384nbt on a machine with KataGo):
 

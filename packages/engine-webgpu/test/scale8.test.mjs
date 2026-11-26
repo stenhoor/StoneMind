@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { loadModel, applyScale8, encodePositionV7, evaluateWithSymmetry, forward, parseGtp } from '../dist/index.js';
+import { loadModel, applyScale8, encodePositionV7, evaluateWithSymmetry, forward, gtpMove } from '../dist/index.js';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 const positions = JSON.parse(readFileSync(here('./goldens/positions.json'), 'utf8')).positions;
@@ -21,7 +21,7 @@ const NETS = [
 
 const encode = (position, m) => {
   const size = position.boardSize;
-  const moves = position.moves.map(([color, loc]) => [color, ...parseGtp(loc, size)]);
+  const moves = position.moves.map(([color, loc]) => gtpMove(color, loc, size));
   return encodePositionV7({ xSize: size, ySize: size, rules: position.rules, komi: position.komi, moves }, m.preferPassAliveUnderSuicideRules);
 };
 
@@ -45,6 +45,10 @@ for (const net of NETS) {
   });
 
   for (const position of positions) {
+    if (!golden.positions.some((p) => p.id === position.id)) {
+      test(`${model.name}: scale8 on ${position.id}`, { skip: 'no native golden captured for this position yet' }, () => {});
+      continue;
+    }
     test(`${model.name}: scale8 (reference, symmetry 0) on ${position.id} matches native KataGo and the unscaled raw outputs / 8`, () => {
       const encoded = encode(position, model);
       const raw = forward(model, encoded.input);

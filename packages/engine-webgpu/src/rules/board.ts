@@ -2,8 +2,9 @@
  * A Go board, ported from KataGo's `cpp/game/board.cpp` (KataGo 1.18, MIT, © David J Wu): the same padded layout,
  * location numbering and move semantics, and the same ladder search, so the input features match KataGo's.
  *
- * Chains are recomputed by flood fill when the board changes rather than kept incrementally as KataGo does: simpler,
- * and fast enough for feature encoding. Results don't depend on the chain representation.
+ * Chains are kept incrementally, as in KataGo: a circular list of stones per chain, with the stone and liberty counts
+ * held by the chain's head, updated by each placement, capture and merge. A recorded move is undone by restoring copies
+ * of these arrays, which is what the ladder search does at every node.
  */
 
 export const EMPTY = 0;
@@ -18,9 +19,13 @@ export const PASS_LOC = 1;
 
 export const opp = (p: Stone): Stone => (p === BLACK ? WHITE : BLACK);
 
-/** A recorded move, enough to undo it. */
+/** A recorded move: copies of the board's state, enough to undo it. Can be passed back to be reused. */
 export interface MoveRecord {
   colors: Uint8Array;
+  head: Int32Array;
+  next: Int32Array;
+  size: Int32Array;
+  libs: Int32Array;
   koLoc: number;
   numBlackCaptures: number;
   numWhiteCaptures: number;
@@ -42,11 +47,20 @@ export class Board {
   /** White stones captured (by Black). */
   numWhiteCaptures = 0;
 
-  #dirty = true;
-  #chainHead!: Int32Array;
-  #chainLibs!: Int32Array; // by head
-  #chainSize!: Int32Array; // by head
-  #chainStones!: Map<number, number[]>; // by head
+  /** The head of each stone's chain; -1 off stones. */
+  #head: Int32Array;
+  /** The next stone in the chain (a circular list). */
+  #next: Int32Array;
+  /** Stones in the chain, by head. */
+  #size: Int32Array;
+  /** Liberties of the chain, by head. */
+  #libs: Int32Array;
+  /** Scratch marks for counting each liberty once. */
+  #mark: Int32Array;
+  #stamp = 0;
+  /** Reused records for the ladder search, which plays and undoes many moves (by stack depth, and for the first move). */
+  #ladderRecords: MoveRecord[] = [];
+  #ladderRecordFirst: MoveRecord | undefined;
 
   constructor(xSize: number, ySize: number) {
     if (xSize < 1 || ySize < 1 || xSize > 25 || ySize > 25) throw new Error('board size must be 1–25');
@@ -57,6 +71,11 @@ export class Board {
     this.adj = [-this.stride, -1, 1, this.stride];
     this.colors = new Uint8Array(this.arraySize).fill(WALL);
     for (let y = 0; y < ySize; y++) for (let x = 0; x < xSize; x++) this.colors[this.loc(x, y)] = EMPTY;
+    this.#head = new Int32Array(this.arraySize).fill(-1);
+    this.#next = new Int32Array(this.arraySize).fill(-1);
+    this.#size = new Int32Array(this.arraySize);
+    this.#libs = new Int32Array(this.arraySize);
+    this.#mark = new Int32Array(this.arraySize);
   }
 
   loc(x: number, y: number): number {
@@ -78,6 +97,10 @@ export class Board {
   clone(): Board {
     const b = new Board(this.xSize, this.ySize);
     b.colors.set(this.colors);
+    b.#head.set(this.#head);
+    b.#next.set(this.#next);
+    b.#size.set(this.#size);
+    b.#libs.set(this.#libs);
     b.koLoc = this.koLoc;
     b.numBlackCaptures = this.numBlackCaptures;
     b.numWhiteCaptures = this.numWhiteCaptures;
@@ -86,72 +109,133 @@ export class Board {
 
   // ---------------------------------------------------------------- chains
 
-  #rebuild(): void {
-    const n = this.arraySize;
-    this.#chainHead = new Int32Array(n).fill(-1);
-    this.#chainLibs = new Int32Array(n);
-    this.#chainSize = new Int32Array(n);
-    this.#chainStones = new Map();
-    const libMark = new Int32Array(n).fill(-1);
-    for (let start = 0; start < n; start++) {
-      const c = this.colors[start]!;
-      if ((c !== BLACK && c !== WHITE) || this.#chainHead[start] !== -1) continue;
-      const stones = [start];
-      this.#chainHead[start] = start;
-      let libs = 0;
-      for (let k = 0; k < stones.length; k++) {
-        const s = stones[k]!;
-        for (const d of this.adj) {
-          const a = s + d;
-          const ac = this.colors[a]!;
-          if (ac === EMPTY) {
-            if (libMark[a] !== start) {
-              libMark[a] = start;
-              libs++;
-            }
-          } else if (ac === c && this.#chainHead[a] === -1) {
-            this.#chainHead[a] = start;
-            stones.push(a);
-          }
-        }
-      }
-      this.#chainLibs[start] = libs;
-      this.#chainSize[start] = stones.length;
-      this.#chainStones.set(start, stones);
+  #newStamp(): number {
+    if (++this.#stamp > 0x3fffffff) {
+      this.#mark.fill(0);
+      this.#stamp = 1;
     }
-    this.#dirty = false;
+    return this.#stamp;
   }
 
-  #fresh(): void {
-    if (this.#dirty) this.#rebuild();
+  /** Count the chain's liberties by walking it, each empty point once. */
+  #countLiberties(head: number): number {
+    const stamp = this.#newStamp();
+    let libs = 0;
+    let s = head;
+    do {
+      for (const d of this.adj) {
+        const a = s + d;
+        if (this.colors[a] === EMPTY && this.#mark[a] !== stamp) {
+          this.#mark[a] = stamp;
+          libs++;
+        }
+      }
+      s = this.#next[s]!;
+    } while (s !== head);
+    return libs;
+  }
+
+  /** Put a stone on an empty point, merging chains and updating liberties; no captures. */
+  #placeStone(loc: number, pla: Stone): void {
+    this.colors[loc] = pla;
+    this.#head[loc] = loc;
+    this.#next[loc] = loc;
+    this.#size[loc] = 1;
+    // The point was a liberty of each neighbouring chain (once per chain).
+    const seen: number[] = [];
+    for (const d of this.adj) {
+      const c = this.colors[loc + d];
+      if (c !== BLACK && c !== WHITE) continue;
+      const h = this.#head[loc + d]!;
+      if (seen.includes(h)) continue;
+      seen.push(h);
+      this.#libs[h]!--;
+    }
+    let head = loc;
+    let merged = false;
+    for (const h0 of seen) {
+      if (this.colors[h0] !== pla) continue;
+      const h = this.#head[h0]!;
+      if (h === head) continue;
+      head = this.#merge(head, h);
+      merged = true;
+    }
+    this.#libs[head] = merged ? this.#countLiberties(head) : this.getNumImmediateLiberties(loc);
+  }
+
+  /** Merge two chains: the smaller is relabelled to the larger's head. Returns the new head. */
+  #merge(a: number, b: number): number {
+    let [big, small] = this.#size[a]! >= this.#size[b]! ? [a, b] : [b, a];
+    let s = small;
+    do {
+      this.#head[s] = big;
+      s = this.#next[s]!;
+    } while (s !== small);
+    const t = this.#next[big]!;
+    this.#next[big] = this.#next[small]!;
+    this.#next[small] = t;
+    this.#size[big]! += this.#size[small]!;
+    return big;
+  }
+
+  /** Remove a chain; each emptied point becomes a liberty of each neighbouring chain. Returns the stones removed. */
+  #removeChain(loc: number): number {
+    const head = this.#head[loc]!;
+    const n = this.#size[head]!;
+    const stones: number[] = [];
+    let s = head;
+    do {
+      stones.push(s);
+      s = this.#next[s]!;
+    } while (s !== head);
+    for (const st of stones) {
+      this.colors[st] = EMPTY;
+      this.#head[st] = -1;
+      this.#next[st] = -1;
+    }
+    for (const st of stones) {
+      const seen: number[] = [];
+      for (const d of this.adj) {
+        const c = this.colors[st + d];
+        if (c !== BLACK && c !== WHITE) continue;
+        const h = this.#head[st + d]!;
+        if (seen.includes(h)) continue;
+        seen.push(h);
+        this.#libs[h]!++;
+      }
+    }
+    return n;
   }
 
   chainHead(loc: number): number {
-    this.#fresh();
-    return this.#chainHead[loc]!;
+    return this.#head[loc]!;
   }
 
   getNumLiberties(loc: number): number {
-    this.#fresh();
-    return this.#chainLibs[this.#chainHead[loc]!]!;
+    return this.#libs[this.#head[loc]!]!;
   }
 
   getChainSize(loc: number): number {
-    this.#fresh();
-    return this.#chainSize[this.#chainHead[loc]!]!;
+    return this.#size[this.#head[loc]!]!;
   }
 
+  /** The chain's stones, starting from its head. */
   chainStones(loc: number): readonly number[] {
-    this.#fresh();
-    return this.#chainStones.get(this.#chainHead[loc]!)!;
+    const head = this.#head[loc]!;
+    const out: number[] = [];
+    let s = head;
+    do {
+      out.push(s);
+      s = this.#next[s]!;
+    } while (s !== head);
+    return out;
   }
 
   /** All chain heads of a colour, in location order (KataGo iterates heads in location order too). */
   chainHeads(color: Stone): number[] {
-    this.#fresh();
     const out: number[] = [];
-    for (const head of this.#chainStones.keys()) if (this.colors[head] === color) out.push(head);
-    return out.sort((a, b) => a - b);
+    for (let loc = 0; loc < this.arraySize; loc++) if (this.colors[loc] === color && this.#head[loc] === loc) out.push(loc);
+    return out;
   }
 
   // ------------------------------------------------------------- legality
@@ -232,21 +316,15 @@ export class Board {
       return;
     }
     const o = opp(pla);
-    this.colors[loc] = pla;
-    this.#dirty = true;
+    this.#placeStone(loc, pla);
     let numCaptured = 0;
     let possibleKoLoc = NULL_LOC;
-    const seen: number[] = [];
     for (const d of this.adj) {
       const a = loc + d;
-      if (this.colors[a] !== o) continue;
-      const head = this.chainHead(a);
-      if (seen.includes(head)) continue;
-      seen.push(head);
-      if (this.getNumLiberties(a) === 0) {
-        numCaptured += this.#removeChain(a);
-        possibleKoLoc = a;
-      }
+      // A captured chain's stones are already empty when a later neighbour of the same chain is reached.
+      if (this.colors[a] !== o || this.getNumLiberties(a) !== 0) continue;
+      numCaptured += this.#removeChain(a);
+      possibleKoLoc = a;
     }
     if (numCaptured === 1 && this.getChainSize(loc) === 1 && this.getNumLiberties(loc) === 1) this.koLoc = possibleKoLoc;
     else this.koLoc = NULL_LOC;
@@ -259,46 +337,68 @@ export class Board {
     }
   }
 
-  #removeChain(loc: number): number {
-    const stones = [...this.chainStones(loc)];
-    for (const s of stones) this.colors[s] = EMPTY;
-    this.#dirty = true;
-    return stones.length;
-  }
-
-  playMoveRecorded(loc: number, pla: Stone): MoveRecord {
-    const record: MoveRecord = {
-      colors: this.colors.slice(),
-      koLoc: this.koLoc,
-      numBlackCaptures: this.numBlackCaptures,
-      numWhiteCaptures: this.numWhiteCaptures,
+  /** Play a move, recording what's needed to undo it; `reuse` is a record to overwrite instead of allocating one. */
+  playMoveRecorded(loc: number, pla: Stone, reuse?: MoveRecord): MoveRecord {
+    const record: MoveRecord = reuse ?? {
+      colors: new Uint8Array(this.arraySize),
+      head: new Int32Array(this.arraySize),
+      next: new Int32Array(this.arraySize),
+      size: new Int32Array(this.arraySize),
+      libs: new Int32Array(this.arraySize),
+      koLoc: 0,
+      numBlackCaptures: 0,
+      numWhiteCaptures: 0,
     };
+    record.colors.set(this.colors);
+    record.head.set(this.#head);
+    record.next.set(this.#next);
+    record.size.set(this.#size);
+    record.libs.set(this.#libs);
+    record.koLoc = this.koLoc;
+    record.numBlackCaptures = this.numBlackCaptures;
+    record.numWhiteCaptures = this.numWhiteCaptures;
     this.playMoveAssumeLegal(loc, pla);
     return record;
   }
 
   undo(record: MoveRecord): void {
-    this.colors = record.colors;
+    this.colors.set(record.colors);
+    this.#head.set(record.head);
+    this.#next.set(record.next);
+    this.#size.set(record.size);
+    this.#libs.set(record.libs);
     this.koLoc = record.koLoc;
     this.numBlackCaptures = record.numBlackCaptures;
     this.numWhiteCaptures = record.numWhiteCaptures;
-    this.#dirty = true;
   }
 
   /** A stone placed during setup (KataGo `setStoneFailIfNoLibs`): no captures; fails if it would leave a chain with no liberties. */
   setStone(loc: number, color: Stone): boolean {
     if (this.colors[loc] !== EMPTY) return false;
-    this.colors[loc] = color;
-    this.#dirty = true;
+    const record = this.playMoveRecordedNoCapture(loc, color);
     for (const l of [loc, ...this.adj.map((d) => loc + d)]) {
       const c = this.colors[l];
       if ((c === BLACK || c === WHITE) && this.getNumLiberties(l) === 0) {
-        this.colors[loc] = EMPTY;
-        this.#dirty = true;
+        this.undo(record);
         return false;
       }
     }
     return true;
+  }
+
+  private playMoveRecordedNoCapture(loc: number, color: Stone): MoveRecord {
+    const record: MoveRecord = {
+      colors: this.colors.slice(),
+      head: this.#head.slice(),
+      next: this.#next.slice(),
+      size: this.#size.slice(),
+      libs: this.#libs.slice(),
+      koLoc: this.koLoc,
+      numBlackCaptures: this.numBlackCaptures,
+      numWhiteCaptures: this.numWhiteCaptures,
+    };
+    this.#placeStone(loc, color);
+    return record;
   }
 
   // --------------------------------------------------------- ladder support
@@ -320,7 +420,9 @@ export class Board {
   /** The chain's liberties, appended to buf from bufIdx, skipping ones already in buf[bufStart..]. */
   findLiberties(loc: number, buf: number[], bufStart: number, bufIdx: number): number {
     let found = 0;
-    for (const s of this.chainStones(loc)) {
+    const head = this.#head[loc]!;
+    let s = head;
+    do {
       for (const d of this.adj) {
         const lib = s + d;
         if (this.colors[lib] !== EMPTY) continue;
@@ -328,7 +430,8 @@ export class Board {
         for (let j = bufStart; j < bufIdx + found; j++) if (buf[j] === lib) dup = true;
         if (!dup) buf[bufIdx + found++] = lib;
       }
-    }
+      s = this.#next[s]!;
+    } while (s !== head);
     return found;
   }
 
@@ -336,28 +439,34 @@ export class Board {
     const o = opp(this.colors[loc] as Stone);
     const checked: number[] = [];
     let found = 0;
-    for (const s of this.chainStones(loc)) {
+    const chain = this.#head[loc]!;
+    let s = chain;
+    do {
       for (const d of this.adj) {
         const a = s + d;
         if (this.colors[a] !== o) continue;
-        const head = this.chainHead(a);
-        if (this.getNumLiberties(a) === 1 && !checked.includes(head)) {
+        const head = this.#head[a]!;
+        if (this.#libs[head] === 1 && !checked.includes(head)) {
           found += this.findLiberties(a, buf, bufStart, bufIdx + found);
           checked.push(head);
         }
       }
-    }
+      s = this.#next[s]!;
+    } while (s !== chain);
     return found;
   }
 
   hasLibertyGainingCaptures(loc: number): boolean {
     const o = opp(this.colors[loc] as Stone);
-    for (const s of this.chainStones(loc)) {
+    const chain = this.#head[loc]!;
+    let s = chain;
+    do {
       for (const d of this.adj) {
         const a = s + d;
         if (this.colors[a] === o && this.getNumLiberties(a) === 1) return true;
       }
-    }
+      s = this.#next[s]!;
+    } while (s !== chain);
     return false;
   }
 
@@ -454,12 +563,12 @@ export class Board {
     let works0 = false;
     let works1 = false;
     if (this.isLegal(move0, o, false)) {
-      const r = this.playMoveRecorded(move0, o);
+      const r = (this.#ladderRecordFirst = this.playMoveRecorded(move0, o, this.#ladderRecordFirst));
       works0 = this.searchIsLadderCaptured(loc, true, buf);
       this.undo(r);
     }
     if (this.isLegal(move1, o, false)) {
-      const r = this.playMoveRecorded(move1, o);
+      const r = (this.#ladderRecordFirst = this.playMoveRecorded(move1, o, this.#ladderRecordFirst));
       works1 = this.searchIsLadderCaptured(loc, true, buf);
       this.undo(r);
     }
@@ -489,7 +598,7 @@ export class Board {
     const moveListStarts: number[] = [0];
     const moveListLens: number[] = [0];
     const moveListCur: number[] = [-1];
-    const records: MoveRecord[] = [];
+    const records = this.#ladderRecords;
     let stackIdx = 0;
     let nodes = 0;
     let returnValue = false;
@@ -628,7 +737,7 @@ export class Board {
         returnedFromDeeper = false;
         continue;
       }
-      records[stackIdx] = this.playMoveRecorded(move, p);
+      records[stackIdx] = this.playMoveRecorded(move, p, records[stackIdx]);
       nodes++;
       stackIdx++;
       moveListCur[stackIdx] = -1;
