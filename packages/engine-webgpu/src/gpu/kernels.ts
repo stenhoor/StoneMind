@@ -310,6 +310,22 @@ const AT = [
   [0, 1, -1, 8, -8, 1],
 ];
 
+/** A transform's arithmetic for a stage: the real one by default, a copy for 'move', run-time values for 'writes'. */
+function stageArith(stage: WinoTransformStage | undefined, real: string, out: string, inp: string, count: number, index = 't'): string {
+  if (stage === undefined) return real;
+  // 'move' uses all 36 inputs (folded onto 16 outputs for the output transform), so none of their reads is dropped.
+  if (stage === 'move') {
+    let code = '';
+    for (let k = 0; k < count; k++) {
+      const terms = [];
+      for (let j = k; j < 36; j += count) terms.push(`${inp}[${j}]`);
+      code += `  ${out}[${k}] = ${terms.join(' + ')};\n`;
+    }
+    return code.trimEnd();
+  }
+  return `  for (var k = 0u; k < ${count}u; k++) { ${out}[k] = f32(${index} + k); }`;
+}
+
 /** WGSL for out = M · in · Mᵀ with constant M (rows × 6 or rows × 3), fully unrolled, skipping zero terms. */
 function sandwich(m: number[][], inName: string, inCols: number, tmpName: string, outName: string): string {
   const term = (coef: number, expr: string) => (coef === 1 ? expr : coef === -1 ? `-${expr}` : `${coef.toFixed(9)} * ${expr}`);
@@ -326,6 +342,13 @@ function sandwich(m: number[][], inName: string, inCols: number, tmpName: string
       s += `  ${outName}[${i * rows + j}] = ${sum(m[j]!.flatMap((c, k) => (c === 0 ? [] : [term(c, `${tmpName}${i}_${k}`)])))};\n`;
   return s;
 }
+
+/**
+ * Measurement only (the output is wrong): one stage of a Winograd transform. 'move': all its global and workgroup
+ * memory traffic, without the transform arithmetic; 'reads': only its global reads (each thread then writes one value,
+ * so the reads stay live); 'writes': only its global writes (with the output transform's residual read).
+ */
+export type WinoTransformStage = 'move' | 'reads' | 'writes';
 
 /** The weight transform, on the CPU in float64: weights [oc][ic][3][3] → U [36][ic][oc]. */
 export function winogradWeights(weights: Float32Array, inChannels: number, outChannels: number): Float32Array {
@@ -349,7 +372,7 @@ export function winogradWeights(weights: Float32Array, inChannels: number, outCh
  * flags bit 0: apply BN_ACT's batch norm, activation and mask to each input value first (fusing the preceding layer);
  * bit 1: with it, first add `pre[b][c]`. Padding stays 0, as it would be after a separate BN_ACT.
  */
-export const WINO_IN = (inT: Elem, vT: Elem) => /* wgsl */ `${enableFor(inT, vT)}
+export const WINO_IN = (inT: Elem, vT: Elem, stage?: WinoTransformStage) => /* wgsl */ `${enableFor(inT, vT)}
 ${DYN}
 ${ACTIVATE}
 struct Params {
@@ -384,7 +407,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     shift = sb[P.C + c];
     if ((P.flags & 2u) != 0u) { preBias = pre[b * P.C + c]; }
   }
-  var d: array<f32, 36>;
+${stage === 'writes' ? '' : `  var d: array<f32, 36>;
   for (var i = 0; i < 6; i++) {
     for (var j = 0; j < 6; j++) {
       let y = y0 + i;
@@ -398,10 +421,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       d[i * 6 + j] = v;
     }
   }
-  var o: array<f32, 36>;
-${sandwich(BT, 'd', 6, 't', 'o')}
+`}${stage === 'reads' ? `  var s = 0.0;
+  for (var e = 0u; e < 36u; e++) { s += d[e]; }
+  V[c * P.tileStride + t] = ${vT}(s);
+` : `  var o: array<f32, 36>;
+${stageArith(stage, sandwich(BT, 'd', 6, 't', 'o'), 'o', 'd', 36)}
   for (var e = 0u; e < 36u; e++) { V[(e * P.C + c) * P.tileStride + t] = ${vT}(o[e]); }
-}
+`}}
 `;
 
 /** 36 GEMMs, one per Winograd element: M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t]. Tiled like CONV. */
@@ -470,7 +496,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
  * Output transform: one thread per (tile, output channel), Y = Aᵀ m A, written to the board with CONV's flags
  * (bit 0 accumulate, bit 1 per-(batch, channel) bias).
  */
-export const WINO_OUT = (mT: Elem, outT: Elem) => /* wgsl */ `${enableFor(mT, outT)}
+export const WINO_OUT = (mT: Elem, outT: Elem, stage?: WinoTransformStage) => /* wgsl */ `${enableFor(mT, outT)}
 ${DYN}
 struct Params { outC: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, flags: u32, _pad0: u32 }
 @group(0) @binding(0) var<uniform> P: Params;
@@ -484,10 +510,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let t = gid.x;
   let c = gid.y;
   if (t >= dyn.n * P.tilesPerBoard || c >= P.outC) { return; }
-  var m: array<f32, 36>;
+${stage === 'writes' ? '' : `  var m: array<f32, 36>;
   for (var e = 0u; e < 36u; e++) { m[e] = f32(M[(e * P.outC + c) * P.tileStride + t]); }
-  var y: array<f32, 16>;
-${sandwich(AT, 'm', 6, 't', 'y')}
+`}  var y: array<f32, 16>;
+${stage === 'reads' ? '  for (var e = 0u; e < 36u; e++) { y[0] += m[e]; }' : stageArith(stage, sandwich(AT, 'm', 6, 't', 'y'), 'y', 'm', 16)}
   let b = t / P.tilesPerBoard;
   let r = t % P.tilesPerBoard;
   let y0 = (r / P.tilesX) * 4u;
@@ -495,7 +521,8 @@ ${sandwich(AT, 'm', 6, 't', 'y')}
   var bias = 0.0;
   if ((P.flags & 2u) != 0u) { bias = nbias[b * P.outC + c]; }
   let base = (b * P.outC + c) * P.xSize * P.ySize;
-  for (var i = 0u; i < 4u; i++) {
+${stage === 'reads' ? `  outp[base + y0 * P.xSize + x0] = ${outT}(y[0]);
+` : `  for (var i = 0u; i < 4u; i++) {
     for (var j = 0u; j < 4u; j++) {
       let yy = y0 + i;
       let xx = x0 + j;
@@ -507,7 +534,7 @@ ${sandwich(AT, 'm', 6, 't', 'y')}
       }
     }
   }
-}
+`}}
 `;
 
 // ------------------------------------------------------------------ GEMM v2
@@ -905,17 +932,137 @@ export function winoTransformChannels(kind: 'in' | 'out', xSize: number, ySize: 
 }
 
 /** WINO_IN with workgroup staging; same bindings and parameters. Dispatch: [ceil(C / cpw), n]. */
-export const WINO_IN_V2 = (inT: Elem, vT: Elem, xSize: number, ySize: number) => {
+export interface WinoInV2Options {
+  stage?: WinoTransformStage;
+  /**
+   * Load the board into workgroup memory with the loop unrolled and no branches around the reads (indices clamped,
+   * padding chosen with select), so each thread's reads can all be in flight at once (default false). Same values.
+   */
+  unroll?: boolean;
+  /**
+   * Load only the board's points, as one contiguous span per workgroup (its channels' boards are adjacent), four at a
+   * time where aligned (the border stays zero, as WGSL zero-initialises workgroup memory); and stage the fused batch norm's per-channel values and
+   * the mask (one bit per point) in workgroup memory once, instead of reading them for every point (default false).
+   * Same values. The input is bound as vec4s (GpuNetwork's buffers are whole multiples of 16 bytes).
+   */
+  linear?: boolean;
+  /**
+   * With `linear`, how the mask's bits are built (default 'atomic'): 'atomic', every thread sets its points' bits with
+   * atomicOr; 'words', each of the first ceil(points / 32) threads builds one word from 32 unrolled reads, into a plain
+   * array.
+   */
+  maskBits?: 'atomic' | 'words';
+  /** Channels per workgroup (default winoTransformChannels('in', …)); dispatch [ceil(C / cpw), ceil(n / bpw)]. */
+  cpw?: number;
+  /**
+   * With `linear`, boards per workgroup (default 1). V holds every board's tiles contiguously, so with bpw boards each
+   * channel's writes are runs of bpw × tilesPerBoard values instead of tilesPerBoard.
+   */
+  bpw?: number;
+}
+
+export const WINO_IN_V2 = (inT: Elem, vT: Elem, xSize: number, ySize: number, { stage, unroll = false, linear = false, maskBits = 'atomic', cpw, bpw = 1 }: WinoInV2Options = {}) => {
   const TX = Math.ceil(xSize / 4);
   const TPB = TX * Math.ceil(ySize / 4);
   const PX = TX * 4 + 2;
   const PY = Math.ceil(ySize / 4) * 4 + 2;
-  const CPW = winoTransformChannels('in', xSize, ySize);
-  const WG = CPW * TPB;
+  const CPW = cpw ?? winoTransformChannels('in', xSize, ySize);
+  const BPW = linear ? bpw : 1;
+  const WG = CPW * BPW * TPB;
   let gather = '';
   for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) gather += `  d[${i * 6 + j}] = S[sbase + ${i * PX + j}u];\n`;
   let store = '';
   for (let e = 0; e < 36; e++) store += `  V[(${e}u * P.C + c) * P.tileStride + t] = ${vT}(o[${e}]);\n`;
+  // The unrolled, branch-free load: one block per step of WG slots.
+  const TOTAL = CPW * PY * PX;
+  let unrolled = '';
+  for (let k = 0; k * WG < TOTAL; k++) {
+    const guard = (k + 1) * WG > TOTAL;
+    unrolled += `  {
+    let idx = li + ${k * WG}u;
+    let cc = idx / ${PY * PX}u;
+    let rem = idx % ${PY * PX}u;
+    let y = i32(rem / ${PX}u) - 1;
+    let x = i32(rem % ${PX}u) - 1;
+    let c = c0 + cc;
+    let inside = c < P.C && y >= 0 && y < ${ySize} && x >= 0 && x < ${xSize};
+    let cs = select(0u, c, c < P.C);
+    let pos = select(0u, u32(y) * ${xSize}u + u32(x), inside);
+    let raw = f32(inp[(b * P.C + cs) * ${xSize * ySize}u + pos]);
+    let preBias = select(0.0, pre[b * P.C + cs], (P.flags & 2u) != 0u);
+    let act = select(0.0, activate((raw + preBias) * sb[cs] + sb[P.C + cs], P.act), mask[b * P.maskStride + pos] == 1.0);
+    ${guard ? `if (idx < ${TOTAL}u) { ` : ''}S[idx] = select(0.0, select(raw, act, fused), inside);${guard ? ' }' : ''}
+  }
+`;
+  }
+  // The linear load: for each of the workgroup's boards (bbq), its channels' span (point i: channel i / AREA) into S,
+  // with the fusion from staged values (Ch per channel and board; the mask, one bit per point, per board).
+  const AREA = xSize * ySize;
+  const WORDS = Math.ceil(AREA / 32);
+  const put = (i: string, val: string) => `{
+      let cc = ${i} / ${AREA}u;
+      let pos = ${i} % ${AREA}u;
+      var v = ${val};
+      if (fused) { let ch = Ch[cc * ${BPW}u + bbq]; v = select(0.0, activate((v + ch.z) * ch.x + ch.y, P.act), ((${maskBits === 'atomic' ? `atomicLoad(&Mb[bbq * ${WORDS}u + (pos >> 5u)])` : `Mb[bbq * ${WORDS}u + (pos >> 5u)]`} >> (pos & 31u)) & 1u) == 1u); }
+      S[(cc * ${BPW}u + bbq) * ${PY * PX}u + (pos / ${xSize}u + 1u) * ${PX}u + pos % ${xSize}u + 1u] = v;
+    }`;
+  // S (so its border) and Mb start at zero: WGSL zero-initialises workgroup memory. Each thread's (at most NQ) aligned
+  // vec4 reads are issued first, so they are in flight during the staging. Every board's span starts on a multiple of
+  // 4 values when C and c0 are multiples of 4.
+  const NQ = Math.ceil((CPW * BPW * AREA) / 4 / WG);
+  const quads = Array.from({ length: NQ }, (_, k) => k);
+  const linearLoad = `  let count = min(${CPW}u, P.C - c0) * ${AREA}u;
+  let qpb = count / 4u;
+  let aligned = P.C % 4u == 0u && c0 % 4u == 0u && count % 4u == 0u;
+${quads.map((k) => `  var raw${k} = vec4<f32>();
+`).join('')}  if (aligned) {
+${quads.map((k) => `    {
+      let qa = li + ${k * WG}u;
+      let bq = b0 + qa / qpb;
+      if (qa < ${BPW}u * qpb && bq < dyn.n) { raw${k} = vec4<f32>(inp[(((bq * P.C + c0) * ${AREA}u) >> 2u) + qa % qpb]); }
+    }
+`).join('')}  }
+  if (fused) {
+    if (li < ${CPW * BPW}u) {
+      let c = min(c0 + li / ${BPW}u, P.C - 1u);
+      let bq = min(b0 + li % ${BPW}u, dyn.n - 1u);
+      Ch[li] = vec3<f32>(sb[c], sb[P.C + c], select(0.0, pre[bq * P.C + c], (P.flags & 2u) != 0u));
+    }
+${maskBits === 'atomic' ? `    for (var pp = li; pp < ${BPW * AREA}u; pp += ${WG}u) {
+      let bq = b0 + pp / ${AREA}u;
+      let pos = pp % ${AREA}u;
+      if (bq < dyn.n && mask[bq * P.maskStride + pos] == 1.0) { atomicOr(&Mb[(pp / ${AREA}u) * ${WORDS}u + (pos >> 5u)], 1u << (pos & 31u)); }
+    }` : `    if (li < ${BPW * WORDS}u) {
+      let bq = min(b0 + li / ${WORDS}u, dyn.n - 1u);
+      let wi = li % ${WORDS}u;
+      let m0 = bq * P.maskStride + wi * 32u;
+      var w = 0u;
+${Array.from({ length: 32 }, (_, k) => `      w |= select(0u, ${(2 ** k) >>> 0}u, (wi * 32u + ${k}u < ${AREA}u) & (mask[min(m0 + ${k}u, bq * P.maskStride + ${AREA - 1}u)] == 1.0));
+`).join('')}      Mb[li] = w;
+    }`}
+  }
+  workgroupBarrier();
+  if (aligned) {
+${quads.map((k) => `    {
+      let qa = li + ${k * WG}u;
+      let bbq = qa / qpb;
+      if (qa < ${BPW}u * qpb && b0 + bbq < dyn.n) {
+        let q = qa % qpb;
+${[0, 1, 2, 3].map((j) => `        ${put(`(q * 4u + ${j}u)`, `raw${k}[${j}]`)}
+`).join('')}      }
+    }
+`).join('')}  } else {
+    for (var ia = li; ia < ${BPW}u * count; ia += ${WG}u) {
+      let bbq = ia / count;
+      let i = ia % count;
+      if (b0 + bbq < dyn.n) {
+        let o = ((b0 + bbq) * P.C + c0) * ${AREA}u + i;
+        ${put('i', 'f32(inp[o >> 2u][o & 3u])')}
+      }
+    }
+  }
+  workgroupBarrier();
+`;
   return /* wgsl */ `${enableFor(inT, vT)}
 ${DYN}
 ${ACTIVATE}
@@ -926,21 +1073,24 @@ struct Params {
 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> inp: array<${inT}>;
+@group(0) @binding(2) var<storage, read> inp: array<${linear ? `vec4<${inT}>` : inT}>;
 @group(0) @binding(3) var<storage, read_write> V: array<${vT}>;
 @group(0) @binding(4) var<storage, read> sb: array<f32>;
 @group(0) @binding(5) var<storage, read> pre: array<f32>;
 @group(0) @binding(6) var<storage, read> mask: array<f32>;
 
-var<workgroup> S: array<f32, ${CPW * PY * PX}>; // [cpw][${PY}][${PX}], the board with a 1-point border of zeros
-
+var<workgroup> S: array<f32, ${CPW * BPW * PY * PX}>; // [cpw${linear ? '][bpw' : ''}][${PY}][${PX}], the board with a 1-point border of zeros
+${linear ? `var<workgroup> Ch: array<vec3<f32>, ${CPW * BPW}>; // per channel and board: scale, shift, pre-bias
+var<workgroup> Mb: array<${maskBits === 'atomic' ? 'atomic<u32>' : 'u32'}, ${BPW * WORDS}>; // per board, the mask, one bit per point
+` : ''}
 @compute @workgroup_size(${WG})
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
   let c0 = wg.x * ${CPW}u;
-  let b = wg.y;
-  if (b >= dyn.n) { return; }
+${linear ? `  let b0 = wg.y * ${BPW}u;` : `  let b = wg.y;
+  if (b >= dyn.n) { return; }`}
   let fused = (P.flags & 1u) != 0u;
-  for (var idx = li; idx < ${CPW * PY * PX}u; idx += ${WG}u) {
+${stage === 'writes' ? '' : linear ? linearLoad : `${unroll ? `${unrolled}  workgroupBarrier();
+` : `  for (var idx = li; idx < ${CPW * PY * PX}u; idx += ${WG}u) {
     let cc = idx / ${PY * PX}u;
     let rem = idx % ${PY * PX}u;
     let y = i32(rem / ${PX}u) - 1;
@@ -959,59 +1109,152 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     S[idx] = v;
   }
   workgroupBarrier();
-  let cc = li / ${TPB}u;
+`}`}${linear ? `  let cc = li / ${BPW * TPB}u;
+  let bb = (li / ${TPB}u) % ${BPW}u;
+  let r = li % ${TPB}u;
+  let c = c0 + cc;
+  let b = b0 + bb;
+  if (c >= P.C || b >= dyn.n) { return; }
+  let sbase = (cc * ${BPW}u + bb) * ${PY * PX}u + (r / ${TX}u) * ${4 * PX}u + (r % ${TX}u) * 4u;` : `  let cc = li / ${TPB}u;
   let r = li % ${TPB}u;
   let c = c0 + cc;
   if (c >= P.C) { return; }
-  let sbase = cc * ${PY * PX}u + (r / ${TX}u) * ${4 * PX}u + (r % ${TX}u) * 4u;
-  var d: array<f32, 36>;
-${gather}  var o: array<f32, 36>;
-${sandwich(BT, 'd', 6, 'u', 'o')}
+  let sbase = cc * ${PY * PX}u + (r / ${TX}u) * ${4 * PX}u + (r % ${TX}u) * 4u;`}
+${stage === 'reads' ? `  V[c * P.tileStride + b * ${TPB}u + r] = ${vT}(S[sbase]);
+}
+` : `  var d: array<f32, 36>;
+${stage === 'writes' ? '' : gather}  var o: array<f32, 36>;
+${stageArith(stage, sandwich(BT, 'd', 6, 'u', 'o'), 'o', 'd', 36, `(b * ${TPB}u + r)`)}
   let t = b * ${TPB}u + r;
 ${store}}
-`;
+`}`;
 };
 
 /** WINO_OUT with workgroup staging; same bindings and parameters. Dispatch: [ceil(outC / cpw), n]. */
-export const WINO_OUT_V2 = (mT: Elem, outT: Elem, xSize: number, ySize: number) => {
+/** The input transform 'v3' (GpuNetworkOptions.winoIn): v2 with the linear load (docs/spikes/results/2026-11-b18-transform-ladder.md). */
+export const WINO_IN_V3: WinoInV2Options = { linear: true };
+/** The output transform 'v3' (GpuNetworkOptions.winoOut): v2 with the linear write, 4 channels × 2 boards per workgroup. */
+export const WINO_OUT_V3: WinoOutV2Options = { linear: true, cpw: 4, bpw: 2 };
+
+export interface WinoOutV2Options {
+  stage?: WinoTransformStage;
+  /**
+   * Write the boards as one contiguous span per workgroup (its channels' boards are adjacent), four values at a time
+   * where aligned, with each thread's residual reads issued before any of its writes (default false). Same values.
+   * The output is bound as vec4s (GpuNetwork's buffers are whole multiples of 16 bytes).
+   */
+  linear?: boolean;
+  /** Channels per workgroup (default winoTransformChannels('out', …)); dispatch [ceil(C / cpw), ceil(n / bpw)]. */
+  cpw?: number;
+  /**
+   * With `linear`, boards per workgroup (default 1). M holds every board's tiles contiguously, so with bpw boards each
+   * channel's reads are runs of bpw × tilesPerBoard values instead of tilesPerBoard.
+   */
+  bpw?: number;
+}
+
+export const WINO_OUT_V2 = (mT: Elem, outT: Elem, xSize: number, ySize: number, { stage, linear = false, cpw, bpw = 1 }: WinoOutV2Options = {}) => {
   const TX = Math.ceil(xSize / 4);
   const TPB = TX * Math.ceil(ySize / 4);
   const OX = TX * 4;
   const OY = Math.ceil(ySize / 4) * 4;
-  const CPW = winoTransformChannels('out', xSize, ySize);
-  const WG = CPW * TPB;
+  const CPW = cpw ?? winoTransformChannels('out', xSize, ySize);
+  const BPW = linear ? bpw : 1;
+  const WG = CPW * BPW * TPB;
   let load = '';
   for (let e = 0; e < 36; e++) load += `    m[${e}] = f32(M[(${e}u * P.outC + c) * P.tileStride + t]);\n`;
   let put = '';
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) put += `    S[sbase + ${i * OX + j}u] = y[${i * 4 + j}];\n`;
+  // The linear write: for each of the workgroup's boards, its channels' span (value i: channel i / AREA), from S, plus
+  // the bias and the residual. Each thread's residual reads are issued before any of its writes.
+  const AREA = xSize * ySize;
+  const NQ = Math.ceil((CPW * BPW * AREA) / 4 / WG);
+  const quads = Array.from({ length: NQ }, (_, k) => k);
+  const value = (i: string) => `{
+        let cc = ${i} / ${AREA}u;
+        let pos = ${i} % ${AREA}u;
+        var x = S[(cc * ${BPW}u + bbq) * ${OY * OX}u + (pos / ${xSize}u) * ${OX}u + pos % ${xSize}u];
+        if ((P.flags & 2u) != 0u) { x += nbias[bq * P.outC + c0 + cc]; }`;
+  const linearWrite = `  let count = min(${CPW}u, P.outC - c0) * ${AREA}u;
+  let qpb = count / 4u;
+  let acc = (P.flags & 1u) != 0u;
+  if (P.outC % 4u == 0u && c0 % 4u == 0u && count % 4u == 0u) {
+${quads.map((k) => `    var res${k} = vec4<f32>();
+`).join('')}    if (acc) {
+${quads.map((k) => `      {
+        let qa = li + ${k * WG}u;
+        let bq = b0 + qa / qpb;
+        if (qa < ${BPW}u * qpb && bq < dyn.n) { res${k} = vec4<f32>(outp[(((bq * P.outC + c0) * ${AREA}u) >> 2u) + qa % qpb]); }
+      }
+`).join('')}    }
+${quads.map((k) => `    {
+      let qa = li + ${k * WG}u;
+      let bbq = qa / qpb;
+      let bq = b0 + bbq;
+      if (qa < ${BPW}u * qpb && bq < dyn.n) {
+        let q = qa % qpb;
+        var v = vec4<f32>();
+${[0, 1, 2, 3].map((j) => `        ${value(`(q * 4u + ${j}u)`)}
+          if (acc) { x += res${k}[${j}]; }
+          v[${j}] = x;
+        }
+`).join('')}        outp[(((bq * P.outC + c0) * ${AREA}u) >> 2u) + q] = vec4<${outT}>(v);
+      }
+    }
+`).join('')}  } else {
+    for (var ia = li; ia < ${BPW}u * count; ia += ${WG}u) {
+      let bbq = ia / count;
+      let bq = b0 + bbq;
+      let i = ia % count;
+      if (bq < dyn.n) {
+        let o = (bq * P.outC + c0) * ${AREA}u + i;
+        ${value('i')}
+          if (acc) { x += f32(outp[o >> 2u][o & 3u]); }
+          outp[o >> 2u][o & 3u] = ${outT}(x);
+        }
+      }
+    }
+  }
+`;
   return /* wgsl */ `${enableFor(mT, outT)}
 ${DYN}
 struct Params { outC: u32, xSize: u32, ySize: u32, tilesX: u32, tilesPerBoard: u32, tileStride: u32, flags: u32, _pad0: u32 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
 @group(0) @binding(2) var<storage, read> M: array<${mT}>;
-@group(0) @binding(3) var<storage, read_write> outp: array<${outT}>;
+@group(0) @binding(3) var<storage, read_write> outp: array<${linear ? `vec4<${outT}>` : outT}>;
 @group(0) @binding(4) var<storage, read> nbias: array<f32>;
 
-var<workgroup> S: array<f32, ${CPW * OY * OX}>; // [cpw][${OY}][${OX}], whole tiles
+var<workgroup> S: array<f32, ${CPW * BPW * OY * OX}>; // [cpw${linear ? '][bpw' : ''}][${OY}][${OX}], whole tiles
 
 @compute @workgroup_size(${WG})
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
   let c0 = wg.x * ${CPW}u;
-  let b = wg.y;
+${linear ? `  let b0 = wg.y * ${BPW}u;
+  let cc = li / ${BPW * TPB}u;
+  let bb = (li / ${TPB}u) % ${BPW}u;
+  let r = li % ${TPB}u;
+  let b = b0 + bb;
+  let c = c0 + cc;
+  if (c < P.outC && b < dyn.n) {` : `  let b = wg.y;
   if (b >= dyn.n) { return; }
   let cc = li / ${TPB}u;
   let r = li % ${TPB}u;
   let c = c0 + cc;
-  if (c < P.outC) {
+  if (c < P.outC) {`}
     let t = b * ${TPB}u + r;
     var m: array<f32, 36>;
-${load}    var y: array<f32, 16>;
-${sandwich(AT, 'm', 6, 'u', 'y')}
-    let sbase = cc * ${OY * OX}u + (r / ${TX}u) * ${4 * OX}u + (r % ${TX}u) * 4u;
+${stage === 'writes' ? '' : load}    var y: array<f32, 16>;
+${stage === 'reads' ? `    for (var e = 0u; e < 36u; e++) { y[0] += m[e]; }
+    ${linear ? `let o = (b * P.outC + c) * ${xSize * ySize}u + r;
+    outp[o >> 2u][o & 3u] = ${outT}(y[0]);` : `outp[(b * P.outC + c) * ${xSize * ySize}u + r] = ${outT}(y[0]);`}
+  }
+}
+` : `${stageArith(stage, sandwich(AT, 'm', 6, 'u', 'y'), 'y', 'm', 16, `(b * ${TPB}u + r)`)}
+    let sbase = ${linear ? `(cc * ${BPW}u + bb)` : 'cc'} * ${OY * OX}u + (r / ${TX}u) * ${4 * OX}u + (r % ${TX}u) * 4u;
 ${put}  }
   workgroupBarrier();
-  for (var idx = li; idx < ${CPW * xSize * ySize}u; idx += ${WG}u) {
+${linear ? linearWrite : `  for (var idx = li; idx < ${CPW * xSize * ySize}u; idx += ${WG}u) {
     let cc2 = idx / ${xSize * ySize}u;
     let pos = idx % ${xSize * ySize}u;
     let c2 = c0 + cc2;
@@ -1022,8 +1265,8 @@ ${put}  }
     if ((P.flags & 1u) != 0u) { v += f32(outp[o]); }
     outp[o] = ${outT}(v);
   }
-}
-`;
+`}}
+`}`;
 };
 
 // ------------------------------------------------------------------ GEMM on matrix hardware (experimental)

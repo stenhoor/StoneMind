@@ -78,11 +78,18 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     feature (`chromium-experimental-subgroup-matrix`) only behind a switch today; on the owner's laptop, Edge with
     `--enable-unsafe-webgpu` offers it. The device requests it when offered. Results:
     `docs/spikes/results/2026-11-b18-matrix.md`.
-  - **Winograd transforms v2** (`winoIn`, default `'v2'`; `winoOut`, default `'v1'`; `winoTransforms` sets both): the
-    v2 input transform was faster than v1 in every steady measurement, the output transforms in neither order
-    consistently (`docs/spikes/results/2026-11-b18-steady.md`). Each workgroup copies a few
-    channels of one board into workgroup memory with adjacent reads, applying a fused batch norm once per point (v1
-    recomputes it for each overlapping tile), and writes the output board back with adjacent writes.
+  - **Winograd transforms v2** (`winoIn`, `winoOut`, `winoTransforms` sets both): each workgroup copies a few channels
+    of one board into workgroup memory with adjacent reads, applying a fused batch norm once per point (v1 recomputes it
+    for each overlapping tile), and writes the output board back with adjacent writes. The v2 input transform was
+    faster than v1 in every steady measurement, the output transforms in neither order consistently
+    (`docs/spikes/results/2026-11-b18-steady.md`).
+  - **Winograd transforms v3** (the default for both): v2 reading the input boards, or writing the output boards, as
+    one contiguous span per workgroup, four values at a time. The input transform also stages the fused batch norm's
+    per-channel values and the mask (one bit per point) in workgroup memory once, and issues its board reads before
+    that staging. The output transform covers 4 channels of 2 boards per workgroup, so its reads of the GEMM's output
+    are runs of 50 tiles, and issues its residual reads before its writes. On the owner's laptop, at batch 16: input
+    −25% against v2, output −24% against v1, batch-16 pass −6.9% in the budget benchmark, review −3.7%
+    (`docs/spikes/results/2026-11-b18-transform-ladder.md`).
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
     `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't
@@ -189,7 +196,11 @@ time over b18's 62 + 18 + 18 such GEMMs.
 (v1 and v2) on their own at b18's 192 channels and batches 16, 32 and 64, the same way: the input transform fused
 (batch norm and activation), the output transform adding the residual. Each version's output must equal v1's. It also
 times a plain copy of the input transform's minimum bytes, as the device's practical ceiling, and reports each
-transform's bytes per second against it.
+transform's bytes per second against it. `?transformBatches=16,64` chooses the batches. `?transformLadder=1` adds v3
+and the variants measured for it, and measures every version by stage (`WinoTransformStage`: without the transform
+arithmetic, global reads only, global writes only). Each timing is the median of 3, against a stream kernel that reads
+and writes the same bytes at the same buffer sizes. A final section times the whole kernels again, interleaved over 7
+rounds with their stream kernel (`docs/spikes/results/2026-11-b18-transform-ladder.md`).
 
 **Call trace:** `GpuNetwork.startTrace()` / `stopTrace()` record every network call's wall-clock times, the network
 code's own JavaScript parts and its compute pass's GPU timestamps (carried back in the call's own readback, so tracing
