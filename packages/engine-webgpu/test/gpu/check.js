@@ -6,6 +6,7 @@ import {
 } from '../../dist/index.js';
 import { runGemmBench } from './gemm-bench.js';
 import { runTransformBench } from './transform-bench.js';
+import { runDispatchBench } from './dispatch-bench.js';
 
 // The same tolerances as test/goldens.test.mjs.
 const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
@@ -622,6 +623,14 @@ export async function runAgreement({ file = null, visits = [100, 500], batches =
 
 /** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
 function summarise(r) {
+  if (r.kind === 'dispatch') {
+    const lines = [`dispatch benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${r.elem} storage`];
+    if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
+    lines.push(`near-empty dispatch: dependent ${r.fixed.dependentMsPerDispatch} ms, independent ${r.fixed.independentMsPerDispatch} ms`);
+    for (const g of r.gemm) lines.push(`GEMM v3 batch ${g.batch}: dependent ${g.dependentMsPerDispatch} ms, independent ${g.independentMsPerDispatch} ms`);
+    for (const n of r.network ?? []) lines.push(`network batch ${n.batch} (plan for ${n.planMaxBatch}): ${n.dispatches} dispatches, GPU pass ${n.gpuPassMs} ms (gemm ${n.gemm})`);
+    return lines.join('\n');
+  }
   if (r.kind === 'transforms') {
     const lines = [`transform benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${r.elem} storage`];
     if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
@@ -759,6 +768,21 @@ document.getElementById('transforms').addEventListener('click', () => {
     lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
     download.hidden = false;
   });
+});
+document.getElementById('dispatch').addEventListener('click', () => {
+  summary.textContent = 'Running…';
+  out.textContent = '';
+  download.hidden = true;
+  steps.length = 0;
+  const file = picker.files?.[0] ?? null;
+  (file ? file.arrayBuffer() : fetch(modelUrl).then((res) => res.arrayBuffer()))
+    .then((modelBytes) => runDispatchBench({ modelBytes, step }))
+    .then((r) => show({ ...r, model: r.model ?? 'dispatch' }), (e) => {
+      const error = describeError(e);
+      summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+      lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+      download.hidden = false;
+    });
 });
 window.runCheck = runCheck;
 window.runSearchBench = runSearchBench;

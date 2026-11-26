@@ -1,0 +1,99 @@
+{
+  "kind": "dispatch",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T13:51:57.685Z",
+  "batches": [
+    16,
+    32,
+    64
+  ],
+  "count": 500,
+  "repeat": 30,
+  "runs": 7,
+  "elem": "f16",
+  "warmUpMs": 2000,
+  "fixed": {
+    "dependentMsPerDispatch": 0.00144,
+    "independentMsPerDispatch": 0.00144
+  },
+  "gemm": [
+    {
+      "batch": 16,
+      "dependentMsPerDispatch": 0.1835,
+      "independentMsPerDispatch": 0.1813
+    },
+    {
+      "batch": 32,
+      "dependentMsPerDispatch": 0.3146,
+      "independentMsPerDispatch": 0.3124
+    },
+    {
+      "batch": 64,
+      "dependentMsPerDispatch": 0.5418,
+      "independentMsPerDispatch": 0.5461
+    }
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "network": [
+    {
+      "batch": 16,
+      "planMaxBatch": 16,
+      "dispatches": 338,
+      "gemm": "v3",
+      "gpuPassMs": 30.802
+    },
+    {
+      "batch": 16,
+      "planMaxBatch": 64,
+      "dispatches": 338,
+      "gemm": "v3",
+      "gpuPassMs": 32.637
+    },
+    {
+      "batch": 32,
+      "planMaxBatch": 32,
+      "dispatches": 338,
+      "gemm": "v3",
+      "gpuPassMs": 51.118
+    },
+    {
+      "batch": 32,
+      "planMaxBatch": 64,
+      "dispatches": 338,
+      "gemm": "v3",
+      "gpuPassMs": 49.611
+    },
+    {
+      "batch": 64,
+      "planMaxBatch": 64,
+      "dispatches": 338,
+      "gemm": "v3",
+      "gpuPassMs": 92.144
+    }
+  ],
+  "ok": true,
+  "steps": [
+    "13:51:57.686 fixed cost: 500 near-empty dispatches",
+    "13:51:57.692 warming up for 2000 ms",
+    "13:52:00.071 GEMM v3 at batch 16: 30 dependent and 30 independent dispatches",
+    "13:52:00.229 GEMM v3 at batch 32: 30 dependent and 30 independent dispatches",
+    "13:52:00.412 GEMM v3 at batch 64: 30 dependent and 30 independent dispatches",
+    "13:52:00.703 loading the model",
+    "13:52:01.287 network pass at batch 16, plan for 16",
+    "13:52:04.409 network pass at batch 16, plan for 64",
+    "13:52:07.341 network pass at batch 32, plan for 32",
+    "13:52:10.433 network pass at batch 32, plan for 64",
+    "13:52:13.589 network pass at batch 64, plan for 64"
+  ]
+}
