@@ -1,0 +1,106 @@
+{
+  "networkWarmUpMs": 0,
+  "kind": "dispatch",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T14:30:04.996Z",
+  "batches": [
+    16,
+    32,
+    64
+  ],
+  "count": 500,
+  "repeat": 30,
+  "runs": 7,
+  "elem": "f16",
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js); the network pass is awaited per call",
+  "warmUpMs": 2000,
+  "fixed": {
+    "dependentMsPerDispatch": 0.00139,
+    "independentMsPerDispatch": 0.00137
+  },
+  "gemm": [
+    {
+      "batch": 16,
+      "dependentMsPerDispatch": 0.1857,
+      "independentMsPerDispatch": 0.1785
+    },
+    {
+      "batch": 32,
+      "dependentMsPerDispatch": 0.3046,
+      "independentMsPerDispatch": 0.3055
+    },
+    {
+      "batch": 64,
+      "dependentMsPerDispatch": 0.5805,
+      "independentMsPerDispatch": 0.5926
+    }
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "network": [
+    {
+      "batch": 16,
+      "planMaxBatch": 16,
+      "dispatches": 338,
+      "gemm": "v3",
+      "warmUpPasses": 1,
+      "gpuPassMs": 29.295
+    },
+    {
+      "batch": 16,
+      "planMaxBatch": 64,
+      "dispatches": 338,
+      "gemm": "v3",
+      "warmUpPasses": 1,
+      "gpuPassMs": 26.149
+    },
+    {
+      "batch": 32,
+      "planMaxBatch": 32,
+      "dispatches": 338,
+      "gemm": "v3",
+      "warmUpPasses": 1,
+      "gpuPassMs": 48.89
+    },
+    {
+      "batch": 32,
+      "planMaxBatch": 64,
+      "dispatches": 338,
+      "gemm": "v3",
+      "warmUpPasses": 1,
+      "gpuPassMs": 50.332
+    },
+    {
+      "batch": 64,
+      "planMaxBatch": 64,
+      "dispatches": 338,
+      "gemm": "v3",
+      "warmUpPasses": 1,
+      "gpuPassMs": 85.721
+    }
+  ],
+  "ok": true,
+  "steps": [
+    "14:30:04.996 fixed cost: 500 near-empty dispatches",
+    "14:30:05.002 warming up for 2000 ms",
+    "14:30:07.596 GEMM v3 at batch 16: 30 dependent and 30 independent dispatches",
+    "14:30:07.968 GEMM v3 at batch 32: 30 dependent and 30 independent dispatches",
+    "14:30:08.619 GEMM v3 at batch 64: 30 dependent and 30 independent dispatches",
+    "14:30:09.422 loading the model",
+    "14:30:09.989 network pass at batch 16, plan for 16",
+    "14:30:13.061 network pass at batch 16, plan for 64",
+    "14:30:16.111 network pass at batch 32, plan for 32",
+    "14:30:19.309 network pass at batch 32, plan for 64",
+    "14:30:22.462 network pass at batch 64, plan for 64"
+  ]
+}
