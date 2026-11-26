@@ -73,7 +73,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     16) and the arithmetic (`arith`: `f32`; or, where the device has `shader-f16`, `f16` or `f16x2`, the latter on pairs
     of output columns as `vec2<f16>`; both sum each chunk in f16 and add it into f32 accumulators). The default is chosen per device by `defaultGemmConfig`: on Apple GPUs 4 × 4, chunks of 8, with f16 arithmetic
     when `precision` is `'f16'` (fastest on the owner's iPad) and f32 arithmetic otherwise; elsewhere `GEMM_DEFAULT`, 4 × 8, chunks of 16, f32.
-  - **Winograd transforms v2** (`winoTransforms: 'v2'`, default `'v1'` until measured): each workgroup copies a few
+  - **Winograd transforms v2** (`winoIn`, default `'v2'`; `winoOut`, default `'v1'`; `winoTransforms` sets both): the
+    v2 input transform was faster than v1 in every steady measurement, the output transforms in neither order
+    consistently (`docs/spikes/results/2026-11-b18-steady.md`). Each workgroup copies a few
     channels of one board into workgroup memory with adjacent reads, applying a fused batch norm once per point (v1
     recomputes it for each overlapping tile), and writes the output board back with adjacent writes.
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only

@@ -52,10 +52,18 @@ export interface GpuNetworkOptions {
   /** GEMM v3's shape (default `GEMM_V3_DEFAULT`, 4 × 8 per thread, chunks of 16). */
   gemmV3Config?: GemmV3Config;
   /**
-   * The Winograd input and output transforms (default 'v1'). 'v2' stages each board through workgroup memory
-   * (`WINO_IN_V2`, `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point.
+   * The Winograd input and output transforms together. 'v2' stages each board through workgroup memory (`WINO_IN_V2`,
+   * `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point. `winoIn` and `winoOut`
+   * override it for one transform each; without any of the three, the input transform is 'v2' and the output 'v1'.
    */
   winoTransforms?: 'v1' | 'v2';
+  /**
+   * The Winograd input transform (default 'v2'). With passes submitted back to back, v2 was faster than v1 in all nine
+   * of three runs × batches 16, 32 and 64 on the owner's RTX 3080 Laptop GPU (docs/spikes/results/2026-11-b18-steady.md).
+   */
+  winoIn?: 'v1' | 'v2';
+  /** The Winograd output transform (default 'v1': neither was consistently faster in the same runs). */
+  winoOut?: 'v1' | 'v2';
   /**
    * How many {@link GpuNetwork.evaluate} calls may be in flight at once (default 2). While one call's outputs are read
    * back, the next call's inputs are written and its work submitted, so the GPU doesn't wait for the page between calls.
@@ -217,7 +225,12 @@ export class GpuNetwork {
   get gemmConfig(): GemmConfig {
     return this.#gemmConfig;
   }
-  #winoTransforms: 'v1' | 'v2' = 'v1';
+  #winoIn: 'v1' | 'v2' = 'v2';
+  #winoOut: 'v1' | 'v2' = 'v1';
+  /** The Winograd input and output transforms the plan uses. */
+  get winoTransforms(): { in: 'v1' | 'v2'; out: 'v1' | 'v2' } {
+    return { in: this.#winoIn, out: this.#winoOut };
+  }
   #winograd = true;
   #timestamps = false;
   #fuse = true;
@@ -250,7 +263,8 @@ export class GpuNetwork {
     net.#gemm = options.gemm ?? defaultGemm(engine.adapterInfo.vendor);
     net.#gemmConfig = options.gemmConfig ?? defaultGemmConfig(engine.adapterInfo.vendor, net.#elem);
     net.#gemmV3Config = options.gemmV3Config ?? GEMM_V3_DEFAULT;
-    net.#winoTransforms = options.winoTransforms ?? 'v1';
+    net.#winoIn = options.winoIn ?? options.winoTransforms ?? 'v2';
+    net.#winoOut = options.winoOut ?? options.winoTransforms ?? 'v1';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
     const scale8 = options.scale8 ?? net.#elem === 'f16';
@@ -541,7 +555,7 @@ export class GpuNetwork {
     const act = fused ? ACT[fused.activation] : 0;
     this.#specs.push({
       kind: 'winoIn',
-      code: this.#winoTransforms === 'v2'
+      code: this.#winoIn === 'v2'
         ? WINO_IN_V2(this.#elemOf(input), this.#elemOf(V), this.xSize, this.ySize)
         : WINO_IN(this.#elemOf(input), this.#elemOf(V)),
       buffers: [
@@ -551,7 +565,7 @@ export class GpuNetwork {
         fused?.pre ?? this.#dummy,
         this.#input,
       ],
-      workgroups: this.#winoTransforms === 'v2'
+      workgroups: this.#winoIn === 'v2'
         ? (n) => [Math.ceil(ic / winoTransformChannels('in', this.xSize, this.ySize)), n]
         : (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
@@ -579,14 +593,14 @@ export class GpuNetwork {
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     this.#specs.push({
       kind: 'winoOut',
-      code: this.#winoTransforms === 'v2'
+      code: this.#winoOut === 'v2'
         ? WINO_OUT_V2(this.#elemOf(M), this.#elemOf(output), this.xSize, this.ySize)
         : WINO_OUT(this.#elemOf(M), this.#elemOf(output)),
       buffers: [
         this.#uniform([oc, this.xSize, this.ySize, tilesX, tilesPerBoard, tileStride, flags, 0]),
         this.#dyn, M, output, opts.nbias ?? this.#dummy,
       ],
-      workgroups: this.#winoTransforms === 'v2'
+      workgroups: this.#winoOut === 'v2'
         ? (n) => [Math.ceil(oc / winoTransformChannels('out', this.xSize, this.ySize)), n]
         : (n) => [Math.ceil((n * tilesPerBoard) / 64), oc],
     });
