@@ -956,3 +956,145 @@ ${put}  }
 }
 `;
 };
+
+// ------------------------------------------------------------------ GEMM on matrix hardware (experimental)
+//
+// GEMM v2's bindings, parameters and dispatch, on subgroup matrices (\`chromium-experimental-subgroup-matrix\`, which
+// browsers offer only behind a switch today). A workgroup is one 32-lane subgroup and computes a 16·fm × 16·fn tile of
+// C as fm × fn 16 × 16 f32 accumulators from f16 inputs: each chunk of 32 values of k is copied into workgroup memory
+// as f16 (zero past the edges), then multiplied with subgroupMatrixMultiplyAccumulate. The result goes through
+// workgroup memory so the threads can add the bias and residual and write only inside C. The sums are in a different
+// order from v2 and v3, so the results differ from theirs by rounding.
+
+/** The matrix GEMM's shape: 16 × 16 accumulators per workgroup along M (fm) and N (fn). */
+export interface GemmMmaConfig {
+  fm: 1 | 2 | 4;
+  fn: 1 | 2 | 4;
+  /**
+   * Load the matrices straight from A and B (no workgroup copy) when the workgroup's whole tile, and K, are inside
+   * the matrices (default false); other workgroups take the copying path.
+   */
+  direct?: boolean;
+  /**
+   * A is stored transposed, [M][K] (P.aRow is then its row length), so the left matrices load row by row (default
+   * false: A is [K][M], as GpuNetwork stores it).
+   */
+  ta?: boolean;
+  /**
+   * With \`direct\`: steps of 16 along K per loop iteration (default 2), all their loads issued before their multiplies.
+   * K must be a multiple of 16·uk for the direct path.
+   */
+  uk?: 2 | 4 | 6 | 12;
+}
+
+/** The matrix GEMM's tile: rows (M) and columns (N) of C per workgroup. */
+export const gemmMmaTile = (c: GemmMmaConfig) => ({ tm: 16 * c.fm, tn: 16 * c.fn });
+
+/** GEMM on subgroup matrices (needs the subgroup-matrix feature with an f16 → f32 16 × 16 × 16 configuration). */
+export const GEMM_MMA = (aT: Elem, bT: Elem, cT: Elem, config: GemmMmaConfig) => {
+  const { fm, fn } = config;
+  const TM = 16 * fm;
+  const TN = 16 * fn;
+  const TK = 32;
+  const TA = config.ta === true;
+  let decl = '';
+  for (let i = 0; i < fm; i++) for (let j = 0; j < fn; j++) decl += `  var acc${i}_${j} = subgroup_matrix_result<f32, 16, 16>();\n`;
+  let inner = '';
+  for (let kk = 0; kk < TK / 16; kk++) {
+    inner += '    {\n';
+    for (let i = 0; i < fm; i++)
+      inner += `      let l${i} = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&As, ${kk * 16 * TM + i * 16}u, true, ${TM}u);\n`;
+    for (let j = 0; j < fn; j++)
+      inner += `      let r${j} = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&Bs, ${kk * 16 * TN + j * 16}u, false, ${TN}u);\n`;
+    for (let i = 0; i < fm; i++)
+      for (let j = 0; j < fn; j++) inner += `      acc${i}_${j} = subgroupMatrixMultiplyAccumulate(l${i}, r${j}, acc${i}_${j});\n`;
+    inner += '    }\n';
+  }
+  const UK = config.uk ?? 2;
+  let directInner = '';
+  for (let kk = 0; kk < UK; kk++) {
+    for (let i = 0; i < fm; i++)
+      directInner += TA
+        ? `      let l${kk}_${i} = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&A, aBase + (m0 + ${i * 16}u) * P.aRow + k0 + ${kk * 16}u, false, P.aRow);\n`
+        : `      let l${kk}_${i} = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&A, aBase + (k0 + ${kk * 16}u) * P.aRow + m0 + ${i * 16}u, true, P.aRow);\n`;
+    for (let j = 0; j < fn; j++)
+      directInner += `      let r${kk}_${j} = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&B, bBase + (k0 + ${kk * 16}u) * P.bRow + n0 + ${j * 16}u, false, P.bRow);\n`;
+  }
+  for (let kk = 0; kk < UK; kk++)
+    for (let i = 0; i < fm; i++)
+      for (let j = 0; j < fn; j++) directInner += `      acc${i}_${j} = subgroupMatrixMultiplyAccumulate(l${kk}_${i}, r${kk}_${j}, acc${i}_${j});\n`;
+  const direct = config.direct === true && aT === 'f16' && bT === 'f16';
+  const directOpen = direct
+    ? `  let full = m0 + ${TM}u <= P.M && n0 + ${TN}u <= N && P.K % ${16 * UK}u == 0u;
+  if (full) {
+    for (var k0 = 0u; k0 < P.K; k0 += ${16 * UK}u) {
+${directInner}    }
+  } else {
+`
+    : '';
+  let store = '';
+  for (let i = 0; i < fm; i++)
+    for (let j = 0; j < fn; j++) store += `  subgroupMatrixStore(&Cs, ${i * 16 * TN + j * 16}u, acc${i}_${j}, false, ${TN}u);\n`;
+  return /* wgsl */ `enable f16;
+enable chromium_experimental_subgroup_matrix;
+${DYN}
+struct Params {
+  M: u32, K: u32, nFixed: u32, nPerBatch: u32,
+  aBatch: u32, aRow: u32, bBatch: u32, bRow: u32,
+  cBatch: u32, cRow: u32, flags: u32, nbiasStride: u32,
+}
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> A: array<${aT}>;
+@group(0) @binding(3) var<storage, read> B: array<${bT}>;
+@group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
+@group(0) @binding(5) var<storage, read> nbias: array<f32>;
+
+var<workgroup> As: array<f16, ${TK * TM}>; // [TK][TM]
+var<workgroup> Bs: array<f16, ${TK * TN}>; // [TK][TN]
+var<workgroup> Cs: array<f32, ${TM * TN}>; // [TM][TN]
+
+@compute @workgroup_size(32)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) tid: u32) {
+  let z = wg.z;
+  let m0 = wg.y * ${TM}u;
+  let n0 = wg.x * ${TN}u;
+  var N = P.nFixed;
+  if (N == 0u) { N = dyn.n * P.nPerBatch; }
+  let aBase = z * P.aBatch;
+  let bBase = z * P.bBatch;
+${decl}${directOpen}  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
+    for (var i = tid; i < ${TK * TM}u; i += 32u) {
+      let k = k0 + i / ${TM}u;
+      let m = m0 + i % ${TM}u;
+      var v = f16(0.0);
+      if (k < P.K && m < P.M) { v = f16(A[aBase + ${TA ? 'm * P.aRow + k' : 'k * P.aRow + m'}]); }
+      As[i] = v;
+    }
+    for (var i = tid; i < ${TK * TN}u; i += 32u) {
+      let k = k0 + i / ${TN}u;
+      let n = n0 + i % ${TN}u;
+      var v = f16(0.0);
+      if (k < P.K && n < N) { v = f16(B[bBase + k * P.bRow + n]); }
+      Bs[i] = v;
+    }
+    workgroupBarrier();
+${inner}    workgroupBarrier();
+  }
+${direct ? '  }\n' : ''}${store}  workgroupBarrier();
+  for (var e = tid; e < ${TM * TN}u; e += 32u) {
+    let m = m0 + e / ${TN}u;
+    let n = n0 + e % ${TN}u;
+    if (m < P.M && n < N) {
+      var bias = 0.0;
+      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }
+      let o = z * P.cBatch + m * P.cRow + n;
+      var v = Cs[e] + bias;
+      if ((P.flags & 1u) != 0u) { v += f32(C[o]); }
+      C[o] = ${cT}(v);
+    }
+  }
+}
+`;
+};
+

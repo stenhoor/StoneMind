@@ -4,7 +4,7 @@
 // the browser's timestamp resolution; the median over `runs` passes is reported, per dispatch. Every kernel's output is
 // compared with GEMM v2's and, for the first batch position, with a float64 product on the CPU.
 import { requestEngineDevice, toFloat16Array, fromFloat16Bits } from '../../dist/index.js';
-import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, gemmTile, gemmV3Tile } from '../../dist/gpu/kernels.js';
+import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, GEMM_MMA, gemmTile, gemmV3Tile, gemmMmaTile } from '../../dist/gpu/kernels.js';
 import { timePasses } from './timing.js';
 
 const TILES_PER_BOARD = 25; // 19 × 19 in 4 × 4 tiles
@@ -79,6 +79,61 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
     const tile = gemmV3Tile(config);
     if ((double ? 2 : 1) * tk * (tile.tm + tile.tn) * 4 > wgBytes) continue;
     kernels.push({ name: 'v3', config, code: GEMM_V3(elem, elem, elem, config), tile });
+  }
+  // The matrix GEMM (experimental), where the device has subgroup matrices with an f16 → f32 16 × 16 × 16 shape.
+  const mma = elem === 'f16' && engine.subgroupMatrixConfigs.some((c) => c.componentType === 'f16' && c.resultComponentType === 'f32' && c.M === 16 && c.N === 16 && c.K === 16);
+  report.subgroupMatrixConfigs = engine.subgroupMatrixConfigs;
+  if (mma) {
+    // Direct loads, with A as GpuNetwork stores it and transposed (as winoGemm: 'mma' stores it).
+    for (const [fm, fn, ta] of [[2, 1, false], [2, 2, false], [2, 1, true], [2, 2, true]]) {
+      const config = ta ? { fm, fn, direct: true, ta } : { fm, fn, direct: true };
+      kernels.push({ name: 'mma', config, code: GEMM_MMA(elem, elem, elem, config), tile: gemmMmaTile(config) });
+    }
+  }
+  // Raw matrix throughput: only subgroupMatrixMultiplyAccumulate on values already in registers (no loads), with 4
+  // independent accumulators, so the figure is what the matrix units reach through WebGPU on this device.
+  if (mma) {
+    const ITER = 1024;
+    const WGS = 48 * 64;
+    const code = `enable f16;
+enable chromium_experimental_subgroup_matrix;
+@group(0) @binding(0) var<storage, read_write> out: array<f32>;
+var<workgroup> L: array<f16, 256>;
+@compute @workgroup_size(32)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) tid: u32) {
+  for (var i = tid; i < 256u; i += 32u) { L[i] = f16(f32(i % 7u) * 0.001); }
+  workgroupBarrier();
+  let l = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&L, 0u, false, 16u);
+  let r = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&L, 0u, false, 16u);
+  var a0 = subgroup_matrix_result<f32, 16, 16>();
+  var a1 = subgroup_matrix_result<f32, 16, 16>();
+  var a2 = subgroup_matrix_result<f32, 16, 16>();
+  var a3 = subgroup_matrix_result<f32, 16, 16>();
+  for (var i = 0u; i < ${ITER}u; i++) {
+    a0 = subgroupMatrixMultiplyAccumulate(l, r, a0);
+    a1 = subgroupMatrixMultiplyAccumulate(l, r, a1);
+    a2 = subgroupMatrixMultiplyAccumulate(l, r, a2);
+    a3 = subgroupMatrixMultiplyAccumulate(l, r, a3);
+  }
+  let base = wg.x * 1024u;
+  subgroupMatrixStore(&out, base, a0, false, 16u);
+  subgroupMatrixStore(&out, base + 256u, a1, false, 16u);
+  subgroupMatrixStore(&out, base + 512u, a2, false, 16u);
+  subgroupMatrixStore(&out, base + 768u, a3, false, 16u);
+}
+`;
+    const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code }), entryPoint: 'main' } });
+    const out = device.createBuffer({ size: WGS * 1024 * 4, usage: GPUBufferUsage.STORAGE });
+    const bind = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: out } }] });
+    const timed = await timePasses(device, (p) => {
+      p.setPipeline(pipeline);
+      p.setBindGroup(0, bind);
+      p.dispatchWorkgroups(WGS);
+    }, { runs });
+    const flops = WGS * ITER * 4 * 2 * 16 * 16 * 16;
+    report.matrixPeak = { workgroups: WGS, iterations: ITER, msPerDispatch: +timed.msPerPass.toFixed(4), tflops: +(flops / (timed.msPerPass / 1000) / 1e12).toFixed(2) };
+    step(`matrix units: ${report.matrixPeak.tflops} TFLOPS`);
+    out.destroy();
   }
   // reverse: measure the v3 shapes in the opposite order (v2 stays first, as the reference for the output check).
   if (reverse) kernels.splice(1, kernels.length - 1, ...kernels.slice(1).reverse());
@@ -161,6 +216,18 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
       const Bvals = values(shape.sizes.B, 2);
       const A = upload(Avals);
       const B = upload(Bvals);
+      // For kernels that take A transposed ([M][K] per matrix): the same values, and the row length K.
+      let At = null;
+      let paramsT = null;
+      if (kernels.some((k) => k.config?.ta)) {
+        const t = new Float32Array(Avals.length);
+        for (let base = 0; base < Avals.length; base += shape.M * shape.K)
+          for (let k = 0; k < shape.K; k++) for (let m = 0; m < shape.M; m++) t[base + m * shape.K + k] = Avals[base + k * shape.M + m];
+        At = upload(t);
+        const pt = [...shape.params];
+        pt[5] = shape.K;
+        paramsT = uniform(pt);
+      }
       const dyn = uniform([b, 0, 0, 0]);
       const params = uniform(shape.params);
       const flops = 2 * shape.M * shape.K * shape.N * shape.Z;
@@ -172,7 +239,7 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
         const C = device.createBuffer({ size: Math.ceil((shape.sizes.C * (elem === 'f16' ? 2 : 4)) / 4) * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
         const bind = device.createBindGroup({
           layout: k.pipeline.getBindGroupLayout(0),
-          entries: [params, dyn, A, B, C, nbias].map((buffer, binding) => ({ binding, resource: { buffer } })),
+          entries: (k.config?.ta ? [paramsT, dyn, At, B, C, nbias] : [params, dyn, A, B, C, nbias]).map((buffer, binding) => ({ binding, resource: { buffer } })),
         });
         const groups = [Math.ceil(shape.N / k.tile.tn), Math.ceil(shape.M / k.tile.tm), shape.Z];
         const pass = async (count, timed) => {
@@ -228,6 +295,16 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
         };
         if (v2Out === null) v2Out = out;
         else entry.maxAbsDiffFromV2 = cmp(v2Out);
+        // The matrix GEMM sums in another order, so it is held to the reference check's tolerance against v2 instead.
+        if (k.name === 'mma' && v2Out !== out) {
+          let worst = 0;
+          for (let z = 0; z < shape.Z; z++)
+            for (let m = 0; m < shape.M; m++) {
+              const base = z * shape.strides.cBatch + m * shape.strides.cRow;
+              for (let n = 0; n < shape.N; n++) worst = Math.max(worst, Math.abs(out[base + n] - v2Out[base + n]) / (1e-2 + 2e-3 * Math.abs(v2Out[base + n])));
+            }
+          entry.worstV2Ratio = +worst.toFixed(4);
+        }
         if (ref) {
           let worst = 0;
           for (let m = 0; m < shape.M; m++)
@@ -245,6 +322,7 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
       report.rows.push(row);
       A.destroy();
       B.destroy();
+      At?.destroy();
     }
   }
   // Per network, for each kernel: Σ over the three shapes of perNetwork × ms per dispatch, by batch.
@@ -255,7 +333,7 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
       ms: kernels.map((k, i) => ({ kernel: k.name, config: k.config, ms: +rows.reduce((s, r) => s + r.perNetwork * r.kernels[i].msPerDispatch, 0).toFixed(3) })),
     };
   });
-  report.ok = report.rows.every((r) => r.kernels.every((e) => (e.maxAbsDiffFromV2 ?? 0) === 0 && e.matchesReference !== false));
+  report.ok = report.rows.every((r) => r.kernels.every((e) => (e.kernel === 'mma' ? e.worstV2Ratio <= 1 : (e.maxAbsDiffFromV2 ?? 0) === 0) && e.matchesReference !== false));
   if (lost) report.deviceLost = lost;
   device.destroy();
   return report;

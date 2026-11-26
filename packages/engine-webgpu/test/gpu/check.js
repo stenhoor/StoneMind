@@ -86,6 +86,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
   report.adapterFeatures = engine.adapterFeatures;
+  if (engine.subgroupMatrixConfigs.length) report.subgroupMatrixConfigs = engine.subgroupMatrixConfigs;
   step(`adapter offers: ${engine.adapterFeatures.join(', ') || 'none'}`);
   const bytes = file ? await file.arrayBuffer() : await (await fetch(modelUrl)).arrayBuffer();
   step(`loading the model (${bytes.byteLength} bytes)`);
@@ -139,6 +140,13 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v3' },
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v3' },
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', winoTransforms: 'v1' },
+    );
+  }
+  // Experimental: the Winograd GEMMs on matrix hardware, where the device offers it (today only behind a browser switch).
+  if (engine.features.has('chromium-experimental-subgroup-matrix') && engine.features.has('shader-f16')) {
+    variants.push(
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', winoGemm: 'mma' },
+      { winograd: true, fuse: false, precision: 'f16', gemm: 'v3', winoGemm: 'mma' },
     );
   }
   // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
@@ -311,6 +319,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   report.dispatches = net.dispatchCount;
   report.gemm = net.gemm;
   report.winoTransforms = net.winoTransforms;
+  if (net.winoGemmMma) report.winoGemmMma = net.winoGemmMma;
   report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
@@ -490,6 +499,7 @@ export async function runSearchBench({
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch });
   report.gemm = net.gemm;
   report.winoTransforms = net.winoTransforms;
+  if (net.winoGemmMma) report.winoGemmMma = net.winoGemmMma;
   report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   report.maxInFlight = net.maxInFlight;
   const cols = 'ABCDEFGHJKLMNOPQRST';
