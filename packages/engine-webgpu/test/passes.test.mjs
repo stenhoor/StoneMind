@@ -60,3 +60,19 @@ test('inputs: friendly-pass rules hide history and the pass-ends-phase flag when
   assert.equal(root.input.global[0], 0);
   assert.equal(root.input.global[14], 0);
 });
+
+test('a cloned history plays on independently of the original', () => {
+  const hist = buildHistory({ ...base, rules: 'tromp-taylor', moves: [['B', 4, 4]] });
+  const copy = hist.clone();
+  copy.play(copy.board.loc(2, 2), WHITE);
+  copy.play(1 /* PASS_LOC */, BLACK);
+  assert.equal(hist.moves.length, 1);
+  assert.equal(hist.board.colors[hist.board.loc(2, 2)], 0);
+  assert.equal(hist.consecutiveEndingPasses, 0);
+  assert.equal(copy.moves.length, 3);
+  assert.equal(copy.consecutiveEndingPasses, 1);
+  // The copy continues to apply superko and pass rules.
+  copy.play(1, WHITE);
+  assert.equal(copy.isGameFinished, true);
+  assert.equal(hist.isGameFinished, false);
+});

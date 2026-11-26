@@ -110,3 +110,62 @@ test('area: a group with one eye is not pass-alive; only the "unsafe" options co
   const loose = calculateArea(oneEye, true, true, true, false);
   for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) assert.equal(loose[oneEye.loc(x, y)], BLACK, `(${x},${y})`);
 });
+
+test('incremental chains match a flood fill after every move and undo of random games', () => {
+  let seed = 12345;
+  const rnd = (n) => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return Math.floor((seed / 2147483648) * n);
+  };
+  const check = (b) => {
+    const seen = new Map();
+    for (let y = 0; y < b.ySize; y++) {
+      for (let x = 0; x < b.xSize; x++) {
+        const loc = b.loc(x, y);
+        const c = b.colors[loc];
+        if (c !== BLACK && c !== WHITE) continue;
+        // Flood fill the chain and its liberties.
+        const stones = new Set([loc]);
+        const libs = new Set();
+        const stack = [loc];
+        while (stack.length) {
+          const s = stack.pop();
+          for (const d of b.adj) {
+            const a = s + d;
+            if (b.colors[a] === EMPTY) libs.add(a);
+            else if (b.colors[a] === c && !stones.has(a)) {
+              stones.add(a);
+              stack.push(a);
+            }
+          }
+        }
+        assert.equal(b.getChainSize(loc), stones.size, `size at ${x},${y}`);
+        assert.equal(b.getNumLiberties(loc), libs.size, `liberties at ${x},${y}`);
+        const head = b.chainHead(loc);
+        assert.ok(stones.has(head), 'head is in the chain');
+        if (seen.has(head)) assert.equal(seen.get(head), stones.size);
+        seen.set(head, stones.size);
+        assert.deepEqual(new Set(b.chainStones(loc)), stones);
+      }
+    }
+  };
+  for (const size of [5, 9]) {
+    for (let game = 0; game < 20; game++) {
+      const b = new Board(size, size);
+      let pla = BLACK;
+      for (let move = 0; move < size * size * 2; move++) {
+        const loc = b.loc(rnd(size), rnd(size));
+        if (!b.isLegal(loc, pla, true)) continue;
+        const before = b.clone();
+        const record = b.playMoveRecorded(loc, pla);
+        check(b);
+        if (rnd(4) === 0) {
+          b.undo(record);
+          assert.deepEqual(b.colors, before.colors);
+          check(b);
+        }
+        pla = pla === BLACK ? WHITE : BLACK;
+      }
+    }
+  }
+});

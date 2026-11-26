@@ -51,6 +51,8 @@ export interface InputOptions {
   conservativePassAndIsRoot?: boolean;
   /** KataGo `enablePassingHacks`. Default false. */
   enablePassingHacks?: boolean;
+  /** KataGo `maxHistory`: the most past moves the inputs may show (default 5, all of them). */
+  maxHistory?: number;
 }
 
 const stone = (p: Player): Stone => (p === 'B' ? BLACK : WHITE);
@@ -180,9 +182,11 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   } else if (hist.isGameFinished) {
     maxTurnsOfHistoryToInclude = 1;
   }
+  maxTurnsOfHistoryToInclude = Math.min(maxTurnsOfHistoryToInclude, options.maxHistory ?? 5);
   let numTurnsOfHistoryIncluded = 0;
   const ms = hist.moves;
-  for (let k = 1; k <= Math.min(maxTurnsOfHistoryToInclude, ms.length); k++) {
+  const amountOfHistoryToTryToUse = Math.min(maxTurnsOfHistoryToInclude, hist.numApproxValidTurnsThisPhase, ms.length);
+  for (let k = 1; k <= amountOfHistoryToTryToUse; k++) {
     const m = ms[ms.length - k]!;
     if (m.pla !== (k % 2 === 1 ? o : pla)) break;
     numTurnsOfHistoryIncluded = k;
