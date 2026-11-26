@@ -55,7 +55,13 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     KataGo's **scale8** transform first (`src/model/scale8.ts`, ported from `ModelDesc::applyScale8ToReduceActivations`):
     activations run at 1/8 scale with `mish_scale8`, and raw outputs are multiplied back by 8 on readback, so results
     are unscaled either way. `scale8: true` also works in f32.
-  - **GEMM v2** (`gemm: 'v2'`, the default; `'v1'` keeps the first kernels): one generic batched matrix multiply
+  - **GEMM v3** (`gemm: 'v3'`, the default except on Apple GPUs, from `defaultGemm`): GEMM v2's tiles and
+    parameters, with each thread owning runs of 4 adjacent rows and columns so it reads its operands from workgroup
+    memory as `vec4`s, `vec4` accumulators, f32 arithmetic, and the next chunk of A and B read into registers while
+    the current one is multiplied. It does the same fma steps in the same order as v2's f32 arithmetic, so the outputs
+    are the same. `gemmV3Config` sets its shape (`rm`, `rn`: 4 or 8; `tk`: 8 or 16; default `GEMM_V3_DEFAULT`,
+    4 × 8, chunks of 16). Apple GPUs keep GEMM v2 with their measured shape until v3 is measured there.
+  - **GEMM v2** (`gemm: 'v2'`; `'v1'` keeps the first kernels): one generic batched matrix multiply
     (`GEMM_V2`) for the Winograd GEMMs and for 1×1 convolutions, which become a plain GEMM per batch position instead
     of going through the implicit-GEMM convolution. 64 × 128 tiles, 4 × 8 outputs per thread, and a fully unrolled
     inner product with scalar accumulators, so no index there is a run-time value apart from each thread's offsets
@@ -144,7 +150,7 @@ It writes `test/goldens/<net name>.json`, using `kata-raw-nn <symmetry> 0` with 
 KataGo version, the backend and the network's SHA-256.
 
 **The GPU check** (`scripts/gpu-check.mjs`, run by hand) loads `test/gpu/index.html` in a browser. It runs the
-WebGPU network on the golden positions in one batch (each variant: Winograd fused and unfused, implicit GEMM, fp32 with scale8, GEMM v2 fused and unfused, and fp16 fused and unfused with each GEMM where the device has `shader-f16`; `--variants <text>` or `?variants=` runs only those whose JSON contains the text), compares every output with the reference forward pass, and
+WebGPU network on the golden positions in one batch (each variant: Winograd fused and unfused, implicit GEMM, fp32 with scale8, GEMM v2 fused and unfused, GEMM v3 fused, and fp16 fused and unfused with each GEMM where the device has `shader-f16`; `--variants <text>` or `?variants=` runs only those whose JSON contains the text), compares every output with the reference forward pass, and
 compares the post-processed results with native KataGo's (symmetry 0) at the goldens test's tolerances. It also
 evaluates the positions in three calls made at once (`maxInFlight` 2, so the third waits its turn) and requires
 exactly the batched call's outputs (`concurrentCallsMatchBatched`; a mismatch fails the variant). `--bench`
@@ -161,6 +167,13 @@ plan's GPU time from timestamps at the start and end of its single compute pass,
 timed in its own pass, summed by kernel, with the ten slowest. `timerTickNs` is the greatest common divisor of the
 measured intervals; a large value means the browser coarsens its timestamps. `GpuNetwork.profile(inputs, 'pass' |
 'ops')` does the timing.
+
+**The GEMM benchmark** (the page's "GEMM benchmark" button) times GEMM v2 and six GEMM v3 shapes on their own, at
+b18's three GEMM shapes (the Winograd GEMM of a 3×3 192→192 convolution, and the 1×1 convolutions 384→192 and
+192→384) and batches 16, 32 and 64, with GpuNetwork's parameters and dispatch. After a 2-second warm-up, each timing is
+one compute pass of 30 identical dispatches (median of 7), so it is far longer than a coarse timestamp step. Every
+kernel's output must equal GEMM v2's exactly and match a float64 product on the CPU; `perNetwork` sums each kernel's
+time over b18's 62 + 18 + 18 such GEMMs.
 
 **Tuning** (`--tune`, or the page's "Tune the GEMM" button) runs every GEMM v2 shape (`rm`, `rn`, `tk`, and `arith`
 f32 and, where available, f16) with Winograd fused and the device's best storage precision. Each is checked for
