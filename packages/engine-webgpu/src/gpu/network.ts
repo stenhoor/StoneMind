@@ -42,7 +42,8 @@ export interface GpuNetworkOptions {
    */
   gemm?: 'v1' | 'v2';
   /**
-   * GEMM v2's shape. Default: `defaultGemmConfig` for the adapter's vendor (measured per device). arith 'f16' and
+   * GEMM v2's shape. Default: `defaultGemmConfig` for the adapter's vendor and `precision` (measured per device; f16
+   * arithmetic only with f16 storage). arith 'f16' and
    * 'f16x2' need the device feature `shader-f16`.
    */
   gemmConfig?: GemmConfig;
@@ -196,7 +197,7 @@ export class GpuNetwork {
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
     net.#gemm = options.gemm ?? 'v2';
-    net.#gemmConfig = options.gemmConfig ?? defaultGemmConfig(engine.adapterInfo.vendor, engine.features.has('shader-f16'));
+    net.#gemmConfig = options.gemmConfig ?? defaultGemmConfig(engine.adapterInfo.vendor, net.#elem);
     net.#winoTransforms = options.winoTransforms ?? 'v1';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");

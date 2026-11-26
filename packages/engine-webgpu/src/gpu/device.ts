@@ -11,6 +11,11 @@ export interface EngineDevice {
   device: GPUDevice;
   /** The optional features the device was created with. */
   features: ReadonlySet<OptionalFeature>;
+  /**
+   * Every feature the adapter offers, sorted, including ones the engine doesn't use yet (such as
+   * `chromium-experimental-subgroup-matrix`, the route to matrix hardware). For reports only.
+   */
+  adapterFeatures: readonly string[];
   /** What the adapter says about itself, where the browser exposes it. */
   adapterInfo: Partial<GPUAdapterInfo>;
 }
@@ -48,6 +53,7 @@ export async function requestEngineDevice(want: readonly OptionalFeature[] = OPT
   return {
     device,
     features: new Set(requiredFeatures),
+    adapterFeatures: [...adapter.features].sort(),
     adapterInfo: info ? { vendor: info.vendor, architecture: info.architecture, device: info.device, description: info.description } : {},
   };
 }
