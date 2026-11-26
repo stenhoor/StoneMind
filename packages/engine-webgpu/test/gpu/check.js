@@ -5,6 +5,7 @@ import {
   buildHistory, Search, PASS_LOC, reviewGame,
 } from '../../dist/index.js';
 import { runGemmBench } from './gemm-bench.js';
+import { runTransformBench } from './transform-bench.js';
 
 // The same tolerances as test/goldens.test.mjs.
 const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
@@ -621,6 +622,13 @@ export async function runAgreement({ file = null, visits = [100, 500], batches =
 
 /** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
 function summarise(r) {
+  if (r.kind === 'transforms') {
+    const lines = [`transform benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${r.elem} storage`];
+    if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
+    for (const x of r.copy ?? []) lines.push(`batch ${x.batch} copy of ${x.bytes} bytes: ${x.msPerDispatch} ms (${x.gbPerSecond} GB/s)`);
+    for (const row of r.rows) lines.push(`batch ${row.batch} ${row.transform}: ${row.kernels.map((k) => `${k.kernel} ${k.msPerDispatch} ms (${k.gbPerSecond} GB/s)`).join(' · ')}`);
+    return lines.join('\n');
+  }
   if (r.kind === 'gemm') {
     const lines = [`GEMM benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${r.elem} storage · ${r.timing}`];
     if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
@@ -734,6 +742,18 @@ document.getElementById('gemm').addEventListener('click', () => {
   download.hidden = true;
   steps.length = 0;
   runGemmBench({ step }).then((r) => show({ ...r, model: 'gemm' }), (e) => {
+    const error = describeError(e);
+    summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+    lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+    download.hidden = false;
+  });
+});
+document.getElementById('transforms').addEventListener('click', () => {
+  summary.textContent = 'Running…';
+  out.textContent = '';
+  download.hidden = true;
+  steps.length = 0;
+  runTransformBench({ step }).then((r) => show({ ...r, model: 'transforms' }), (e) => {
     const error = describeError(e);
     summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
     lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };

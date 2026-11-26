@@ -671,8 +671,15 @@ ${store}}
 export interface GemmV3Config {
   rm: 4 | 8;
   rn: 4 | 8;
-  tk: 8 | 16;
+  tk: 8 | 16 | 32;
+  /** Two buffers of workgroup memory, alternating, so each chunk needs one barrier (default false). */
+  double?: boolean;
+  /** Threads along M (default 16): the workgroup is 16 × wy threads and its tile wy·rm × 16·rn. */
+  wy?: 8 | 16;
 }
+
+/** GEMM v3's tile: rows (M) and columns (N) of C per workgroup. */
+export const gemmV3Tile = (c: GemmV3Config) => ({ tm: (c.wy ?? 16) * c.rm, tn: 16 * c.rn });
 
 /**
  * The GEMM kernel to use on a device: 'v3' everywhere except Apple GPUs, which keep 'v2' with the shape measured
@@ -691,23 +698,26 @@ export const GEMM_V3_DEFAULT: GemmV3Config = { rm: 4, rn: 8, tk: 16 };
 /** GEMM v3: GEMM v2's bindings, parameters and dispatch, with the tile 16·rm × 16·rn. */
 export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEMM_V3_DEFAULT) => {
   const { rm, rn, tk: TK } = config;
-  const TM = 16 * rm;
+  const DB = config.double === true;
+  const WY = config.wy ?? 16;
+  const THREADS = 16 * WY;
+  const TM = WY * rm;
   const TN = 16 * rn;
   const GM = rm / 4;
   const GN = rn / 4;
   const NA = (TK * TM) / 4; // vec4s of A per chunk
   const NB = (TK * TN) / 4;
-  const LA = Math.ceil(NA / 256);
-  const LB = Math.ceil(NB / 256);
+  const LA = Math.ceil(NA / THREADS);
+  const LB = Math.ceil(NB / THREADS);
   const comps = ['x', 'y', 'z', 'w'];
-  const guard = (r: number, count: number) => ((r + 1) * 256 > count ? `if (tid + ${r * 256}u < ${count}u) ` : '');
+  const guard = (r: number, count: number) => ((r + 1) * THREADS > count ? `if (tid + ${r * THREADS}u < ${count}u) ` : '');
   let decl = '';
   for (let r = 0; r < LA; r++) decl += `  var ra${r} = vec4<f32>(0.0);\n`;
   for (let r = 0; r < LB; r++) decl += `  var rb${r} = vec4<f32>(0.0);\n`;
   for (let i = 0; i < rm; i++) for (let h = 0; h < GN; h++) decl += `  var c${i}_${h} = vec4<f32>(0.0);\n`;
   // Read the chunk starting at k into registers: A is [K][M] (rows of M), B is [K][N].
   const loadOne = (reg: string, r: number, count: number, perRow: number, k: string, base: string, row: string, pos: string, limit: string, src: string) => {
-    let s = `    ${guard(r, count)}{\n      let idx = tid + ${r * 256}u;\n      let k = ${k} + idx / ${perRow}u;\n`;
+    let s = `    ${guard(r, count)}{\n      let idx = tid + ${r * THREADS}u;\n      let k = ${k} + idx / ${perRow}u;\n`;
     s += `      let ${pos} = ${pos}0 + (idx % ${perRow}u) * 4u;\n      var v = vec4<f32>(0.0);\n`;
     s += `      if (k < P.K) {\n        let o = ${base} + k * ${row} + ${pos};\n`;
     for (let j = 0; j < 4; j++) s += `        if (${pos} + ${j}u < ${limit}) { v.${comps[j]} = f32(${src}[o + ${j}u]); }\n`;
@@ -720,14 +730,19 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
     for (let r = 0; r < LB; r++) s += loadOne('rb', r, NB, TN / 4, k, 'bBase', 'P.bRow', 'n', 'N', 'B');
     return s;
   };
-  let put = '';
-  for (let r = 0; r < LA; r++) put += `    ${guard(r, NA)}{ As[tid + ${r * 256}u] = ra${r}; }\n`;
-  for (let r = 0; r < LB; r++) put += `    ${guard(r, NB)}{ Bs[tid + ${r * 256}u] = rb${r}; }\n`;
+  // Store the registers into workgroup memory, at offsets `ao` and `bo` (the buffer, when double-buffered).
+  const putAt = (ao: string, bo: string) => {
+    let s = '';
+    for (let r = 0; r < LA; r++) s += `    ${guard(r, NA)}{ As[${ao}tid + ${r * THREADS}u] = ra${r}; }\n`;
+    for (let r = 0; r < LB; r++) s += `    ${guard(r, NB)}{ Bs[${bo}tid + ${r * THREADS}u] = rb${r}; }\n`;
+    return s;
+  };
+  const put = putAt('', '');
   let inner = '';
   for (let kk = 0; kk < TK; kk++) {
     inner += '    {\n';
-    for (let g = 0; g < GM; g++) inner += `      let a${g} = As[${kk * (TM / 4) + g * 16}u + ty];\n`;
-    for (let h = 0; h < GN; h++) inner += `      let b${h} = Bs[${kk * (TN / 4) + h * 16}u + tx];\n`;
+    for (let g = 0; g < GM; g++) inner += `      let a${g} = As[${DB ? 'ab + ' : ''}${kk * (TM / 4) + g * WY}u + ty];\n`;
+    for (let h = 0; h < GN; h++) inner += `      let b${h} = Bs[${DB ? 'bb + ' : ''}${kk * (TN / 4) + h * 16}u + tx];\n`;
     for (let g = 0; g < GM; g++)
       for (let i = 0; i < 4; i++)
         for (let h = 0; h < GN; h++) inner += `      c${g * 4 + i}_${h} = fma(vec4<f32>(a${g}.${comps[i]}), b${h}, c${g * 4 + i}_${h});\n`;
@@ -736,7 +751,7 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
   let store = '';
   for (let g = 0; g < GM; g++)
     for (let i = 0; i < 4; i++) {
-      store += `  { let m = m0 + ${g * 64 + i}u + 4u * ty;\n    if (m < P.M) {\n`;
+      store += `  { let m = m0 + ${g * 4 * WY + i}u + 4u * ty;\n    if (m < P.M) {\n`;
       store += `      var bias = 0.0;\n      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }\n`;
       for (let h = 0; h < GN; h++)
         for (let j = 0; j < 4; j++) {
@@ -760,10 +775,10 @@ struct Params {
 @group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
 @group(0) @binding(5) var<storage, read> nbias: array<f32>;
 
-var<workgroup> As: array<vec4<f32>, ${NA}>; // [TK][TM / 4]
-var<workgroup> Bs: array<vec4<f32>, ${NB}>; // [TK][TN / 4]
+var<workgroup> As: array<vec4<f32>, ${DB ? 2 * NA : NA}>; // [${DB ? '2][' : ''}TK][TM / 4]
+var<workgroup> Bs: array<vec4<f32>, ${DB ? 2 * NB : NB}>; // [${DB ? '2][' : ''}TK][TN / 4]
 
-@compute @workgroup_size(16, 16)
+@compute @workgroup_size(16, ${WY})
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
   let tx = l.x;
   let ty = l.y;
@@ -777,7 +792,20 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
   let bBase = z * P.bBatch;
 ${decl}
 ${load('0u')}${put}  workgroupBarrier();
+${DB ? `  var cur = 0u;
   for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
+    let more = k0 + ${TK}u < P.K;
+    if (more) {
+${load(`k0 + ${TK}u`)}    }
+    let ab = cur * ${NA}u;
+    let bb = cur * ${NB}u;
+${inner}    if (more) {
+      let an = (1u - cur) * ${NA}u;
+      let bn = (1u - cur) * ${NB}u;
+${putAt('an + ', 'bn + ')}    }
+    workgroupBarrier();
+    cur = 1u - cur;
+  }` : `  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
     let more = k0 + ${TK}u < P.K;
     if (more) {
 ${load(`k0 + ${TK}u`)}    }
@@ -785,7 +813,7 @@ ${inner}    workgroupBarrier();
     if (more) {
 ${put}    }
     workgroupBarrier();
-  }
+  }`}
 ${store}}
 `;
 };

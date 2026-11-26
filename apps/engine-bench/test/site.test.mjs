@@ -47,8 +47,10 @@ test('the GPU check page, its modules and its data are in the site', () => {
   for (const [, ref] of gpuHtml.matchAll(/(?:href|src)="(\.[^"]+)"/g)) assert.ok(existsSync(join(page, ref)), `missing ${ref}`);
   const check = readFileSync(join(page, 'check.js'), 'utf8');
   for (const [, spec] of check.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(page, spec)), `check.js imports missing ${spec}`);
-  const gemm = readFileSync(join(page, 'gemm-bench.js'), 'utf8');
-  for (const [, spec] of gemm.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(page, spec)), `gemm-bench.js imports missing ${spec}`);
+  for (const module of ['gemm-bench.js', 'transform-bench.js']) {
+    const source = readFileSync(join(page, module), 'utf8');
+    for (const [, spec] of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(page, spec)), `${module} imports missing ${spec}`);
+  }
   assert.ok(existsSync(join(gpuCheck, 'test', 'goldens', 'positions.json')));
   assert.ok(existsSync(join(gpuCheck, 'test', 'goldens', 'kata1-b18c384nbt-s9996604416-d4316597426.json')));
   assert.ok(!existsSync(join(gpuCheck, 'test', 'goldens', 'kata1-b18c384nbt-s9996604416-d4316597426-cuda.json')));
