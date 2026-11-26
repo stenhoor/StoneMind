@@ -20,7 +20,7 @@ export { GameHistory, UnsupportedPositionError, IllegalMoveError } from './rules
 export { parseRules, type Rules } from './rules/rules.js';
 export { encodePositionV7, encodeHistoryV7, buildHistory, gtpMove, type EncodedPositionV7, type PositionSpec, type SpecMove, type InputOptions } from './features/v7.js';
 export { requestEngineDevice, getGpu, WebGpuUnavailableError, OPTIONAL_FEATURES, type EngineDevice, type OptionalFeature } from './gpu/device.js';
-export { GpuNetwork, type GpuNetworkOptions, type GpuProfile, type CallTiming } from './gpu/network.js';
+export { GpuNetwork, type GpuNetworkOptions, type GpuProfile, type CallTiming, type CallTrace } from './gpu/network.js';
 export { ACT, ACTIVATION_PROBE, GEMM_DEFAULT, GEMM_V3_DEFAULT, defaultGemm, defaultGemmConfig, type Elem, type GemmConfig, type GemmMmaConfig, type GemmV3Config } from './gpu/kernels.js';
 export type * from './gpu/webgpu.js';
 export { applyScale8 } from './model/scale8.js';
