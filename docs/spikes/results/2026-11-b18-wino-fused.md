@@ -39,8 +39,8 @@ input transform and GEMM. The rule was to stop if the first version wasn't faste
     them as matrices.
   - **The transform's own cost:** the other 13.3 ms (25.845 − 12.5797) is the repeated transform work.
 - **The design that would avoid the repeated work** is one workgroup computing all 36 elements for its tiles. That needs
-  36 sets of accumulators per workgroup. At batch 16 it leaves about 78 workgroups for the GPU's 48 SMs. It wasn't
-  tried.
+  36 sets of accumulators per workgroup. With 32 output channels × 32 tiles per workgroup (an estimate, not built),
+  batch 16 would give 6 × 13 = 78 workgroups for the GPU's 48 SMs. It wasn't tried.
 
 ## How it was run
 
