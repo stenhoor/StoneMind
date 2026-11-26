@@ -123,10 +123,11 @@ cycles, and rule sets with a button.
 
 ## 13. Browser engine: network calls in flight (spike 0001)
 
-KataGo runs its search threads on the CPU while one neural-net server thread per model runs the GPU
-(`numNNServerThreadsPerModel`, 1 by default in `analysis_example.cfg`). The browser engine is a single JavaScript
-thread, so it gets the same CPU/GPU overlap by letting more than one network call be in flight. Decided in code, with
-no spec covering it:
+KataGo runs its search threads in parallel on the CPU while one neural-net server thread per model runs the GPU
+(`numNNServerThreadsPerModel`, 1 by default in `analysis_example.cfg`). The browser engine runs on one JavaScript
+thread, with no workers, so its search work never runs in parallel. While a network call runs on the GPU, the thread is
+free (it waits with `await`), and letting more than one call be in flight lets it run another search's work in that
+time. Decided in code, with no spec covering it:
 - **`GpuNetwork` allows 2 calls in flight by default** (`maxInFlight`). Each has its own readback buffer, and calls
   are submitted in the order they're made.
 - **`SharedEvaluator` spreads requests across calls.** When two calls can start, requests that arrived together are

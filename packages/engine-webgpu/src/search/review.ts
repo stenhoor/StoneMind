@@ -20,9 +20,10 @@ type Request = { inputs: readonly NetInput[]; resolve: (o: RawOutputs[]) => void
  *
  * Up to the network's `maxInFlight` calls run at once. When several calls can start, the waiting requests are spread
  * across them (each request whole, in arrival order, to the call with the fewest inputs that has room), so searches that
- * asked together are answered separately: one search picks its next leaves while another's call runs on the GPU, as
- * KataGo's search threads run on the CPU while its server thread runs the GPU. Requests that don't fit wait for the next
- * free call. With `maxInFlight` 1, everything waiting goes into one call.
+ * asked together are answered separately: one search picks its next leaves while another's call runs on the GPU.
+ * Everything here runs on one JavaScript thread, so the searches' own work never runs in parallel, as KataGo's search
+ * threads do; it only overlaps the GPU's work. Requests that don't fit wait for the next free call. With
+ * `maxInFlight` 1, everything waiting goes into one call.
  */
 export class SharedEvaluator implements NetEvaluator {
   readonly maxBatch: number;
