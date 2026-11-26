@@ -9,8 +9,12 @@
 // query to its final response, after a warm-up query. KataGo's evaluation cache is cleared before each timed query
 // (its `clear_cache` action), as the browser benchmark starts each search with an empty cache. The live query runs
 // once per --repeat (default 3).
+//
+// --count-review runs only the review, with no warm-up and no live queries, and reports the network evaluations it
+// made: the "NN rows" and "NN batches" KataGo writes to its log as it exits. Its time is not comparable with a timed
+// run's (no warm-up).
 import { spawn, spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -25,8 +29,10 @@ const { values } = parseArgs({
     override: { type: 'string' },
     repeat: { type: 'string' },
     out: { type: 'string' },
+    'count-review': { type: 'boolean' },
   },
 });
+const countOnly = values['count-review'] === true;
 if (!values.katago || !values.config || !values.model || !values.report) {
   console.error('usage: native-search-bench.mjs --katago <katago> --config <analysis cfg> --model <model> --report <report.json> [--override "..."] [--out <file>]');
   process.exit(2);
@@ -41,6 +47,7 @@ const overrides = [`logDir=${logDir}`, ...(values.override ? [values.override] :
 const proc = spawn(values.katago, ['analysis', '-config', values.config, '-model', values.model, '-override-config', overrides], { stdio: ['pipe', 'pipe', 'pipe'] });
 let stderr = '';
 proc.stderr.on('data', (d) => (stderr += d));
+const exited = new Promise((resolve) => proc.on('exit', resolve));
 const waiting = new Map();
 createInterface({ input: proc.stdout }).on('line', (line) => {
   const r = JSON.parse(line);
@@ -72,9 +79,9 @@ function query(q, expected = 1) {
 }
 
 const base = { rules: 'tromp-taylor', komi: 7.5, boardXSize: 19, boardYSize: 19 };
-await query({ id: 'warmup', ...base, moves: [], maxVisits: 200 });
+if (!countOnly) await query({ id: 'warmup', ...base, moves: [], maxVisits: 200 });
 
-const repeat = Number(values.repeat ?? 3);
+const repeat = countOnly ? 0 : Number(values.repeat ?? 3);
 const liveRuns = [];
 for (let i = 0; i < repeat; i++) {
   await query({ id: `clear-live-${i}`, action: 'clear_cache' });
@@ -98,6 +105,14 @@ const modes = (report.review.modes ?? []).map((m) => ({
   turns: m.bestMoves.length,
 }));
 proc.stdin.end();
+// KataGo writes its network counts to its log as it exits.
+let nn = null;
+if (countOnly) {
+  await exited;
+  const log = readdirSync(logDir).map((f) => readFileSync(join(logDir, f), 'utf8')).join('\n');
+  const num = (label) => Number(new RegExp(`${label}: ([0-9.]+)`).exec(log)?.[1] ?? NaN);
+  nn = { rows: num('NN rows'), batches: num('NN batches'), avgBatchSize: num('NN avg batch size') };
+}
 
 const version = spawnSync(values.katago, ['version'], { encoding: 'utf8' }).stdout.split('\n')[0];
 const out = {
@@ -107,7 +122,7 @@ const out = {
   override: values.override ?? null,
   model: values.model,
   browserReport: { date: report.date, model: report.model, userAgent: report.userAgent },
-  live: { position: live.id, maxVisits: report.live.maxVisits, runs: liveRuns },
+  ...(countOnly ? { countReviewOnly: true } : { live: { position: live.id, maxVisits: report.live.maxVisits, runs: liveRuns } }),
   review: {
     moves: game.length,
     visitsPerMove: report.review.visitsPerMove,
@@ -116,6 +131,7 @@ const out = {
     visitsPerSecond: +((reviewVisits * 1000) / reviewMs).toFixed(1),
     minutesFor250Moves: +((reviewMs / game.length) * 250 / 60000).toFixed(2),
     bestMoves: turns.map((t) => nativeBest.get(t)),
+    ...(nn ? { nnRows: nn.rows, nnBatches: nn.batches, nnAvgBatchSize: nn.avgBatchSize } : {}),
   },
   browserReviewModes: modes,
 };
