@@ -203,6 +203,15 @@ number. On the GEMM benchmark, `?gemmBatches=16,64` runs only those batches and 
 shapes in the opposite order. `?gemmShapes=small` measures narrower v3 tiles instead (`GemmV3Config.wx`, threads
 along N), for small batches.
 
+**The budget benchmark** (the page's "Budget benchmark" button, `test/gpu/budget-bench.js`) measures what each kind
+of work in the network costs on this device, against what the device can do. It measures the ceilings first: copy
+bandwidth, vector FMA throughput in f32 and f16, matrix throughput where the device has subgroup matrices, and a
+near-empty dispatch. Then, at each batch, it times the network's pass whole, without each kind of dispatch, and with
+only that kind, alongside each kind's least work (`GpuNetwork.opWork`). It uses `GpuNetwork.recordPass`, which encodes
+the plan (optionally leaving kinds out) into a pass for timing. `?budgetVariant=<options JSON>` and
+`?budgetBatches=1,16` change the network and the batches. Results and the plan built on them:
+`docs/spikes/results/2026-11-b18-budget.md`.
+
 **The dispatch benchmark** (the page's "Dispatch benchmark" button) measures what a dispatch costs beyond its own
 work: a near-empty kernel dispatched 500 times in one pass, each waiting for the one before (one buffer) or not (a buffer
 each); GEMM v3 at b18's Winograd shape, dependent and independent, at batches 16, 32 and 64; and the b18 plan's single

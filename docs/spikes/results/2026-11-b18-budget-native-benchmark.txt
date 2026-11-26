@@ -1,0 +1,55 @@
+2026-11-26 10:31:04-0600: Running with following config:
+logDir = analysis_logs
+maxVisits = 500
+nnCacheSizePowerOfTwo = 23
+nnMaxBatchSize = 64
+nnMutexPoolSizePowerOfTwo = 17
+nnRandomize = true
+numAnalysisThreads = 2
+numSearchThreads = 16
+numSearchThreadsPerAnalysisThread = 16
+reportAnalysisWinratesAs = BLACK
+2026-11-26 10:31:04-0600: Loading model and initializing benchmark...
+2026-11-26 10:31:04-0600: Testing with default positions for board size: 19
+NOTE: Your config hardcodes nnMaxBatchSize = 64. This benchmark ignores it, and the notes at the end say how to keep it consistent with what was measured.
+2026-11-26 10:31:04-0600: nnRandSeed0 = 9988802983440799125
+2026-11-26 10:31:04-0600: After dedups: nnModelFile0 = ~/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz useFP16 auto
+2026-11-26 10:31:04-0600: Initializing neural net buffer to be size 19 * 19 exactly
+2026-11-26 10:31:05-0600: Cuda backend thread 0: Found GPU NVIDIA GeForce RTX 3080 Laptop GPU memory 16781344768 compute capability major 8 minor 6
+2026-11-26 10:31:05-0600: Cuda backend thread 0: Model version 14 useFP16 = true useNHWC = true
+2026-11-26 10:31:05-0600: Cuda backend thread 0: Model name: kata1-b18c384nbt-s9996604416-d4316597426 (nbt convnet, 26326985 params)
+2026-11-26 10:31:05-0600: CUDA backend: running 1x1 NHWC convolutions as a GEMM
+2026-11-26 10:31:06-0600: Loaded config ~/katago/analysis_example.cfg and/or command-line and query overrides
+2026-11-26 10:31:06-0600: Loaded model ~/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
+Testing using 1600 visits.
+Your GTP config is currently set to cudaUseFP16 = auto
+Your GTP config is currently set to use numSearchThreads = 16
+Testing different numbers of threads (board size 19x19): 
+numSearchThreads =  4: 10 / 10 positions, visits/s = 700.51 nnEvals/s = 560.76 nnBatches/s = 280.77 avgBatchSize = 2.00 (22.9 secs) (EloDiff baseline)
+numSearchThreads =  8: 10 / 10 positions, visits/s = 964.85 nnEvals/s = 759.38 nnBatches/s = 190.82 avgBatchSize = 3.98 (16.7 secs) (EloDiff +108)
+numSearchThreads = 16: 10 / 10 positions, visits/s = 1296.68 nnEvals/s = 1020.17 nnBatches/s = 128.98 avgBatchSize = 7.91 (12.4 secs) (EloDiff +203)
+numSearchThreads = 32: 10 / 10 positions, visits/s = 1236.91 nnEvals/s = 1029.36 nnBatches/s = 65.47 avgBatchSize = 15.72 (13.2 secs) (EloDiff +153)
+numSearchThreads = 64: 10 / 10 positions, visits/s = 1167.18 nnEvals/s = 1041.88 nnBatches/s = 33.73 avgBatchSize = 30.89 (14.2 secs) (EloDiff +63)
+numSearchThreads = 128: 10 / 10 positions, visits/s = 1232.76 nnEvals/s = 1171.93 nnBatches/s = 19.01 avgBatchSize = 61.64 (14.0 secs) (EloDiff -41)
+Based on some test data, each speed doubling gains perhaps ~250 Elo by searching deeper.
+Based on some test data, each thread costs perhaps 7 Elo if using 800 visits, and 2 Elo if using 5000 visits (by making MCTS worse).
+So APPROXIMATELY based on this benchmark, if you intend to do a 5 second search: 
+numSearchThreads =  4: (baseline)
+numSearchThreads =  8:  +108 Elo
+numSearchThreads = 16:  +203 Elo (recommended)
+numSearchThreads = 32:  +153 Elo
+numSearchThreads = 64:   +63 Elo
+numSearchThreads = 128:   -41 Elo
+If you care about performance, you may want to edit numSearchThreads in ~/katago/analysis_example.cfg and/or command-line and query overrides based on the above results!
+WARNING: Your config hardcodes nnMaxBatchSize = 64, but this benchmark used the batch size this backend derives from the number of threads.
+To make normal runs match what was measured, delete nnMaxBatchSize from your config (recommended), or set it to at least the numSearchThreads you choose.
+If you intend to do much longer searches, configure the seconds per game move you expect with the '-time' flag and benchmark again.
+If you intend to do short or fixed-visit searches, use lower numSearchThreads for better strength, high threads will weaken strength.
+If interested see also other notes about performance and mem usage in the top of ~/katago/analysis_example.cfg and/or command-line and query overrides
+Running additional tests of a few other settings at numSearchThreads = 16.
+Re-measuring the current recommendation as a baseline:
+numSearchThreads = 16: 10 / 10 positions, visits/s = 1332.01 nnEvals/s = 1032.77 nnBatches/s = 130.68 avgBatchSize = 7.90 (12.1 secs)
+Testing a max batch size of 8, half the search threads, which can pipeline better on some GPUs:
+numSearchThreads = 16: 10 / 10 positions, visits/s = 1217.09 nnEvals/s = 949.22 nnBatches/s = 120.22 avgBatchSize = 7.90 (13.3 secs) (EloDiff -35)
+Half batch size was not at least 3% faster (measured -8.6%), keeping the default.
+2026-11-26 10:33:15-0600: GPU -1 finishing, processed 108081 rows 16001 batches
