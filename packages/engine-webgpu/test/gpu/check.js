@@ -81,6 +81,8 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
   step(`device: ${JSON.stringify(engine.adapterInfo)}, features ${[...engine.features].join(', ') || 'none'}`);
   report.adapter = engine.adapterInfo;
   report.features = [...engine.features];
+  report.adapterFeatures = engine.adapterFeatures;
+  step(`adapter offers: ${engine.adapterFeatures.join(', ') || 'none'}`);
   const bytes = file ? await file.arrayBuffer() : await (await fetch(modelUrl)).arrayBuffer();
   step(`loading the model (${bytes.byteLength} bytes)`);
   const model = await loadModel(new Uint8Array(bytes));
@@ -416,6 +418,7 @@ let lastReport = null;
 /** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
 function summarise(r) {
   const lines = [`ok: ${r.ok} · model ${r.model} · adapter ${JSON.stringify(r.adapter)} · features ${r.features.join(', ') || 'none'}`];
+  if (r.adapterFeatures) lines.push(`adapter offers: ${r.adapterFeatures.join(', ') || 'none'}`);
   if (r.f16) lines.push(`fp16: ${r.f16}`);
   lines.push(`activations ok: ${r.activations?.ok}`);
   if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
