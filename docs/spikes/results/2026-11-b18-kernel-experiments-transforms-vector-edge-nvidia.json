@@ -1,0 +1,256 @@
+{
+  "kind": "transforms",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T13:39:17.340Z",
+  "batches": [
+    16,
+    32,
+    64
+  ],
+  "repeat": 30,
+  "runs": 7,
+  "channels": 192,
+  "elem": "f16",
+  "act": 4,
+  "warmUpMs": 2000,
+  "rows": [
+    {
+      "batch": 16,
+      "transform": "in",
+      "minBytes": 7747584,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.0524,
+          "gbPerSecond": 147.8
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0459,
+          "gbPerSecond": 168.9,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 2",
+          "msPerDispatch": 0.1005,
+          "gbPerSecond": 77.1,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 4",
+          "msPerDispatch": 0.1223,
+          "gbPerSecond": 63.3,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "minBytes": 9965568,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.0481,
+          "gbPerSecond": 207.4
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0502,
+          "gbPerSecond": 198.3,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 2",
+          "msPerDispatch": 0.0612,
+          "gbPerSecond": 162.9,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 4",
+          "msPerDispatch": 0.0961,
+          "gbPerSecond": 103.7,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 32,
+      "transform": "in",
+      "minBytes": 15495168,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.0939,
+          "gbPerSecond": 165
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0765,
+          "gbPerSecond": 202.7,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 2",
+          "msPerDispatch": 0.4129,
+          "gbPerSecond": 37.5,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 4",
+          "msPerDispatch": 0.3801,
+          "gbPerSecond": 40.8,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 32,
+      "transform": "out",
+      "minBytes": 19931136,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.1136,
+          "gbPerSecond": 175.5
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.1049,
+          "gbPerSecond": 190.1,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 2",
+          "msPerDispatch": 0.1595,
+          "gbPerSecond": 125,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 4",
+          "msPerDispatch": 0.3189,
+          "gbPerSecond": 62.5,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "minBytes": 30990336,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.2927,
+          "gbPerSecond": 105.9
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.2294,
+          "gbPerSecond": 135.1,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 2",
+          "msPerDispatch": 0.6772,
+          "gbPerSecond": 45.8,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 4",
+          "msPerDispatch": 0.6248,
+          "gbPerSecond": 49.6,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "minBytes": 39862272,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.1988,
+          "gbPerSecond": 200.5
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.2053,
+          "gbPerSecond": 194.1,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 2",
+          "msPerDispatch": 0.2512,
+          "gbPerSecond": 158.7,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 tpt 4",
+          "msPerDispatch": 0.4172,
+          "gbPerSecond": 95.5,
+          "maxAbsDiffFromV1": 0
+        }
+      ]
+    }
+  ],
+  "perNetwork": [
+    {
+      "batch": 16,
+      "in v1": 4.087,
+      "in v2": 3.58,
+      "in v3 tpt 2": 7.839,
+      "in v3 tpt 4": 9.539,
+      "out v1": 3.752,
+      "out v2": 3.916,
+      "out v3 tpt 2": 4.774,
+      "out v3 tpt 4": 7.496
+    },
+    {
+      "batch": 32,
+      "in v1": 7.324,
+      "in v2": 5.967,
+      "in v3 tpt 2": 32.206,
+      "in v3 tpt 4": 29.648,
+      "out v1": 8.861,
+      "out v2": 8.182,
+      "out v3 tpt 2": 12.441,
+      "out v3 tpt 4": 24.874
+    },
+    {
+      "batch": 64,
+      "in v1": 22.831,
+      "in v2": 17.893,
+      "in v3 tpt 2": 52.822,
+      "in v3 tpt 4": 48.734,
+      "out v1": 15.506,
+      "out v2": 16.013,
+      "out v3 tpt 2": 19.594,
+      "out v3 tpt 4": 32.542
+    }
+  ],
+  "ok": true,
+  "model": "transforms",
+  "steps": [
+    "13:39:17.471 compiling 8 kernels",
+    "13:39:18.129 warming up for 2000 ms",
+    "13:39:20.133 batch 16, input transform",
+    "13:39:20.856 batch 16, output transform",
+    "13:39:21.618 batch 32, input transform",
+    "13:39:22.656 batch 32, output transform",
+    "13:39:23.538 batch 64, input transform",
+    "13:39:25.233 batch 64, output transform"
+  ]
+}

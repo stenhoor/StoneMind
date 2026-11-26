@@ -4,7 +4,7 @@
 // the browser's timestamp resolution; the median over `runs` passes is reported, per dispatch. Every kernel's output is
 // compared with GEMM v2's and, for the first batch position, with a float64 product on the CPU.
 import { requestEngineDevice, toFloat16Array, fromFloat16Bits } from '../../dist/index.js';
-import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, gemmTile } from '../../dist/gpu/kernels.js';
+import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, gemmTile, gemmV3Tile } from '../../dist/gpu/kernels.js';
 
 const TILES_PER_BOARD = 25; // 19 × 19 in 4 × 4 tiles
 const AREA = 361;
@@ -66,9 +66,15 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
   const kernels = [
     { name: 'v2', config: GEMM_DEFAULT, code: GEMM_V2(elem, elem, elem, GEMM_DEFAULT), tile: gemmTile(GEMM_DEFAULT) },
   ];
-  for (const [rm, rn, tk] of [[4, 8, 16], [8, 8, 16], [4, 4, 16], [8, 4, 16], [4, 8, 8], [8, 8, 8]]) {
-    const config = { rm, rn, tk };
-    kernels.push({ name: 'v3', config, code: GEMM_V3(elem, elem, elem, config), tile: { tm: 16 * rm, tn: 16 * rn } });
+  const wgBytes = device.limits.maxComputeWorkgroupStorageSize;
+  report.maxComputeWorkgroupStorageSize = wgBytes;
+  // [rm, rn, tk, wy]: rows and columns per thread, the chunk, and threads along M.
+  const shapesToTry = [[4, 8, 16, 16], [8, 8, 16, 8], [8, 8, 8, 8], [8, 4, 16, 8], [8, 8, 32, 8], [4, 8, 16, 8], [8, 8, 16, 16]];
+  for (const [rm, rn, tk, wy] of shapesToTry) {
+    const config = { rm, rn, tk, wy };
+    const tile = gemmV3Tile(config);
+    if (tk * (tile.tm + tile.tn) * 4 > wgBytes) continue;
+    kernels.push({ name: 'v3', config, code: GEMM_V3(elem, elem, elem, config), tile });
   }
   step(`compiling ${kernels.length} kernels`);
   for (const k of kernels) {

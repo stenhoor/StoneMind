@@ -60,7 +60,10 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     memory as `vec4`s, `vec4` accumulators, f32 arithmetic, and the next chunk of A and B read into registers while
     the current one is multiplied. It does the same fma steps in the same order as v2's f32 arithmetic, so the outputs
     are the same. `gemmV3Config` sets its shape (`rm`, `rn`: 4 or 8; `tk`: 8 or 16; default `GEMM_V3_DEFAULT`,
-    4 × 8, chunks of 16). Apple GPUs keep GEMM v2 with their measured shape until v3 is measured there.
+    4 × 8, chunks of 16). `wy` (8 or 16, default 16) sets the threads along M, so the tile is wy·rm × 16·rn, and
+    `double: true` alternates two buffers of workgroup memory so each chunk needs one barrier. Neither was faster on
+    the owner's RTX 3080 Laptop GPU (docs/spikes/results/2026-11-b18-kernel-experiments.md). Apple GPUs keep GEMM v2
+    with their measured shape until v3 is measured there.
   - **GEMM v2** (`gemm: 'v2'`; `'v1'` keeps the first kernels): one generic batched matrix multiply
     (`GEMM_V2`) for the Winograd GEMMs and for 1×1 convolutions, which become a plain GEMM per batch position instead
     of going through the implicit-GEMM convolution. 64 × 128 tiles, 4 × 8 outputs per thread, and a fully unrolled
@@ -168,12 +171,18 @@ timed in its own pass, summed by kernel, with the ten slowest. `timerTickNs` is 
 measured intervals; a large value means the browser coarsens its timestamps. `GpuNetwork.profile(inputs, 'pass' |
 'ops')` does the timing.
 
-**The GEMM benchmark** (the page's "GEMM benchmark" button) times GEMM v2 and six GEMM v3 shapes on their own, at
+**The GEMM benchmark** (the page's "GEMM benchmark" button) times GEMM v2 and seven GEMM v3 shapes on their own, at
 b18's three GEMM shapes (the Winograd GEMM of a 3×3 192→192 convolution, and the 1×1 convolutions 384→192 and
 192→384) and batches 16, 32 and 64, with GpuNetwork's parameters and dispatch. After a 2-second warm-up, each timing is
 one compute pass of 30 identical dispatches (median of 7), so it is far longer than a coarse timestamp step. Every
 kernel's output must equal GEMM v2's exactly and match a float64 product on the CPU; `perNetwork` sums each kernel's
 time over b18's 62 + 18 + 18 such GEMMs.
+
+**The transform benchmark** (the page's "Transform benchmark" button) times the Winograd input and output transforms
+(v1 and v2) on their own at b18's 192 channels and batches 16, 32 and 64, the same way: the input transform fused
+(batch norm and activation), the output transform adding the residual. Each version's output must equal v1's. It also
+times a plain copy of the input transform's minimum bytes, as the device's practical ceiling, and reports each
+transform's bytes per second against it.
 
 **Tuning** (`--tune`, or the page's "Tune the GEMM" button) runs every GEMM v2 shape (`rm`, `rn`, `tk`, and `arith`
 f32 and, where available, f16) with Winograd fused and the device's best storage precision. Each is checked for

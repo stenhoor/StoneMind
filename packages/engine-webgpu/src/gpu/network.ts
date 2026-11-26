@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -208,7 +208,7 @@ export class GpuNetwork {
   #gemmKernel(aT: Elem, bT: Elem, cT: Elem): { code: string; tm: number; tn: number } {
     if (this.#gemm === 'v3') {
       const c = this.#gemmV3Config;
-      return { code: GEMM_V3(aT, bT, cT, c), tm: 16 * c.rm, tn: 16 * c.rn };
+      return { code: GEMM_V3(aT, bT, cT, c), ...gemmV3Tile(c) };
     }
     return { code: GEMM_V2(aT, bT, cT, this.#gemmConfig), ...gemmTile(this.#gemmConfig) };
   }
