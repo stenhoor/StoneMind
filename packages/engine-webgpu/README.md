@@ -195,7 +195,8 @@ shapes in the opposite order.
 **The dispatch benchmark** (the page's "Dispatch benchmark" button) measures what a dispatch costs beyond its own
 work: a near-empty kernel dispatched 500 times in one pass, each waiting for the one before (one buffer) or not (a buffer
 each); GEMM v3 at b18's Winograd shape, dependent and independent, at batches 16, 32 and 64; and the b18 plan's single
-pass at those batches, on a plan built for each batch and on one built for 64.
+pass at those batches, on a plan built for each batch and on one built for 64, each timed after 1 s of the
+same pass (`?networkWarmUpMs=` changes it), because building a plan leaves the GPU idle and its clocks low.
 
 **Tuning** (`--tune`, or the page's "Tune the GEMM" button) runs every GEMM v2 shape (`rm`, `rn`, `tk`, and `arith`
 f32 and, where available, f16) with Winograd fused and the device's best storage precision. Each is checked for

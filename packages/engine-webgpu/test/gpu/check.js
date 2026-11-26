@@ -783,7 +783,7 @@ document.getElementById('dispatch').addEventListener('click', () => {
   steps.length = 0;
   const file = picker.files?.[0] ?? null;
   (file ? file.arrayBuffer() : fetch(modelUrl).then((res) => res.arrayBuffer()))
-    .then((modelBytes) => runDispatchBench({ modelBytes, step }))
+    .then((modelBytes) => runDispatchBench({ modelBytes, step, ...(params.has('networkWarmUpMs') ? { networkWarmUpMs: Number(params.get('networkWarmUpMs')) } : {}) }))
     .then((r) => show({ ...r, model: r.model ?? 'dispatch' }), (e) => {
       const error = describeError(e);
       summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;

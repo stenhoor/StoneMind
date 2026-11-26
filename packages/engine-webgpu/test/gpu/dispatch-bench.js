@@ -16,10 +16,10 @@ const NOOP = /* wgsl */ `
 fn main(@builtin(local_invocation_index) i: u32) { v[i] = v[i] + 1.0; }
 `;
 
-export async function runDispatchBench({ modelBytes, batches = [16, 32, 64], count = 500, repeat = 30, runs = 7, warmUpMs = 2000, step = () => {} } = {}) {
+export async function runDispatchBench({ modelBytes, batches = [16, 32, 64], count = 500, repeat = 30, runs = 7, warmUpMs = 2000, networkWarmUpMs = 1000, step = () => {} } = {}) {
   const engine = await requestEngineDevice();
   const { device } = engine;
-  const report = { kind: 'dispatch', adapter: engine.adapterInfo, features: [...engine.features], userAgent: navigator.userAgent, date: new Date().toISOString(), batches, count, repeat, runs };
+  const report = { networkWarmUpMs, kind: 'dispatch', adapter: engine.adapterInfo, features: [...engine.features], userAgent: navigator.userAgent, date: new Date().toISOString(), batches, count, repeat, runs };
   let lost = null;
   device.lost.then((info) => { lost = { reason: info.reason, message: info.message }; });
   if (!engine.features.has('timestamp-query')) throw new Error('the dispatch benchmark needs timestamp-query');
@@ -134,7 +134,14 @@ export async function runDispatchBench({ modelBytes, batches = [16, 32, 64], cou
       step(`network pass at batch ${b}, plan for ${planBatch}`);
       const net = await GpuNetwork.create(engine, model, { maxBatch: planBatch, precision: elem });
       const inputs = Array.from({ length: b }, () => input);
-      await net.profile(inputs, 'pass');
+      // Building the plan compiles its shaders for seconds with the GPU idle, and its clocks drop
+      // (docs/spikes/results/2026-11-b18-pass-gap.md). Keep it busy with the same pass for networkWarmUpMs first.
+      const w0 = performance.now();
+      let warmUpPasses = 0;
+      do {
+        await net.profile(inputs, 'pass');
+        warmUpPasses++;
+      } while (performance.now() - w0 < networkWarmUpMs);
       const ms = [];
       for (let r = 0; r < runs; r++) {
         const p = await net.profile(inputs, 'pass');
@@ -142,7 +149,7 @@ export async function runDispatchBench({ modelBytes, batches = [16, 32, 64], cou
       }
       ms.sort((x, y) => x - y);
       const gpuPassMs = ms[Math.floor(ms.length / 2)];
-      report.network.push({ batch: b, planMaxBatch: planBatch, dispatches: net.dispatchCount, gemm: net.gemm, gpuPassMs: +gpuPassMs.toFixed(3) });
+      report.network.push({ batch: b, planMaxBatch: planBatch, dispatches: net.dispatchCount, gemm: net.gemm, warmUpPasses, gpuPassMs: +gpuPassMs.toFixed(3) });
       net.destroy();
     }
   }
