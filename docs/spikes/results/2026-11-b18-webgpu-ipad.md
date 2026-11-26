@@ -79,6 +79,33 @@ These are evaluations per second at batch 64, all Winograd, from a single run. T
   storage.
 - **The implicit GEMM lost the device again,** as in the earlier runs.
 
+## Check and benchmark after PR #47
+
+These are evaluations per second at batch 64, all Winograd, from a single run. The default GEMM shape was used, which is
+4 × 4, chunk 8, with f16 arithmetic only for fp16 storage.
+
+| Variant | Fused | Unfused | `ok` |
+| --- | ---: | ---: | --- |
+| GEMM v1, f32 | 20.2 | 20.1 | true |
+| GEMM v2, f32 | 107.4 | 88.5 | true |
+| GEMM v2, f32, transforms v2 | 96.1 | 90.0 | true |
+| GEMM v2, f32, scale8 | 91.0 | | true |
+| GEMM v1, fp16 storage | 20.4 | 20.4 | true |
+| GEMM v2, fp16 storage | 101.3 | 104.4 | true |
+| GEMM v2, fp16 storage, transforms v2 | 107.0 | 100.9 | true |
+
+- **The PR #47 fix holds:** every f32 GEMM v2 variant passes again.
+- **The implicit GEMM lost the device again,** which is the only reason the overall result is `ok: false`.
+- **The adapter offers:** `bgra8unorm-storage`, `core-features-and-limits`, `depth-clip-control`,
+  `depth32float-stencil8`, `float16-renderable`, `float32-blendable`, `float32-filterable`, `float32-renderable`,
+  `indirect-first-instance`, `rg11b10ufloat-renderable`, `shader-f16`, `texture-compression-astc`,
+  `texture-compression-astc-sliced-3d`, `texture-compression-bc`, `texture-compression-bc-sliced-3d`,
+  `texture-compression-etc2`, `texture-formats-tier1`, `timestamp-query`. There is no
+  `chromium-experimental-subgroup-matrix` and no `subgroups`.
+- **Run-to-run spread:** across the two runs after #46, the same default fp16 fused variant measured 124.8 and then
+  101.3, and its order against transforms v2 reversed (124.8 against 113.9, then 101.3 against 107.0). Single runs on
+  this device therefore can't rank variants that differ by less than about 20%. Why it varies hasn't been measured.
+
 ## Not available
 
 - **Native comparison:** there's no native KataGo number for this device. KataGo's command line can't run on iPadOS.
