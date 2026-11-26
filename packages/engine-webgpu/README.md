@@ -105,6 +105,16 @@ have yet switched off, on 9×9 and 19×19 positions under tromp-taylor, Chinese 
 exactly the same visits, with the same principal variations, and win rates and leads within the network goldens'
 tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
 
+**Search benchmark.** The GPU check page's **Search benchmark** button (or `scripts/gpu-check.mjs --search`) runs the
+search on the WebGPU network:
+- **Live:** visits per second on one 19×19 position (`fight-19`), 2000 visits, at batches 16, 32 and 64.
+- **Review:** a game played by the search from an empty board, 250 moves at 100 visits each, timed. The report includes
+  the game.
+
+`scripts/native-search-bench.mjs` runs native KataGo's analysis engine on the same work from that report: the same
+position and visits, and every turn of the same game at the same visits. It clears KataGo's evaluation cache before
+each timed query, as the browser starts each search with an empty one.
+
 **Capturing goldens** for another network (for example b18c384nbt on a machine with KataGo):
 
 ```bash
