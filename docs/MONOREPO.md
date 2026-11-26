@@ -63,7 +63,7 @@ from the root builds dependencies before dependents.
 | `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-bench |
 | `@stonemind/engine-webgpu` | Library (experimental engine) | npm package; loaded in pages without a bundler | none yet (engine, for the contract, in phase 5) | engine-bench (its site build publishes the GPU check page) |
 | `@stonemind/katago-bridge` | Local tool (Node CLI) | Run from a checkout on the player's computer | engine | players running native KataGo |
-| `@stonemind/engine-bench` | App (static page) | GitHub Pages: https://stenhoor.github.io/StoneMind/engine-bench/ and /gpu-check/ | engine, brand, engine-webgpu | none |
+| `@stonemind/engine-bench` | App (static page) | GitHub Pages: https://stenhoor.github.io/StoneMind/engine-bench/, /gpu-check/ and /ort-bench/ | engine, brand, engine-webgpu; outside: onnxruntime-web 1.31.1 (MIT, benchmark-only, approved 2026-11-25), copied into /ort-bench/ only | none |
 
 ```text
           @stonemind/domain          @stonemind/storage          @stonemind/brand (no dependencies)

@@ -54,6 +54,26 @@ writeFileSync(
     '<meta http-equiv="refresh" content="0; url=test/gpu/"><a href="test/gpu/">StoneMind GPU check</a>\n',
 );
 
+// The onnxruntime-web baseline (ort-bench/): a developer page that runs KataGo's ONNX graph under onnxruntime-web, the
+// approved benchmark-only outside code (docs/spikes/0001-browser-katago-webgpu.md, "Approved outside code"). It uses
+// the GPU check's copy of the engine for encoding and post-processing. Only the two builds it loads are copied: the
+// WebGPU build and the WASM build, each with its runtime.
+const ortBench = join(site, 'ort-bench');
+mkdirSync(join(ortBench, 'vendor'), { recursive: true });
+for (const file of ['index.html', 'ort-bench.js']) cpSync(join(app, 'ort-bench', file), join(ortBench, file));
+const ortDist = join(repo, 'node_modules', 'onnxruntime-web', 'dist');
+for (const file of [
+  'ort.webgpu.min.mjs',
+  'ort-wasm-simd-threaded.asyncify.mjs',
+  'ort-wasm-simd-threaded.asyncify.wasm',
+  'ort.wasm.min.mjs',
+  'ort-wasm-simd-threaded.mjs',
+  'ort-wasm-simd-threaded.wasm',
+]) {
+  cpSync(join(ortDist, file), join(ortBench, 'vendor', file));
+}
+cpSync(join(app, 'ort-bench', 'ONNXRUNTIME-LICENSE.txt'), join(ortBench, 'vendor', 'LICENSE.txt'));
+
 // The site root: GitHub Pages serves the repository's site at /StoneMind/, so point it at the bench.
 writeFileSync(
   join(site, 'index.html'),

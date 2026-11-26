@@ -16,6 +16,16 @@ copied unchanged).
 https://stenhoor.github.io/StoneMind/gpu-check/, copying its compiled modules, `test/gpu/` and its goldens (not the
 CUDA record) with the package's own layout, so a browser on any device can run the check by picking a model file.
 
+**onnxruntime-web baseline** (`ort-bench/`, published at https://stenhoor.github.io/StoneMind/ort-bench/): spike
+0001's pass mark 1. A developer page that runs KataGo's own ONNX graph (`katago dumponnx -skip-scale8`, from a KataGo
+build with the ONNX or TensorRT backend) under onnxruntime-web 1.31.1, with its WebGPU and WASM execution providers. For
+each, it checks the 19×19 golden positions against native KataGo at the engine's goldens tolerances, then measures
+evaluations per second by batch size, the same way as the GPU check page (the first 19×19 golden position repeated,
+one warm-up, the median of 5 runs). It needs the `.onnx` file and the same network's `.bin.gz` (for post-processing).
+onnxruntime-web is the approved benchmark-only outside code (MIT); only its WebGPU and WASM builds are copied, with its
+licence, and the product never loads it. `npm run serve` serves it cross-origin isolated, so the WASM provider can use
+threads (GitHub Pages can't send those headers), and saves the reports it posts to `REPORT_OUT`.
+
 ## Used by
 
 Nothing: it is a deployable page.
