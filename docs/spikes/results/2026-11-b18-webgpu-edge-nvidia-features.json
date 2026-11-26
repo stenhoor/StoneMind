@@ -1,0 +1,6325 @@
+{
+  "modelUrl": "/model.bin.gz",
+  "referenceCompared": false,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T00:20:13.762Z",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "adapterFeatures": [
+    "atomic-vec2u-min-max",
+    "bgra8unorm-storage",
+    "clip-distances",
+    "core-features-and-limits",
+    "depth-clip-control",
+    "depth32float-stencil8",
+    "dual-source-blending",
+    "float32-blendable",
+    "float32-filterable",
+    "indirect-first-instance",
+    "primitive-index",
+    "rg11b10ufloat-renderable",
+    "shader-f16",
+    "subgroup-size-control",
+    "subgroups",
+    "texture-component-swizzle",
+    "texture-compression-bc",
+    "texture-compression-bc-sliced-3d",
+    "texture-compression-unaligned",
+    "texture-formats-tier1",
+    "texture-formats-tier2",
+    "timestamp-query"
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "goldenUrl": "/golden.json",
+  "activations": {
+    "ok": true,
+    "maxError": {
+      "identity": 0,
+      "relu": 0,
+      "mish": 1.591954282162815e-7,
+      "silu": 1.3881428386509228e-7,
+      "mish_scale8": 1.591954282162815e-7
+    },
+    "worstAt": {
+      "identity": {
+        "x": -30,
+        "gpu": -30,
+        "want": -30
+      },
+      "relu": {
+        "x": -30,
+        "gpu": 0,
+        "want": 0
+      },
+      "mish": {
+        "x": 8.75,
+        "gpu": 8.750000953674316,
+        "want": 8.74999956071439
+      },
+      "silu": {
+        "x": 2.5859375,
+        "gpu": 2.404794931411743,
+        "want": 2.4047952652316757
+      },
+      "mish_scale8": {
+        "x": 1.09375,
+        "gpu": 1.0937501192092896,
+        "want": 1.0937499450892987
+      }
+    }
+  },
+  "variants": [
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "gemm": "v1"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 16.8,
+          "evalsPerSecond": 59.5
+        },
+        {
+          "batch": 2,
+          "medianMs": 18.5,
+          "evalsPerSecond": 108.1
+        },
+        {
+          "batch": 4,
+          "medianMs": 20,
+          "evalsPerSecond": 200
+        },
+        {
+          "batch": 8,
+          "medianMs": 30,
+          "evalsPerSecond": 266.7
+        },
+        {
+          "batch": 16,
+          "medianMs": 50.7,
+          "evalsPerSecond": 315.6
+        },
+        {
+          "batch": 32,
+          "medianMs": 90.5,
+          "evalsPerSecond": 353.6
+        },
+        {
+          "batch": 64,
+          "medianMs": 168.1,
+          "evalsPerSecond": 380.7
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 17.1,
+            "gpuPassMsMedian": 9.437,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 11.272,
+              "wallMs": 16.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.459
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 1.835
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 4.325
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.59
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.328
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 3.539
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.197
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 91,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 113,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 145,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 167,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 199,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 237,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 253,
+                  "kind": "conv",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 48.6,
+            "gpuPassMsMedian": 43.647,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 44.892,
+              "wallMs": 50.9,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.459
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 5.964
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 20.513
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 4.784
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.835
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 11.141
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.197
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 19,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 35,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 67,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 162.7,
+            "gpuPassMsMedian": 156.434,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 162.202,
+              "wallMs": 169.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 18.285
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 75.825
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.743
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 6.423
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 41.943
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.328
+                }
+              },
+              "slowest": [
+                {
+                  "index": 35,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 127,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 143,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 165,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 181,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 219,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 251,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 273,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 305,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 321,
+                  "kind": "conv",
+                  "ms": 1.18
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false,
+        "gemm": "v1"
+      },
+      "dispatches": 410,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 11.5,
+          "evalsPerSecond": 87
+        },
+        {
+          "batch": 2,
+          "medianMs": 12.8,
+          "evalsPerSecond": 156.3
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.1,
+          "evalsPerSecond": 233.9
+        },
+        {
+          "batch": 8,
+          "medianMs": 26.5,
+          "evalsPerSecond": 301.9
+        },
+        {
+          "batch": 16,
+          "medianMs": 47.6,
+          "evalsPerSecond": 336.1
+        },
+        {
+          "batch": 32,
+          "medianMs": 87.2,
+          "evalsPerSecond": 367
+        },
+        {
+          "batch": 64,
+          "medianMs": 167.9,
+          "evalsPerSecond": 381.2
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 12.7,
+            "gpuPassMsMedian": 9.306,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 11.338,
+              "wallMs": 15.4,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.983
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 4.129
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.852
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 1.18
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 3.473
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 71,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 109,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 137,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 157,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 203,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 223,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 269,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 289,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 335,
+                  "kind": "conv",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 48.6,
+            "gpuPassMsMedian": 44.696,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 46.268,
+              "wallMs": 51.8,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.786
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 4.719
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 20.578
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.505
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 3.146
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 11.469
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 23,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 25,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 45,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 167.9,
+            "gpuPassMsMedian": 161.415,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 166.658,
+              "wallMs": 174.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.721
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 15.073
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 75.956
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.743
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 14.09
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 41.746
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.328
+                }
+              },
+              "slowest": [
+                {
+                  "index": 109,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 111,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 155,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 201,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 221,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 243,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 287,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 307,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 333,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 353,
+                  "kind": "conv",
+                  "ms": 1.18
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "gemm": "v2"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 12.4,
+          "evalsPerSecond": 80.6
+        },
+        {
+          "batch": 2,
+          "medianMs": 13.3,
+          "evalsPerSecond": 150.4
+        },
+        {
+          "batch": 4,
+          "medianMs": 16.9,
+          "evalsPerSecond": 236.7
+        },
+        {
+          "batch": 8,
+          "medianMs": 26.4,
+          "evalsPerSecond": 303
+        },
+        {
+          "batch": 16,
+          "medianMs": 39.6,
+          "evalsPerSecond": 404
+        },
+        {
+          "batch": 32,
+          "medianMs": 70.9,
+          "evalsPerSecond": 451.3
+        },
+        {
+          "batch": 64,
+          "medianMs": 138,
+          "evalsPerSecond": 463.8
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 14.6,
+            "gpuPassMsMedian": 11.076,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 12.583,
+              "wallMs": 18,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 2.425
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 5.964
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.786
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.459
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.294
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 61,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 64,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 137,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 140,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 159,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 162,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 229,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 232,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 51.5,
+            "gpuPassMsMedian": 47.448,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 41.878,
+              "wallMs": 47,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 9.044
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 18.285
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 4.981
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.901
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 7.012
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 138.4,
+            "gpuPassMsMedian": 133.693,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 158.99,
+              "wallMs": 168,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 19.923
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 79.167
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.743
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 6.357
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 33.882
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 105,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 108,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 131,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 134,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 137,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 140,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 162,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 169,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 175,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                },
+                {
+                  "index": 178,
+                  "kind": "winoGemm",
+                  "ms": 1.18
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false,
+        "gemm": "v2"
+      },
+      "dispatches": 410,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 15.7,
+          "evalsPerSecond": 63.7
+        },
+        {
+          "batch": 2,
+          "medianMs": 12.7,
+          "evalsPerSecond": 157.5
+        },
+        {
+          "batch": 4,
+          "medianMs": 18.7,
+          "evalsPerSecond": 213.9
+        },
+        {
+          "batch": 8,
+          "medianMs": 27.4,
+          "evalsPerSecond": 292
+        },
+        {
+          "batch": 16,
+          "medianMs": 45.6,
+          "evalsPerSecond": 350.9
+        },
+        {
+          "batch": 32,
+          "medianMs": 73.5,
+          "evalsPerSecond": 435.4
+        },
+        {
+          "batch": 64,
+          "medianMs": 140.2,
+          "evalsPerSecond": 456.5
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 14,
+            "gpuPassMsMedian": 9.961,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 12.255,
+              "wallMs": 16.4,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.721
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.655
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.619
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.721
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 1.18
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.359
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 82,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 86,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 94,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 98,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 102,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 121,
+                  "kind": "matvec",
+                  "ms": 0.131
+                },
+                {
+                  "index": 128,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 132,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 140,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 41.1,
+            "gpuPassMsMedian": 37.814,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 39.78,
+              "wallMs": 45.5,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 4.522
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 18.35
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.243
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 4.194
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 6.816
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 147.3,
+            "gpuPassMsMedian": 140.64,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 169.345,
+              "wallMs": 176.8,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 49.676
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 60.621
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.678
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 13.566
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 25.952
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.328
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 198,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 210,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 226,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 276,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 280,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 296,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 370,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "gemm": "v2",
+        "winoTransforms": "v2"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 15.1,
+          "evalsPerSecond": 66.2
+        },
+        {
+          "batch": 2,
+          "medianMs": 15.6,
+          "evalsPerSecond": 128.2
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.1,
+          "evalsPerSecond": 233.9
+        },
+        {
+          "batch": 8,
+          "medianMs": 25.4,
+          "evalsPerSecond": 315
+        },
+        {
+          "batch": 16,
+          "medianMs": 43.5,
+          "evalsPerSecond": 367.8
+        },
+        {
+          "batch": 32,
+          "medianMs": 76.6,
+          "evalsPerSecond": 417.8
+        },
+        {
+          "batch": 64,
+          "medianMs": 133.8,
+          "evalsPerSecond": 478.3
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 13.3,
+            "gpuPassMsMedian": 10.224,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 11.993,
+              "wallMs": 16,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 1.376
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.226
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 1.049
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.459
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.294
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 80,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 83,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 108,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 115,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 137,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 40.9,
+            "gpuPassMsMedian": 36.831,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 38.666,
+              "wallMs": 44.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 5.702
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 18.416
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.243
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.704
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 7.012
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 86,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 105,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 134.7,
+            "gpuPassMsMedian": 128.909,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 133.3,
+              "wallMs": 140.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 18.35
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 62.39
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.547
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 6.357
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 26.804
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 108,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 118,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 121,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 131,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 137,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 159,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 162,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false,
+        "gemm": "v2",
+        "winoTransforms": "v2"
+      },
+      "dispatches": 410,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 16.1,
+          "evalsPerSecond": 62.1
+        },
+        {
+          "batch": 2,
+          "medianMs": 16.8,
+          "evalsPerSecond": 119
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.9,
+          "evalsPerSecond": 223.5
+        },
+        {
+          "batch": 8,
+          "medianMs": 27.2,
+          "evalsPerSecond": 294.1
+        },
+        {
+          "batch": 16,
+          "medianMs": 46.1,
+          "evalsPerSecond": 347.1
+        },
+        {
+          "batch": 32,
+          "medianMs": 79.8,
+          "evalsPerSecond": 401
+        },
+        {
+          "batch": 64,
+          "medianMs": 148.9,
+          "evalsPerSecond": 429.8
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 18.5,
+            "gpuPassMsMedian": 10.158,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 12.059,
+              "wallMs": 26.3,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 1.311
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.16
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.918
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.59
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.49
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 43,
+                  "kind": "conv1x1",
+                  "ms": 0.131
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 74,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 78,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 132,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 144,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 160,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 164,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 168,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 46.7,
+            "gpuPassMsMedian": 37.814,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 39.715,
+              "wallMs": 51.3,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 5.046
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 17.826
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.243
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 4.194
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 6.75
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 74,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 151,
+            "gpuPassMsMedian": 134.414,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 138.478,
+              "wallMs": 159,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 17.629
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 61.145
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 18.94
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 13.828
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 26.018
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 152,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 160,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 164,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 168,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 194,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 198,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 214,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 218,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 230,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 234,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "scale8": true,
+        "gemm": "v2"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00000105983168392082,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.000002109675548589429,
+          "policyKLDiv": 0.000005463537946417786,
+          "ownershipError": 0.0000022025634763972457
+        },
+        "max": {
+          "winrateError": 0.000001323902216156074,
+          "leadError": 0.0004729927778244214,
+          "scoreMeanError": 0.0004963345527650986,
+          "topPolicyDiff": 0.000002526116580692239,
+          "policyKLDiv": 0.000008714790036737148,
+          "ownershipError": 0.000010053369464392559
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000052991584196041,
+          "leadError": 0.00046956336498249485,
+          "scoreMeanError": 0.00048788997702153836,
+          "topPolicyDiff": 0.00008438702194357717,
+          "policyKLDiv": 0.002731768973208893,
+          "ownershipError": 0.0000629303850399213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00002647804432312148,
+          "leadError": 0.00015766425927480712,
+          "scoreMeanError": 0.00016544485092169955,
+          "topPolicyDiff": 0.00004210194301153732,
+          "policyKLDiv": 0.002178697509184287,
+          "ownershipError": 0.00005026684732196279
+        },
+        "worstFp16LimitRatio": 0.002731768973208893,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 13,
+          "evalsPerSecond": 76.9
+        },
+        {
+          "batch": 2,
+          "medianMs": 16.9,
+          "evalsPerSecond": 118.3
+        },
+        {
+          "batch": 4,
+          "medianMs": 18.4,
+          "evalsPerSecond": 217.4
+        },
+        {
+          "batch": 8,
+          "medianMs": 27.2,
+          "evalsPerSecond": 294.1
+        },
+        {
+          "batch": 16,
+          "medianMs": 44.2,
+          "evalsPerSecond": 362
+        },
+        {
+          "batch": 32,
+          "medianMs": 77.3,
+          "evalsPerSecond": 414
+        },
+        {
+          "batch": 64,
+          "medianMs": 135.1,
+          "evalsPerSecond": 473.7
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 13.3,
+            "gpuPassMsMedian": 10.224,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 12.19,
+              "wallMs": 16.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 1.573
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.226
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.983
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.393
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.359
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 46,
+                  "kind": "matvec",
+                  "ms": 0.131
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 80,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 83,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 108,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 115,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 40.9,
+            "gpuPassMsMedian": 37.356,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 38.732,
+              "wallMs": 44.3,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 5.636
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 18.35
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.308
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.835
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 6.881
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.197
+                }
+              },
+              "slowest": [
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 139.4,
+            "gpuPassMsMedian": 132.907,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 152.83,
+              "wallMs": 159.5,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 39.846
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 61.997
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 17.629
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 6.095
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 26.28
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.328
+                }
+              },
+              "slowest": [
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 77,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 115,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 118,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 131,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 134,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 137,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 140,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 159,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "precision": "f16",
+        "gemm": "v1"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.627481533635109 vs KataGo 0.627843",
+            "whiteLoss 0.3725184663648911 vs KataGo 0.372157",
+            "whiteLead 1.1190296709537506 vs KataGo 1.124",
+            "whiteScoreSelfplay 1.9784656167030334 vs KataGo 1.986",
+            "ownership[0] 0.0011138034802454773 vs KataGo 0.0027717"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.731559544801712 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.5209561586380005 vs KataGo 1.524",
+            "ownership[0] -0.04659675929268659 vs KataGo -0.0475676",
+            "ownership[2] -0.08257887146971502 vs KataGo -0.0833775",
+            "ownership[3] -0.07540285700055299 vs KataGo -0.0746449"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay 0.7961344022952476 vs KataGo 0.793",
+            "ownership[2] -0.019069646886473498 vs KataGo -0.0186621",
+            "ownership[3] 0.0016582128527342559 vs KataGo 0.0019937",
+            "ownership[4] 0.05708958700761379 vs KataGo 0.0578004",
+            "ownership[5] 0.035599611580090784 vs KataGo 0.0362102"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.5193781480193138 vs KataGo 0.522",
+            "whiteScoreSelfplay 1.1978106200695038 vs KataGo 1.2",
+            "ownership[0] 0.09199243602531743 vs KataGo 0.0896974",
+            "ownership[1] 0.046263280227364846 vs KataGo 0.0445708",
+            "ownership[2] 0.040204385291226274 vs KataGo 0.038729"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.4118176705472429 vs KataGo 0.410634",
+            "whiteLoss 0.5881823294527572 vs KataGo 0.589366",
+            "whiteLead -0.9190461784601212 vs KataGo -0.929",
+            "whiteScoreSelfplay -2.288791835308075 vs KataGo -2.311",
+            "ownership[0] 0.2039631475225058 vs KataGo 0.2047461"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.249291658401489 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.958935618400574 vs KataGo 5.955",
+            "ownership[0] 0.07796720412021944 vs KataGo 0.0772119",
+            "ownership[1] 0.06514137654259274 vs KataGo 0.0648968",
+            "ownership[2] 0.10817864726208842 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.1132860443831453 vs KataGo 0.111894",
+            "whiteLoss 0.8867139556168547 vs KataGo 0.888106",
+            "whiteLead -2.531070113182068 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5861898064613342 vs KataGo -2.606",
+            "ownership[0] -0.022563575975251583 vs KataGo -0.0238966"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.01136813976563993 vs KataGo -0.0118003",
+            "ownership[1] 0.050007103392725544 vs KataGo 0.0497578",
+            "ownership[6] 0.6404763159553257 vs KataGo 0.6406928",
+            "ownership[9] -0.10659600422450703 vs KataGo -0.106873",
+            "ownership[10] -0.021245521311949483 vs KataGo -0.021876"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.7623126293985215 vs KataGo 0.761713",
+            "whiteLoss 0.23768737060147843 vs KataGo 0.238287",
+            "whiteLead 1.016782596707344 vs KataGo 1.014",
+            "whiteScoreSelfplay 1.6158151626586914 vs KataGo 1.609",
+            "ownership[0] 0.2220435747367351 vs KataGo 0.221711"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6508315781480938 vs KataGo 0.653372",
+            "whiteLoss 0.3484497683786501 vs KataGo 0.345909",
+            "whiteLead 0.24289897887229162 vs KataGo 0.248",
+            "whiteScoreSelfplay 0.39358510850452616 vs KataGo 0.405",
+            "ownership[0] 0.0346538894457133 vs KataGo 0.0365449"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00139204438314533,
+          "leadError": 0.009953821539878893,
+          "scoreMeanError": 0.019810193538665644,
+          "topPolicyDiff": 0.0019894428799377417,
+          "policyKLDiv": 0.00002661164508928577,
+          "ownershipError": 0.0023578022874294743
+        },
+        "max": {
+          "winrateError": 0.002540941642022104,
+          "leadError": 0.01792988681793206,
+          "scoreMeanError": 0.022208164691924992,
+          "topPolicyDiff": 0.002643577925438234,
+          "policyKLDiv": 0.00002988219610846967,
+          "ownershipError": 0.009374208917236677
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.0696022191572665,
+          "leadError": 0.009953821539878893,
+          "scoreMeanError": 0.019810193538665644,
+          "topPolicyDiff": 0.07957771519750967,
+          "policyKLDiv": 0.013305822544642885,
+          "ownershipError": 0.06736577964084213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.050818832840442085,
+          "leadError": 0.005976628939310687,
+          "scoreMeanError": 0.007402721563974997,
+          "topPolicyDiff": 0.044059632090637235,
+          "policyKLDiv": 0.007470549027117418,
+          "ownershipError": 0.04687104458618339
+        },
+        "worstFp16LimitRatio": 0.07957771519750967,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 34.7,
+          "evalsPerSecond": 28.8
+        },
+        {
+          "batch": 2,
+          "medianMs": 14.5,
+          "evalsPerSecond": 137.9
+        },
+        {
+          "batch": 4,
+          "medianMs": 15.9,
+          "evalsPerSecond": 251.6
+        },
+        {
+          "batch": 8,
+          "medianMs": 24.8,
+          "evalsPerSecond": 322.6
+        },
+        {
+          "batch": 16,
+          "medianMs": 42.6,
+          "evalsPerSecond": 375.6
+        },
+        {
+          "batch": 32,
+          "medianMs": 78.8,
+          "evalsPerSecond": 406.1
+        },
+        {
+          "batch": 64,
+          "medianMs": 148.4,
+          "evalsPerSecond": 431.3
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 13.8,
+            "gpuPassMsMedian": 9.961,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 11.862,
+              "wallMs": 16.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.918
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 2.097
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 4.85
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.066
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 3.867
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 21,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 37,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 46,
+                  "kind": "matvec",
+                  "ms": 0.131
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 75,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 91,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 100,
+                  "kind": "matvec",
+                  "ms": 0.131
+                },
+                {
+                  "index": 113,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 129,
+                  "kind": "conv",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 45.9,
+            "gpuPassMsMedian": 42.009,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 41.746,
+              "wallMs": 47.3,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.459
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 5.046
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 20.578
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 3.473
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.704
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 10.42
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 61,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 64,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 77,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 80,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 111,
+                  "kind": "conv",
+                  "ms": 0.328
+                },
+                {
+                  "index": 115,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 118,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 165.7,
+            "gpuPassMsMedian": 159.318,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 161.481,
+              "wallMs": 167.8,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 24.51
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 76.087
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 12.124
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 5.046
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 42.861
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.197
+                }
+              },
+              "slowest": [
+                {
+                  "index": 181,
+                  "kind": "conv",
+                  "ms": 1.245
+                },
+                {
+                  "index": 305,
+                  "kind": "conv",
+                  "ms": 1.245
+                },
+                {
+                  "index": 75,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 89,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 111,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 127,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 129,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 143,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 165,
+                  "kind": "conv",
+                  "ms": 1.18
+                },
+                {
+                  "index": 183,
+                  "kind": "conv",
+                  "ms": 1.18
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false,
+        "precision": "f16",
+        "gemm": "v1"
+      },
+      "dispatches": 410,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.0021748683117728002 vs KataGo 0.0027717",
+            "ownership[1] -0.05475971025853227 vs KataGo -0.0545004",
+            "ownership[2] -0.007518581929432589 vs KataGo -0.00647",
+            "ownership[3] -0.029239844404555328 vs KataGo -0.0290147",
+            "ownership[4] -0.01889472373999071 vs KataGo -0.0179139"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.7313773781061172 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.521087884902954 vs KataGo 1.524",
+            "ownership[0] -0.04668788238794013 vs KataGo -0.0475676",
+            "ownership[1] -0.08185323567246862 vs KataGo -0.0823399",
+            "ownership[2] -0.08183887837108077 vs KataGo -0.0833775"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.3316150929651014 vs KataGo 0.329",
+            "ownership[0] -0.0359614768901483 vs KataGo -0.0357231",
+            "ownership[1] -0.03915443262612029 vs KataGo -0.0393883",
+            "ownership[2] -0.018946449498361738 vs KataGo -0.0186621",
+            "ownership[3] 0.0011254366159421437 vs KataGo 0.0019937"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.09039280735184353 vs KataGo 0.0896974",
+            "ownership[1] 0.045034418219483306 vs KataGo 0.0445708",
+            "ownership[2] 0.03963986562434351 vs KataGo 0.038729",
+            "ownership[3] 0.0650181465442884 vs KataGo 0.0646943",
+            "ownership[4] 0.0451032964824016 vs KataGo 0.0455609"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay -2.3020631074905396 vs KataGo -2.311",
+            "ownership[0] 0.2056277649560556 vs KataGo 0.2047461",
+            "ownership[1] 0.23310927638991366 vs KataGo 0.2328202",
+            "ownership[2] 0.16560309843817525 vs KataGo 0.1643442",
+            "ownership[3] 0.15981048538470072 vs KataGo 0.158699"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.252876877784729 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.9635865688323975 vs KataGo 5.955",
+            "ownership[0] 0.07764322929886505 vs KataGo 0.0772119",
+            "ownership[1] 0.06521450492875788 vs KataGo 0.0648968",
+            "ownership[2] 0.10816110763513832 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.11265228288522461 vs KataGo 0.111894",
+            "whiteLoss 0.8873477171147753 vs KataGo 0.888106",
+            "whiteLead -2.5380077958106995 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5953423976898193 vs KataGo -2.606",
+            "ownership[0] -0.024637906940878977 vs KataGo -0.0238966"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 2.529030442237854 vs KataGo 2.525",
+            "whiteScoreSelfplay 3.0229875445365906 vs KataGo 3.018",
+            "ownership[0] -0.012045085870574625 vs KataGo -0.0118003",
+            "ownership[1] 0.04928485172682605 vs KataGo 0.0497578",
+            "ownership[2] 0.1316856900388678 vs KataGo 0.1318882"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.7613560801568443 vs KataGo 0.761713",
+            "whiteLoss 0.23864391984315567 vs KataGo 0.238287",
+            "whiteScoreSelfplay 1.6066375374794006 vs KataGo 1.609",
+            "ownership[0] 0.22011915925820258 vs KataGo 0.221711",
+            "ownership[1] 0.1884242977797313 vs KataGo 0.1892069"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6528119428022285 vs KataGo 0.653372",
+            "whiteLoss 0.34647691005173675 vs KataGo 0.345909",
+            "whiteLead 0.2452422144026565 vs KataGo 0.248",
+            "whiteScoreSelfplay 0.3992892525784481 vs KataGo 0.405",
+            "ownership[0] 0.03708633435936531 vs KataGo 0.0365449"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.0005718364787194517,
+          "leadError": 0.007876877784728897,
+          "scoreMeanError": 0.008936892509460392,
+          "topPolicyDiff": 0.001310922921260671,
+          "policyKLDiv": 0.000023773412957847287,
+          "ownershipError": 0.002278520849035015
+        },
+        "max": {
+          "winrateError": 0.0007582828852247259,
+          "leadError": 0.01099220418930047,
+          "scoreMeanError": 0.010657602310180536,
+          "topPolicyDiff": 0.0017527552205959251,
+          "policyKLDiv": 0.000032012011576719026,
+          "ownershipError": 0.00767346884862688
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.028591823935972586,
+          "leadError": 0.007876877784728897,
+          "scoreMeanError": 0.008936892509460392,
+          "topPolicyDiff": 0.05243691685042684,
+          "policyKLDiv": 0.011886706478923644,
+          "ownershipError": 0.06510059568671471
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.015165657704494517,
+          "leadError": 0.0036640680631001565,
+          "scoreMeanError": 0.003552534103393512,
+          "topPolicyDiff": 0.029212587009932085,
+          "policyKLDiv": 0.008003002894179757,
+          "ownershipError": 0.0383673442431344
+        },
+        "worstFp16LimitRatio": 0.06510059568671471,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 18,
+          "evalsPerSecond": 55.6
+        },
+        {
+          "batch": 2,
+          "medianMs": 14.8,
+          "evalsPerSecond": 135.1
+        },
+        {
+          "batch": 4,
+          "medianMs": 15.9,
+          "evalsPerSecond": 251.6
+        },
+        {
+          "batch": 8,
+          "medianMs": 24.7,
+          "evalsPerSecond": 323.9
+        },
+        {
+          "batch": 16,
+          "medianMs": 43.4,
+          "evalsPerSecond": 368.7
+        },
+        {
+          "batch": 32,
+          "medianMs": 80.1,
+          "evalsPerSecond": 399.5
+        },
+        {
+          "batch": 64,
+          "medianMs": 150.3,
+          "evalsPerSecond": 425.8
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 13.1,
+            "gpuPassMsMedian": 9.568,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 11.338,
+              "wallMs": 17.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.393
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 4.522
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 1.573
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.786
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 3.539
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 45,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 91,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 111,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 177,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 223,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 243,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 269,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 289,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 309,
+                  "kind": "conv",
+                  "ms": 0.131
+                },
+                {
+                  "index": 335,
+                  "kind": "conv",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 45.2,
+            "gpuPassMsMedian": 40.829,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 44.761,
+              "wallMs": 52.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 3.473
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 21.037
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.636
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 3.67
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 10.158
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 82,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 86,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 94,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 106,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 161.9,
+            "gpuPassMsMedian": 156.107,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 194.773,
+              "wallMs": 203.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.786
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 47.841
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 71.893
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 11.731
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 11.01
+                },
+                "conv": {
+                  "count": 41,
+                  "ms": 51.446
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 25,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 135,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 137,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 175,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 177,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 201,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 267,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 269,
+                  "kind": "conv",
+                  "ms": 1.442
+                },
+                {
+                  "index": 287,
+                  "kind": "conv",
+                  "ms": 1.442
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "precision": "f16",
+        "gemm": "v2"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.627481533635109 vs KataGo 0.627843",
+            "whiteLoss 0.3725184663648911 vs KataGo 0.372157",
+            "whiteLead 1.1190296709537506 vs KataGo 1.124",
+            "whiteScoreSelfplay 1.9784656167030334 vs KataGo 1.986",
+            "ownership[0] 0.0011138034802454773 vs KataGo 0.0027717"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.731559544801712 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.5209561586380005 vs KataGo 1.524",
+            "ownership[0] -0.04659675929268659 vs KataGo -0.0475676",
+            "ownership[2] -0.08257887146971502 vs KataGo -0.0833775",
+            "ownership[3] -0.07540285700055299 vs KataGo -0.0746449"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay 0.7961344022952476 vs KataGo 0.793",
+            "ownership[2] -0.019069646886473498 vs KataGo -0.0186621",
+            "ownership[3] 0.0016582128527342559 vs KataGo 0.0019937",
+            "ownership[4] 0.05708958700761379 vs KataGo 0.0578004",
+            "ownership[5] 0.035599611580090784 vs KataGo 0.0362102"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.5193781480193138 vs KataGo 0.522",
+            "whiteScoreSelfplay 1.1978106200695038 vs KataGo 1.2",
+            "ownership[0] 0.09199243602531743 vs KataGo 0.0896974",
+            "ownership[1] 0.046263280227364846 vs KataGo 0.0445708",
+            "ownership[2] 0.040204385291226274 vs KataGo 0.038729"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.4118176705472429 vs KataGo 0.410634",
+            "whiteLoss 0.5881823294527572 vs KataGo 0.589366",
+            "whiteLead -0.9190461784601212 vs KataGo -0.929",
+            "whiteScoreSelfplay -2.288791835308075 vs KataGo -2.311",
+            "ownership[0] 0.2039631475225058 vs KataGo 0.2047461"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.249291658401489 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.958935618400574 vs KataGo 5.955",
+            "ownership[0] 0.07796720412021944 vs KataGo 0.0772119",
+            "ownership[1] 0.06514137654259274 vs KataGo 0.0648968",
+            "ownership[2] 0.10817864726208842 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.1132860443831453 vs KataGo 0.111894",
+            "whiteLoss 0.8867139556168547 vs KataGo 0.888106",
+            "whiteLead -2.531070113182068 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5861898064613342 vs KataGo -2.606",
+            "ownership[0] -0.022563575975251583 vs KataGo -0.0238966"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.01136813976563993 vs KataGo -0.0118003",
+            "ownership[1] 0.050007103392725544 vs KataGo 0.0497578",
+            "ownership[6] 0.6404763159553257 vs KataGo 0.6406928",
+            "ownership[9] -0.10659600422450703 vs KataGo -0.106873",
+            "ownership[10] -0.021245521311949483 vs KataGo -0.021876"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.7623126293985215 vs KataGo 0.761713",
+            "whiteLoss 0.23768737060147843 vs KataGo 0.238287",
+            "whiteLead 1.016782596707344 vs KataGo 1.014",
+            "whiteScoreSelfplay 1.6158151626586914 vs KataGo 1.609",
+            "ownership[0] 0.2220435747367351 vs KataGo 0.221711"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6508315781480938 vs KataGo 0.653372",
+            "whiteLoss 0.3484497683786501 vs KataGo 0.345909",
+            "whiteLead 0.24289897887229162 vs KataGo 0.248",
+            "whiteScoreSelfplay 0.39358510850452616 vs KataGo 0.405",
+            "ownership[0] 0.0346538894457133 vs KataGo 0.0365449"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00139204438314533,
+          "leadError": 0.009953821539878893,
+          "scoreMeanError": 0.019810193538665644,
+          "topPolicyDiff": 0.0019894428799377417,
+          "policyKLDiv": 0.00002661164508928577,
+          "ownershipError": 0.0023578022874294743
+        },
+        "max": {
+          "winrateError": 0.002540941642022104,
+          "leadError": 0.01792988681793206,
+          "scoreMeanError": 0.022208164691924992,
+          "topPolicyDiff": 0.002643577925438234,
+          "policyKLDiv": 0.00002988219610846967,
+          "ownershipError": 0.009374208917236677
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.0696022191572665,
+          "leadError": 0.009953821539878893,
+          "scoreMeanError": 0.019810193538665644,
+          "topPolicyDiff": 0.07957771519750967,
+          "policyKLDiv": 0.013305822544642885,
+          "ownershipError": 0.06736577964084213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.050818832840442085,
+          "leadError": 0.005976628939310687,
+          "scoreMeanError": 0.007402721563974997,
+          "topPolicyDiff": 0.044059632090637235,
+          "policyKLDiv": 0.007470549027117418,
+          "ownershipError": 0.04687104458618339
+        },
+        "worstFp16LimitRatio": 0.07957771519750967,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 30.4,
+          "evalsPerSecond": 32.9
+        },
+        {
+          "batch": 2,
+          "medianMs": 18.7,
+          "evalsPerSecond": 107
+        },
+        {
+          "batch": 4,
+          "medianMs": 17.8,
+          "evalsPerSecond": 224.7
+        },
+        {
+          "batch": 8,
+          "medianMs": 24.8,
+          "evalsPerSecond": 322.6
+        },
+        {
+          "batch": 16,
+          "medianMs": 39.9,
+          "evalsPerSecond": 401
+        },
+        {
+          "batch": 32,
+          "medianMs": 70.2,
+          "evalsPerSecond": 455.8
+        },
+        {
+          "batch": 64,
+          "medianMs": 127.1,
+          "evalsPerSecond": 503.5
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 18.4,
+            "gpuPassMsMedian": 10.617,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 12.321,
+              "wallMs": 23.4,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 1.507
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.291
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 0.918
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.393
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.49
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv1x1",
+                  "ms": 0.131
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 39,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 46,
+                  "kind": "matvec",
+                  "ms": 0.131
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 64,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 42.1,
+            "gpuPassMsMedian": 32.506,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 34.275,
+              "wallMs": 46.5,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 4.588
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 17.826
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 3.015
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.507
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 6.554
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 64,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 122,
+            "gpuPassMsMedian": 114.36,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 118.555,
+              "wallMs": 126.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.721
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 15.401
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 59.965
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 11.731
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 5.046
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 25.69
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 191,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 226,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false,
+        "precision": "f16",
+        "gemm": "v2"
+      },
+      "dispatches": 410,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.0021748683117728002 vs KataGo 0.0027717",
+            "ownership[1] -0.05475971025853227 vs KataGo -0.0545004",
+            "ownership[2] -0.007518581929432589 vs KataGo -0.00647",
+            "ownership[3] -0.029239844404555328 vs KataGo -0.0290147",
+            "ownership[4] -0.01889472373999071 vs KataGo -0.0179139"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.7313773781061172 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.521087884902954 vs KataGo 1.524",
+            "ownership[0] -0.04668788238794013 vs KataGo -0.0475676",
+            "ownership[1] -0.08185323567246862 vs KataGo -0.0823399",
+            "ownership[2] -0.08183887837108077 vs KataGo -0.0833775"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.3316150929651014 vs KataGo 0.329",
+            "ownership[0] -0.0359614768901483 vs KataGo -0.0357231",
+            "ownership[1] -0.03915443262612029 vs KataGo -0.0393883",
+            "ownership[2] -0.018946449498361738 vs KataGo -0.0186621",
+            "ownership[3] 0.0011254366159421437 vs KataGo 0.0019937"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.09039280735184353 vs KataGo 0.0896974",
+            "ownership[1] 0.045034418219483306 vs KataGo 0.0445708",
+            "ownership[2] 0.03963986562434351 vs KataGo 0.038729",
+            "ownership[3] 0.0650181465442884 vs KataGo 0.0646943",
+            "ownership[4] 0.0451032964824016 vs KataGo 0.0455609"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay -2.3020631074905396 vs KataGo -2.311",
+            "ownership[0] 0.2056277649560556 vs KataGo 0.2047461",
+            "ownership[1] 0.23310927638991366 vs KataGo 0.2328202",
+            "ownership[2] 0.16560309843817525 vs KataGo 0.1643442",
+            "ownership[3] 0.15981048538470072 vs KataGo 0.158699"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.252876877784729 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.9635865688323975 vs KataGo 5.955",
+            "ownership[0] 0.07764322929886505 vs KataGo 0.0772119",
+            "ownership[1] 0.06521450492875788 vs KataGo 0.0648968",
+            "ownership[2] 0.10816110763513832 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.11265228288522461 vs KataGo 0.111894",
+            "whiteLoss 0.8873477171147753 vs KataGo 0.888106",
+            "whiteLead -2.5380077958106995 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5953423976898193 vs KataGo -2.606",
+            "ownership[0] -0.024637906940878977 vs KataGo -0.0238966"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 2.529030442237854 vs KataGo 2.525",
+            "whiteScoreSelfplay 3.0229875445365906 vs KataGo 3.018",
+            "ownership[0] -0.012045085870574625 vs KataGo -0.0118003",
+            "ownership[1] 0.04928485172682605 vs KataGo 0.0497578",
+            "ownership[2] 0.1316856900388678 vs KataGo 0.1318882"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.7613560801568443 vs KataGo 0.761713",
+            "whiteLoss 0.23864391984315567 vs KataGo 0.238287",
+            "whiteScoreSelfplay 1.6066375374794006 vs KataGo 1.609",
+            "ownership[0] 0.22011915925820258 vs KataGo 0.221711",
+            "ownership[1] 0.1884242977797313 vs KataGo 0.1892069"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6528119428022285 vs KataGo 0.653372",
+            "whiteLoss 0.34647691005173675 vs KataGo 0.345909",
+            "whiteLead 0.2452422144026565 vs KataGo 0.248",
+            "whiteScoreSelfplay 0.3992892525784481 vs KataGo 0.405",
+            "ownership[0] 0.03708633435936531 vs KataGo 0.0365449"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.0005718364787194517,
+          "leadError": 0.007876877784728897,
+          "scoreMeanError": 0.008936892509460392,
+          "topPolicyDiff": 0.001310922921260671,
+          "policyKLDiv": 0.000023773412957847287,
+          "ownershipError": 0.002278520849035015
+        },
+        "max": {
+          "winrateError": 0.0007582828852247259,
+          "leadError": 0.01099220418930047,
+          "scoreMeanError": 0.010657602310180536,
+          "topPolicyDiff": 0.0017527552205959251,
+          "policyKLDiv": 0.000032012011576719026,
+          "ownershipError": 0.00767346884862688
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.028591823935972586,
+          "leadError": 0.007876877784728897,
+          "scoreMeanError": 0.008936892509460392,
+          "topPolicyDiff": 0.05243691685042684,
+          "policyKLDiv": 0.011886706478923644,
+          "ownershipError": 0.06510059568671471
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.015165657704494517,
+          "leadError": 0.0036640680631001565,
+          "scoreMeanError": 0.003552534103393512,
+          "topPolicyDiff": 0.029212587009932085,
+          "policyKLDiv": 0.008003002894179757,
+          "ownershipError": 0.0383673442431344
+        },
+        "worstFp16LimitRatio": 0.06510059568671471,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 19.7,
+          "evalsPerSecond": 50.8
+        },
+        {
+          "batch": 2,
+          "medianMs": 20.3,
+          "evalsPerSecond": 98.5
+        },
+        {
+          "batch": 4,
+          "medianMs": 14.8,
+          "evalsPerSecond": 270.3
+        },
+        {
+          "batch": 8,
+          "medianMs": 21.7,
+          "evalsPerSecond": 368.7
+        },
+        {
+          "batch": 16,
+          "medianMs": 37,
+          "evalsPerSecond": 432.4
+        },
+        {
+          "batch": 32,
+          "medianMs": 65.8,
+          "evalsPerSecond": 486.3
+        },
+        {
+          "batch": 64,
+          "medianMs": 121.6,
+          "evalsPerSecond": 526.3
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 13.8,
+            "gpuPassMsMedian": 10.42,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 12.648,
+              "wallMs": 17.2,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.59
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.75
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 1.311
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.721
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.556
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 91,
+                  "kind": "conv1x1",
+                  "ms": 0.131
+                },
+                {
+                  "index": 111,
+                  "kind": "conv1x1",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 41.7,
+            "gpuPassMsMedian": 37.159,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 41.026,
+              "wallMs": 46.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 3.801
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 20.251
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 5.571
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 3.146
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 7.471
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 74,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 82,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 86,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 94,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 106,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                },
+                {
+                  "index": 152,
+                  "kind": "winoGemm",
+                  "ms": 0.328
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 134.8,
+            "gpuPassMsMedian": 128.844,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 154.337,
+              "wallMs": 163.1,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 47.251
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 58.851
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 11.469
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 10.355
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 25.625
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 74,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 78,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 82,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "precision": "f16",
+        "gemm": "v2",
+        "winoTransforms": "v2"
+      },
+      "dispatches": 338,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.627481533635109 vs KataGo 0.627843",
+            "whiteLoss 0.3725184663648911 vs KataGo 0.372157",
+            "whiteLead 1.1190296709537506 vs KataGo 1.124",
+            "whiteScoreSelfplay 1.9784656167030334 vs KataGo 1.986",
+            "ownership[0] 0.0011138034802454773 vs KataGo 0.0027717"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.731559544801712 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.5209561586380005 vs KataGo 1.524",
+            "ownership[0] -0.04659675929268659 vs KataGo -0.0475676",
+            "ownership[2] -0.08257887146971502 vs KataGo -0.0833775",
+            "ownership[3] -0.07540285700055299 vs KataGo -0.0746449"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay 0.7961344022952476 vs KataGo 0.793",
+            "ownership[2] -0.019069646886473498 vs KataGo -0.0186621",
+            "ownership[3] 0.0016582128527342559 vs KataGo 0.0019937",
+            "ownership[4] 0.05708958700761379 vs KataGo 0.0578004",
+            "ownership[5] 0.035599611580090784 vs KataGo 0.0362102"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.5193781480193138 vs KataGo 0.522",
+            "whiteScoreSelfplay 1.1978106200695038 vs KataGo 1.2",
+            "ownership[0] 0.09199243602531743 vs KataGo 0.0896974",
+            "ownership[1] 0.046263280227364846 vs KataGo 0.0445708",
+            "ownership[2] 0.040204385291226274 vs KataGo 0.038729"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.4118176705472429 vs KataGo 0.410634",
+            "whiteLoss 0.5881823294527572 vs KataGo 0.589366",
+            "whiteLead -0.9190461784601212 vs KataGo -0.929",
+            "whiteScoreSelfplay -2.288791835308075 vs KataGo -2.311",
+            "ownership[0] 0.2039631475225058 vs KataGo 0.2047461"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.249291658401489 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.958935618400574 vs KataGo 5.955",
+            "ownership[0] 0.07796720412021944 vs KataGo 0.0772119",
+            "ownership[1] 0.06514137654259274 vs KataGo 0.0648968",
+            "ownership[2] 0.10817864726208842 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.1132860443831453 vs KataGo 0.111894",
+            "whiteLoss 0.8867139556168547 vs KataGo 0.888106",
+            "whiteLead -2.531070113182068 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5861898064613342 vs KataGo -2.606",
+            "ownership[0] -0.022563575975251583 vs KataGo -0.0238966"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.01136813976563993 vs KataGo -0.0118003",
+            "ownership[1] 0.050007103392725544 vs KataGo 0.0497578",
+            "ownership[6] 0.6404763159553257 vs KataGo 0.6406928",
+            "ownership[9] -0.10659600422450703 vs KataGo -0.106873",
+            "ownership[10] -0.021245521311949483 vs KataGo -0.021876"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.7623126293985215 vs KataGo 0.761713",
+            "whiteLoss 0.23768737060147843 vs KataGo 0.238287",
+            "whiteLead 1.016782596707344 vs KataGo 1.014",
+            "whiteScoreSelfplay 1.6158151626586914 vs KataGo 1.609",
+            "ownership[0] 0.2220435747367351 vs KataGo 0.221711"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6508315781480938 vs KataGo 0.653372",
+            "whiteLoss 0.3484497683786501 vs KataGo 0.345909",
+            "whiteLead 0.24289897887229162 vs KataGo 0.248",
+            "whiteScoreSelfplay 0.39358510850452616 vs KataGo 0.405",
+            "ownership[0] 0.0346538894457133 vs KataGo 0.0365449"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.00139204438314533,
+          "leadError": 0.009953821539878893,
+          "scoreMeanError": 0.019810193538665644,
+          "topPolicyDiff": 0.0019894428799377417,
+          "policyKLDiv": 0.00002661164508928577,
+          "ownershipError": 0.0023578022874294743
+        },
+        "max": {
+          "winrateError": 0.002540941642022104,
+          "leadError": 0.01792988681793206,
+          "scoreMeanError": 0.022208164691924992,
+          "topPolicyDiff": 0.002643577925438234,
+          "policyKLDiv": 0.00002988219610846967,
+          "ownershipError": 0.009374208917236677
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.0696022191572665,
+          "leadError": 0.009953821539878893,
+          "scoreMeanError": 0.019810193538665644,
+          "topPolicyDiff": 0.07957771519750967,
+          "policyKLDiv": 0.013305822544642885,
+          "ownershipError": 0.06736577964084213
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.050818832840442085,
+          "leadError": 0.005976628939310687,
+          "scoreMeanError": 0.007402721563974997,
+          "topPolicyDiff": 0.044059632090637235,
+          "policyKLDiv": 0.007470549027117418,
+          "ownershipError": 0.04687104458618339
+        },
+        "worstFp16LimitRatio": 0.07957771519750967,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 15.3,
+          "evalsPerSecond": 65.4
+        },
+        {
+          "batch": 2,
+          "medianMs": 15.9,
+          "evalsPerSecond": 125.8
+        },
+        {
+          "batch": 4,
+          "medianMs": 14,
+          "evalsPerSecond": 285.7
+        },
+        {
+          "batch": 8,
+          "medianMs": 20.3,
+          "evalsPerSecond": 394.1
+        },
+        {
+          "batch": 16,
+          "medianMs": 35.2,
+          "evalsPerSecond": 454.5
+        },
+        {
+          "batch": 32,
+          "medianMs": 62.8,
+          "evalsPerSecond": 509.6
+        },
+        {
+          "batch": 64,
+          "medianMs": 116.9,
+          "evalsPerSecond": 547.5
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 13.8,
+            "gpuPassMsMedian": 10.682,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 12.452,
+              "wallMs": 17.9,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.721
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.983
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.488
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 1.311
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 0.459
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.425
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 29,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 61,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 105,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 115,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 154,
+                  "kind": "matvec",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 35.5,
+            "gpuPassMsMedian": 32.178,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 756.679,
+              "wallMs": 761.4,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.721
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 3.801
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 569.18
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 3.67
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 1.245
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 178.061
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 245,
+                  "kind": "winoGemm",
+                  "ms": 8.192
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 23,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 26,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 51,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 54,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 77,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 115,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 118,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                },
+                {
+                  "index": 121,
+                  "kind": "winoGemm",
+                  "ms": 8.126
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 121.8,
+            "gpuPassMsMedian": 115.737,
+            "perDispatch": {
+              "dispatches": 338,
+              "sumMs": 117.178,
+              "wallMs": 124.7,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.721
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 13.107
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 61.276
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 10.748
+                },
+                "bnAct": {
+                  "count": 45,
+                  "ms": 4.784
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 26.411
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 7,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 10,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 13,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 118,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 162,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 172,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 191,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 229,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 239,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": false,
+        "precision": "f16",
+        "gemm": "v2",
+        "winoTransforms": "v2"
+      },
+      "dispatches": 410,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.0021748683117728002 vs KataGo 0.0027717",
+            "ownership[1] -0.05475971025853227 vs KataGo -0.0545004",
+            "ownership[2] -0.007518581929432589 vs KataGo -0.00647",
+            "ownership[3] -0.029239844404555328 vs KataGo -0.0290147",
+            "ownership[4] -0.01889472373999071 vs KataGo -0.0179139"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.7313773781061172 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.521087884902954 vs KataGo 1.524",
+            "ownership[0] -0.04668788238794013 vs KataGo -0.0475676",
+            "ownership[1] -0.08185323567246862 vs KataGo -0.0823399",
+            "ownership[2] -0.08183887837108077 vs KataGo -0.0833775"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.3316150929651014 vs KataGo 0.329",
+            "ownership[0] -0.0359614768901483 vs KataGo -0.0357231",
+            "ownership[1] -0.03915443262612029 vs KataGo -0.0393883",
+            "ownership[2] -0.018946449498361738 vs KataGo -0.0186621",
+            "ownership[3] 0.0011254366159421437 vs KataGo 0.0019937"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] 0.09039280735184353 vs KataGo 0.0896974",
+            "ownership[1] 0.045034418219483306 vs KataGo 0.0445708",
+            "ownership[2] 0.03963986562434351 vs KataGo 0.038729",
+            "ownership[3] 0.0650181465442884 vs KataGo 0.0646943",
+            "ownership[4] 0.0451032964824016 vs KataGo 0.0455609"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay -2.3020631074905396 vs KataGo -2.311",
+            "ownership[0] 0.2056277649560556 vs KataGo 0.2047461",
+            "ownership[1] 0.23310927638991366 vs KataGo 0.2328202",
+            "ownership[2] 0.16560309843817525 vs KataGo 0.1643442",
+            "ownership[3] 0.15981048538470072 vs KataGo 0.158699"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.252876877784729 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.9635865688323975 vs KataGo 5.955",
+            "ownership[0] 0.07764322929886505 vs KataGo 0.0772119",
+            "ownership[1] 0.06521450492875788 vs KataGo 0.0648968",
+            "ownership[2] 0.10816110763513832 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.11265228288522461 vs KataGo 0.111894",
+            "whiteLoss 0.8873477171147753 vs KataGo 0.888106",
+            "whiteLead -2.5380077958106995 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5953423976898193 vs KataGo -2.606",
+            "ownership[0] -0.024637906940878977 vs KataGo -0.0238966"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 2.529030442237854 vs KataGo 2.525",
+            "whiteScoreSelfplay 3.0229875445365906 vs KataGo 3.018",
+            "ownership[0] -0.012045085870574625 vs KataGo -0.0118003",
+            "ownership[1] 0.04928485172682605 vs KataGo 0.0497578",
+            "ownership[2] 0.1316856900388678 vs KataGo 0.1318882"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.7613560801568443 vs KataGo 0.761713",
+            "whiteLoss 0.23864391984315567 vs KataGo 0.238287",
+            "whiteScoreSelfplay 1.6066375374794006 vs KataGo 1.609",
+            "ownership[0] 0.22011915925820258 vs KataGo 0.221711",
+            "ownership[1] 0.1884242977797313 vs KataGo 0.1892069"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6528119428022285 vs KataGo 0.653372",
+            "whiteLoss 0.34647691005173675 vs KataGo 0.345909",
+            "whiteLead 0.2452422144026565 vs KataGo 0.248",
+            "whiteScoreSelfplay 0.3992892525784481 vs KataGo 0.405",
+            "ownership[0] 0.03708633435936531 vs KataGo 0.0365449"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.0005718364787194517,
+          "leadError": 0.007876877784728897,
+          "scoreMeanError": 0.008936892509460392,
+          "topPolicyDiff": 0.001310922921260671,
+          "policyKLDiv": 0.000023773412957847287,
+          "ownershipError": 0.002278520849035015
+        },
+        "max": {
+          "winrateError": 0.0007582828852247259,
+          "leadError": 0.01099220418930047,
+          "scoreMeanError": 0.010657602310180536,
+          "topPolicyDiff": 0.0017527552205959251,
+          "policyKLDiv": 0.000032012011576719026,
+          "ownershipError": 0.00767346884862688
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.028591823935972586,
+          "leadError": 0.007876877784728897,
+          "scoreMeanError": 0.008936892509460392,
+          "topPolicyDiff": 0.05243691685042684,
+          "policyKLDiv": 0.011886706478923644,
+          "ownershipError": 0.06510059568671471
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.015165657704494517,
+          "leadError": 0.0036640680631001565,
+          "scoreMeanError": 0.003552534103393512,
+          "topPolicyDiff": 0.029212587009932085,
+          "policyKLDiv": 0.008003002894179757,
+          "ownershipError": 0.0383673442431344
+        },
+        "worstFp16LimitRatio": 0.06510059568671471,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 34.3,
+          "evalsPerSecond": 29.2
+        },
+        {
+          "batch": 2,
+          "medianMs": 18.4,
+          "evalsPerSecond": 108.7
+        },
+        {
+          "batch": 4,
+          "medianMs": 19.2,
+          "evalsPerSecond": 208.3
+        },
+        {
+          "batch": 8,
+          "medianMs": 25.5,
+          "evalsPerSecond": 313.7
+        },
+        {
+          "batch": 16,
+          "medianMs": 41.3,
+          "evalsPerSecond": 387.4
+        },
+        {
+          "batch": 32,
+          "medianMs": 71.1,
+          "evalsPerSecond": 450.1
+        },
+        {
+          "batch": 64,
+          "medianMs": 128.1,
+          "evalsPerSecond": 499.6
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 15,
+            "gpuPassMsMedian": 10.551,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 12.648,
+              "wallMs": 25,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.524
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 0.59
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 6.554
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 1.704
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.459
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 2.818
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv1x1",
+                  "ms": 0.131
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 40,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 74,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 94,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 98,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 128,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                },
+                {
+                  "index": 132,
+                  "kind": "winoGemm",
+                  "ms": 0.131
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 43.1,
+            "gpuPassMsMedian": 32.506,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 34.472,
+              "wallMs": 44.1,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.459
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 3.277
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 17.039
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 3.539
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 3.277
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 6.75
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 66,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 74,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 82,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                },
+                {
+                  "index": 94,
+                  "kind": "winoGemm",
+                  "ms": 0.262
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 128.6,
+            "gpuPassMsMedian": 114.557,
+            "perDispatch": {
+              "dispatches": 410,
+              "sumMs": 119.21,
+              "wallMs": 126.5,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "winoIn": {
+                  "count": 78,
+                  "ms": 9.961
+                },
+                "winoGemm": {
+                  "count": 78,
+                  "ms": 60.162
+                },
+                "winoOut": {
+                  "count": 78,
+                  "ms": 11.665
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 10.879
+                },
+                "conv1x1": {
+                  "count": 41,
+                  "ms": 25.69
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.262
+                }
+              },
+              "slowest": [
+                {
+                  "index": 12,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 32,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 36,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 264,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 390,
+                  "kind": "winoGemm",
+                  "ms": 0.918
+                },
+                {
+                  "index": 8,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 16,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 20,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 28,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                },
+                {
+                  "index": 62,
+                  "kind": "winoGemm",
+                  "ms": 0.852
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "variant": {
+        "winograd": false,
+        "gemm": "v1"
+      },
+      "dispatches": 254,
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16,
+        "arith": "f32"
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": true
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": true
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": true
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": true
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.0000010224729868404947,
+          "leadError": 0.0004716495275496335,
+          "scoreMeanError": 0.0004907891315922841,
+          "topPolicyDiff": 0.0000014518775162120079,
+          "policyKLDiv": 0.000005463542154449909,
+          "ownershipError": 0.0000017518323094031785
+        },
+        "max": {
+          "winrateError": 0.0000017111115229728746,
+          "leadError": 0.0004766808152198987,
+          "scoreMeanError": 0.0004933543205263291,
+          "topPolicyDiff": 0.000002592984107208096,
+          "policyKLDiv": 0.000008714765589822198,
+          "ownershipError": 0.000005750618889764636
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.000051123649342024735,
+          "leadError": 0.0004716495275496335,
+          "scoreMeanError": 0.0004907891315922841,
+          "topPolicyDiff": 0.000058075100648480316,
+          "policyKLDiv": 0.0027317710772249543,
+          "ownershipError": 0.00005005235169723367
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.00003422223045945749,
+          "leadError": 0.00015889360507329955,
+          "scoreMeanError": 0.00016445144017544303,
+          "topPolicyDiff": 0.000043216401786801604,
+          "policyKLDiv": 0.0021786913974555493,
+          "ownershipError": 0.00002875309444882318
+        },
+        "worstFp16LimitRatio": 0.0027317710772249543,
+        "fp16LimitsPass": true
+      },
+      "ok": true,
+      "bench": [
+        {
+          "batch": 1,
+          "medianMs": 38,
+          "evalsPerSecond": 26.3
+        },
+        {
+          "batch": 2,
+          "medianMs": 36.9,
+          "evalsPerSecond": 54.2
+        },
+        {
+          "batch": 4,
+          "medianMs": 44.4,
+          "evalsPerSecond": 90.1
+        },
+        {
+          "batch": 8,
+          "medianMs": 60.1,
+          "evalsPerSecond": 133.1
+        },
+        {
+          "batch": 16,
+          "medianMs": 108.9,
+          "evalsPerSecond": 146.9
+        },
+        {
+          "batch": 32,
+          "medianMs": 217.4,
+          "evalsPerSecond": 147.2
+        },
+        {
+          "batch": 64,
+          "medianMs": 414.1,
+          "evalsPerSecond": 154.6
+        }
+      ],
+      "profile": {
+        "timerTickNs": 65536,
+        "rows": [
+          {
+            "batch": 1,
+            "wallMsMedian": 38.2,
+            "gpuPassMsMedian": 35.193,
+            "perDispatch": {
+              "dispatches": 254,
+              "sumMs": 36.438,
+              "wallMs": 41.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.59
+                },
+                "conv": {
+                  "count": 119,
+                  "ms": 34.996
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 0.786
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.066
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 9,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 17,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 21,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 29,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 47,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 51,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 63,
+                  "kind": "conv",
+                  "ms": 0.459
+                },
+                {
+                  "index": 70,
+                  "kind": "conv",
+                  "ms": 0.459
+                }
+              ]
+            }
+          },
+          {
+            "batch": 16,
+            "wallMsMedian": 118.2,
+            "gpuPassMsMedian": 109.642,
+            "perDispatch": {
+              "dispatches": 254,
+              "sumMs": 112.656,
+              "wallMs": 123.5,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.655
+                },
+                "conv": {
+                  "count": 119,
+                  "ms": 107.872
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 3.998
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.131
+                }
+              },
+              "slowest": [
+                {
+                  "index": 5,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 7,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 9,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 59,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 79,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 99,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 103,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 117,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 125,
+                  "kind": "conv",
+                  "ms": 1.376
+                },
+                {
+                  "index": 127,
+                  "kind": "conv",
+                  "ms": 1.376
+                }
+              ]
+            }
+          },
+          {
+            "batch": 64,
+            "wallMsMedian": 417.7,
+            "gpuPassMsMedian": 408.879,
+            "perDispatch": {
+              "dispatches": 254,
+              "sumMs": 409.207,
+              "wallMs": 426.6,
+              "byKind": {
+                "matvec": {
+                  "count": 11,
+                  "ms": 0.786
+                },
+                "conv": {
+                  "count": 119,
+                  "ms": 393.937
+                },
+                "bnAct": {
+                  "count": 117,
+                  "ms": 14.287
+                },
+                "gpool": {
+                  "count": 7,
+                  "ms": 0.197
+                }
+              },
+              "slowest": [
+                {
+                  "index": 39,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 47,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 51,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 61,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 63,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 77,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 79,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 117,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 127,
+                  "kind": "conv",
+                  "ms": 4.981
+                },
+                {
+                  "index": 129,
+                  "kind": "conv",
+                  "ms": 4.981
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "goldensCompared": true,
+  "ok": true,
+  "steps": [
+    "00:20:13.762 requesting a WebGPU device",
+    "00:20:13.858 device: {\"vendor\":\"nvidia\",\"architecture\":\"ampere\",\"device\":\"\",\"description\":\"\"}, features shader-f16, subgroups, timestamp-query",
+    "00:20:13.858 adapter offers: atomic-vec2u-min-max, bgra8unorm-storage, clip-distances, core-features-and-limits, depth-clip-control, depth32float-stencil8, dual-source-blending, float32-blendable, float32-filterable, indirect-first-instance, primitive-index, rg11b10ufloat-renderable, shader-f16, subgroup-size-control, subgroups, texture-component-swizzle, texture-compression-bc, texture-compression-bc-sliced-3d, texture-compression-unaligned, texture-formats-tier1, texture-formats-tier2, timestamp-query",
+    "00:20:13.993 loading the model (97898094 bytes)",
+    "00:20:14.501 model kata1-b18c384nbt-s9996604416-d4316597426",
+    "00:20:14.589 checking activations",
+    "00:20:14.606 activations ok: true",
+    "00:20:14.606 variant {\"winograd\":true,\"fuse\":true,\"gemm\":\"v1\"}",
+    "00:20:14.606   building the network",
+    "00:20:16.045   evaluating the positions",
+    "00:20:16.109   benchmarking",
+    "00:20:18.473   profiling",
+    "00:20:20.094 variant {\"winograd\":true,\"fuse\":false,\"gemm\":\"v1\"}",
+    "00:20:20.094   building the network",
+    "00:20:21.607   evaluating the positions",
+    "00:20:21.654   benchmarking",
+    "00:20:23.872   profiling",
+    "00:20:25.487 variant {\"winograd\":true,\"fuse\":true,\"gemm\":\"v2\"}",
+    "00:20:25.487   building the network",
+    "00:20:27.053   evaluating the positions",
+    "00:20:27.096   benchmarking",
+    "00:20:28.988   profiling",
+    "00:20:33.084 variant {\"winograd\":true,\"fuse\":false,\"gemm\":\"v2\"}",
+    "00:20:33.085   building the network",
+    "00:20:34.610   evaluating the positions",
+    "00:20:34.661   benchmarking",
+    "00:20:36.670   profiling",
+    "00:20:38.126 variant {\"winograd\":true,\"fuse\":true,\"gemm\":\"v2\",\"winoTransforms\":\"v2\"}",
+    "00:20:38.126   building the network",
+    "00:20:39.621   evaluating the positions",
+    "00:20:39.663   benchmarking",
+    "00:20:41.617   profiling",
+    "00:20:42.955 variant {\"winograd\":true,\"fuse\":false,\"gemm\":\"v2\",\"winoTransforms\":\"v2\"}",
+    "00:20:42.955   building the network",
+    "00:20:44.437   evaluating the positions",
+    "00:20:44.487   benchmarking",
+    "00:20:46.577   profiling",
+    "00:20:48.102 variant {\"winograd\":true,\"fuse\":true,\"scale8\":true,\"gemm\":\"v2\"}",
+    "00:20:48.102   building the network",
+    "00:20:49.616   evaluating the positions",
+    "00:20:49.667   benchmarking",
+    "00:20:51.656   profiling",
+    "00:20:53.043 variant {\"winograd\":true,\"fuse\":true,\"precision\":\"f16\",\"gemm\":\"v1\"}",
+    "00:20:53.043   building the network",
+    "00:20:55.442   evaluating the positions",
+    "00:20:55.593   benchmarking",
+    "00:20:57.740   profiling",
+    "00:20:59.324 variant {\"winograd\":true,\"fuse\":false,\"precision\":\"f16\",\"gemm\":\"v1\"}",
+    "00:20:59.324   building the network",
+    "00:21:01.658   evaluating the positions",
+    "00:21:01.842   benchmarking",
+    "00:21:03.993   profiling",
+    "00:21:05.616 variant {\"winograd\":true,\"fuse\":true,\"precision\":\"f16\",\"gemm\":\"v2\"}",
+    "00:21:05.616   building the network",
+    "00:21:08.020   evaluating the positions",
+    "00:21:08.185   benchmarking",
+    "00:21:10.170   profiling",
+    "00:21:11.479 variant {\"winograd\":true,\"fuse\":false,\"precision\":\"f16\",\"gemm\":\"v2\"}",
+    "00:21:11.479   building the network",
+    "00:21:13.850   evaluating the positions",
+    "00:21:13.997   benchmarking",
+    "00:21:15.875   profiling",
+    "00:21:17.962 variant {\"winograd\":true,\"fuse\":true,\"precision\":\"f16\",\"gemm\":\"v2\",\"winoTransforms\":\"v2\"}",
+    "00:21:17.962   building the network",
+    "00:21:20.462   evaluating the positions",
+    "00:21:20.607   benchmarking",
+    "00:21:22.383   profiling",
+    "00:21:24.329 variant {\"winograd\":true,\"fuse\":false,\"precision\":\"f16\",\"gemm\":\"v2\",\"winoTransforms\":\"v2\"}",
+    "00:21:24.329   building the network",
+    "00:21:26.780   evaluating the positions",
+    "00:21:26.942   benchmarking",
+    "00:21:28.961   profiling",
+    "00:21:30.275 variant {\"winograd\":false,\"gemm\":\"v1\"}",
+    "00:21:30.275   building the network",
+    "00:21:30.400   evaluating the positions",
+    "00:21:30.518   benchmarking",
+    "00:21:36.070   profiling"
+  ]
+}
