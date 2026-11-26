@@ -3,6 +3,7 @@
 //
 //   npm run build -w @stonemind/engine-webgpu
 //   node packages/engine-webgpu/scripts/gpu-check.mjs [--bench [--batches 1,8,64]] [--tune] [--model <net.bin.gz> [--golden <goldens.json>]]
+//   node packages/engine-webgpu/scripts/gpu-check.mjs --agreement [--visits 100,500] [--agreement-batches 16,64] [--every 5] [--model ...]
 //   node packages/engine-webgpu/scripts/gpu-check.mjs --search [--live-visits 2000] [--review-moves 250] [--review-visits 100] [--model ...]
 //   node packages/engine-webgpu/scripts/gpu-check.mjs --serve [--model ...] [--out report.json]
 //     Serves the page to open in any browser. Each run's report is posted back and saved to --out
@@ -82,7 +83,13 @@ if (flag('--serve')) {
   await page.goto(url);
   const batches = option('--batches')?.split(',').map(Number);
   const tune = flag('--tune');
-  const report = flag('--search')
+  const report = flag('--agreement')
+    ? await page.evaluate((opts) => window.runAgreement(opts), {
+        ...(option('--visits') ? { visits: option('--visits').split(',').map(Number) } : {}),
+        ...(option('--every') ? { every: Number(option('--every')) } : {}),
+        ...(option('--agreement-batches') ? { batches: option('--agreement-batches').split(',').map(Number) } : {}),
+      })
+    : flag('--search')
     ? await page.evaluate((opts) => window.runSearchBench(opts), {
         ...(option('--live-visits') ? { liveVisits: Number(option('--live-visits')) } : {}),
         ...(option('--review-moves') ? { reviewMoves: Number(option('--review-moves')) } : {}),

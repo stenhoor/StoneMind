@@ -115,6 +115,13 @@ search on the WebGPU network:
 position and visits, and every turn of the same game at the same visits. It clears KataGo's evaluation cache before
 each timed query, as the browser starts each search with an empty one.
 
+**Top-move agreement.** The page's **Agreement positions** button (or `scripts/gpu-check.mjs --agreement`) records the
+search's recommended move on every 5th position of `test/goldens/agreement-game.json` (the game from the owner's
+search benchmark), at 100 and 500 visits, batches 16 and 64. `scripts/native-agreement.mjs` runs native KataGo on the
+same positions twice per visit count, clearing its cache in between, and once at 4000 visits. It reports how often the
+browser agrees with native, how often native agrees with itself (the control, since KataGo's multithreaded search isn't
+deterministic), and how often each agrees with the 4000-visit reference.
+
 **Capturing goldens** for another network (for example b18c384nbt on a machine with KataGo):
 
 ```bash

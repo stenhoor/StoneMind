@@ -14,13 +14,15 @@
   <p>Runs the WebGPU network on the golden positions and compares it with the outputs captured from native KataGo;
     optionally measures evaluations per second by batch size. <b>Search benchmark</b> measures the search: visits per
     second on one position at batches 16, 32 and 64, and the time to review a 250-move game at 100 visits a move (the
-    game is played by the search, and its moves are in the report). A developer page, served by
+    game is played by the search, and its moves are in the report). <b>Agreement positions</b> records the search's
+    recommended move on 50 positions of a fixed game at 100 and 500 visits, at batches 16 and 64, for comparison with
+    native KataGo (<code>scripts/native-agreement.mjs</code>). A developer page, served by
     <code>scripts/gpu-check.mjs</code> or from the project's GitHub Pages site.</p>
   <p><label>Model file (<code>.bin.gz</code>, or the same file uncompressed): <input id="model" type="file"></label><br>
     Without a file, the page uses the model in its <code>model</code> parameter, or else the test network. Goldens
     exist for <code>kata1-b18c384nbt-s9996604416-d4316597426</code> and the test network.</p>
   <p><button id="check" type="button">Check correctness</button> <button id="bench" type="button">Check and benchmark</button>
-    <button id="tune" type="button">Tune the GEMM</button> <button id="search" type="button">Search benchmark</button>
+    <button id="tune" type="button">Tune the GEMM</button> <button id="search" type="button">Search benchmark</button> <button id="agreement" type="button">Agreement positions</button>
     <button id="download" type="button" hidden>Download report</button></p>
   <pre id="summary" aria-live="polite"></pre>
   <details><summary>Steps</summary><pre id="steps"></pre></details>

@@ -532,8 +532,67 @@ export async function runSearchBench({ file = null, liveVisits = 2000, liveBatch
   return report;
 }
 
+/**
+ * Top-move agreement (phase 5's exit criterion): the search's recommended move (most visits) on every `every`th
+ * position of test/goldens/agreement-game.json, at each visit count and batch size, with the default search settings. The
+ * report feeds scripts/native-agreement.mjs, which runs native KataGo on the same positions and compares.
+ */
+export async function runAgreement({ file = null, visits = [100, 500], batches = [16, 64], every = 5 } = {}) {
+  const report = { kind: 'agreement', modelUrl: file ? `file: ${file.name}` : modelUrl, userAgent: navigator.userAgent, date: new Date().toISOString() };
+  steps.length = 0;
+  step('requesting a WebGPU device');
+  const engine = await requestEngineDevice();
+  engine.device.lost.then((info) => {
+    report.deviceLost = { reason: info.reason, message: info.message };
+    step(`DEVICE LOST: reason ${info.reason}: ${info.message}`);
+  });
+  report.adapter = engine.adapterInfo;
+  const bytes = file ? await file.arrayBuffer() : await (await fetch(modelUrl)).arrayBuffer();
+  step(`loading the model (${bytes.byteLength} bytes)`);
+  const model = await loadModel(new Uint8Array(bytes));
+  report.model = model.name;
+  const variant = params.get('searchVariant')
+    ? JSON.parse(params.get('searchVariant'))
+    : { winograd: true, fuse: true, gemm: 'v2', precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
+  report.variant = variant;
+  const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(...batches) });
+  const game = await getJson('../goldens/agreement-game.json');
+  const cols = 'ABCDEFGHJKLMNOPQRST';
+  report.game = { rules: game.rules, komi: game.komi, moves: game.moves.length };
+  report.every = every;
+  report.batches = batches;
+  report.positions = [];
+  try {
+    for (let turn = 0; turn < game.moves.length; turn += every) {
+      const hist = buildHistory({ xSize: 19, ySize: 19, rules: game.rules, komi: game.komi, moves: game.moves.slice(0, turn).map(([c, l]) => gtpMove(c, l, 19)) });
+      const name = (loc) => (loc === PASS_LOC ? 'pass' : cols[hist.board.x(loc)] + (19 - hist.board.y(loc)));
+      const row = { turn, byVisits: {} };
+      // Keyed "<visits>@<batch>": with few visits, a large batch spreads the first leaves across many moves before any
+      // result comes back, so the batch size can change the recommended move.
+      for (const v of visits) for (const batchSize of batches) {
+        const search = new Search(model, net, hist, { batchSize });
+        await search.run({ maxVisits: v });
+        const infos = search.analysis().moveInfos;
+        row.byVisits[`${v}@${batchSize}`] = { best: name(infos[0].loc), top: infos.slice(0, 3).map((m) => ({ move: name(m.loc), visits: m.visits, winrate: +m.winrate.toFixed(4) })) };
+      }
+      report.positions.push(row);
+      if (report.positions.length % 10 === 0) step(`  ${report.positions.length} positions`);
+    }
+  } finally {
+    net.destroy();
+  }
+  report.visits = visits;
+  report.batches = batches;
+  report.steps = [...steps];
+  report.ok = !report.deviceLost;
+  return report;
+}
+
 /** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
 function summarise(r) {
+  if (r.kind === 'agreement') {
+    return `agreement run · ok: ${r.ok} · model ${r.model} · ${r.positions.length} positions at ${r.visits.join(', ')} visits, batches ${r.batches.join(', ')}. Feed this report to scripts/native-agreement.mjs.`;
+  }
   if (r.kind === 'search') {
     const lines = [`search benchmark · ok: ${r.ok} · model ${r.model} · adapter ${JSON.stringify(r.adapter)} · network ${JSON.stringify(r.variant)}`];
     if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
@@ -584,6 +643,18 @@ const run = (bench) => () => {
   });
 };
 document.getElementById('check').addEventListener('click', run(false));
+document.getElementById('agreement').addEventListener('click', () => {
+  summary.textContent = 'Running the agreement positions… (a few minutes)';
+  out.textContent = '';
+  download.hidden = true;
+  const file = picker.files?.[0] ?? null;
+  runAgreement({ file }).then(show, (e) => {
+    const error = describeError(e);
+    summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+    lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+    download.hidden = false;
+  });
+});
 document.getElementById('search').addEventListener('click', () => {
   summary.textContent = 'Running the search benchmark… (several minutes)';
   out.textContent = '';
@@ -622,3 +693,4 @@ download.addEventListener('click', () => {
 });
 window.runCheck = runCheck;
 window.runSearchBench = runSearchBench;
+window.runAgreement = runAgreement;
