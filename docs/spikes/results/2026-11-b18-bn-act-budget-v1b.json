@@ -1,0 +1,600 @@
+{
+  "kind": "budget",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query",
+    "chromium-experimental-subgroup-matrix"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T21:36:17.414Z",
+  "variant": {
+    "winograd": true,
+    "fuse": true,
+    "precision": "f16",
+    "gemm": "v3"
+  },
+  "batches": [
+    16,
+    64
+  ],
+  "maxBatch": 64,
+  "runs": 7,
+  "warmUpMs": 300,
+  "repeats": 3,
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "subgroupMatrixConfigs": [
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    }
+  ],
+  "ceilings": {
+    "at": "2026-11-26T21:36:19.431Z",
+    "copy": [
+      {
+        "mib": 64,
+        "bytesMoved": 134217728,
+        "ms": 0.3828,
+        "minMs": 0.382,
+        "maxMs": 0.3846,
+        "gbPerSecond": 350.6
+      },
+      {
+        "mib": 256,
+        "bytesMoved": 536870912,
+        "ms": 1.5468,
+        "minMs": 1.5464,
+        "maxMs": 1.547,
+        "gbPerSecond": 347.1
+      }
+    ],
+    "fmaf32": {
+      "workgroups": 6144,
+      "iterations": 1024,
+      "ms": 5.3391,
+      "minMs": 5.3299,
+      "maxMs": 5.4121,
+      "tflops": 19.31
+    },
+    "fmaf16": {
+      "workgroups": 6144,
+      "iterations": 1024,
+      "ms": 5.051,
+      "minMs": 5.0466,
+      "maxMs": 5.0512,
+      "tflops": 20.41
+    },
+    "matrix": {
+      "tflops": 43.74,
+      "best": {
+        "sg": 4,
+        "acc": 8
+      },
+      "variants": [
+        {
+          "subgroupsPerWorkgroup": 1,
+          "accumulators": 4,
+          "workgroups": 3072,
+          "iterations": 1024,
+          "msPerDispatch": 2.3799,
+          "tflops": 43.31
+        },
+        {
+          "subgroupsPerWorkgroup": 1,
+          "accumulators": 8,
+          "workgroups": 3072,
+          "iterations": 1024,
+          "msPerDispatch": 4.7154,
+          "tflops": 43.72
+        },
+        {
+          "subgroupsPerWorkgroup": 4,
+          "accumulators": 4,
+          "workgroups": 768,
+          "iterations": 1024,
+          "msPerDispatch": 2.3786,
+          "tflops": 43.34
+        },
+        {
+          "subgroupsPerWorkgroup": 4,
+          "accumulators": 8,
+          "workgroups": 768,
+          "iterations": 1024,
+          "msPerDispatch": 4.7133,
+          "tflops": 43.74
+        },
+        {
+          "subgroupsPerWorkgroup": 8,
+          "accumulators": 8,
+          "workgroups": 384,
+          "iterations": 1024,
+          "msPerDispatch": 4.7133,
+          "tflops": 43.74
+        }
+      ]
+    },
+    "dispatch": {
+      "count": 500,
+      "msPerDispatch": 0.00105,
+      "minMsPerDispatch": 0.00105,
+      "maxMsPerDispatch": 0.00105
+    }
+  },
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "gemm": "v3",
+  "gemmConfig": {
+    "rm": 4,
+    "rn": 8,
+    "tk": 16
+  },
+  "winoTransforms": {
+    "in": "v3",
+    "out": "v3"
+  },
+  "dispatches": 338,
+  "kinds": [
+    "matvec",
+    "winoIn",
+    "winoGemm",
+    "winoOut",
+    "bnAct",
+    "conv1x1",
+    "gpool"
+  ],
+  "network": [
+    {
+      "batch": 16,
+      "at": "2026-11-26T21:36:26.373Z",
+      "full": {
+        "ms": 17.7282,
+        "minMs": 17.69,
+        "maxMs": 17.7447
+      },
+      "kinds": [
+        {
+          "kind": "matvec",
+          "at": "2026-11-26T21:36:27.622Z",
+          "dispatches": 11,
+          "flops": 5022720,
+          "bytes": 812032,
+          "full": {
+            "ms": 17.7639,
+            "minMs": 17.6899,
+            "maxMs": 17.7935
+          },
+          "without": {
+            "ms": 17.339,
+            "minMs": 17.3376,
+            "maxMs": 17.3471
+          },
+          "only": {
+            "ms": 0.2658,
+            "minMs": 0.2657,
+            "maxMs": 0.2696
+          },
+          "shareMs": 0.425
+        },
+        {
+          "kind": "winoIn",
+          "at": "2026-11-26T21:36:30.257Z",
+          "dispatches": 78,
+          "flops": 5006361600,
+          "bytes": 584793216,
+          "full": {
+            "ms": 17.7376,
+            "minMs": 17.7132,
+            "maxMs": 17.743
+          },
+          "without": {
+            "ms": 15.6878,
+            "minMs": 15.629,
+            "maxMs": 15.9364
+          },
+          "only": {
+            "ms": 2.8513,
+            "minMs": 2.7446,
+            "maxMs": 2.8518
+          },
+          "shareMs": 2.0498
+        },
+        {
+          "kind": "winoGemm",
+          "at": "2026-11-26T21:36:33.386Z",
+          "dispatches": 78,
+          "flops": 74915020800,
+          "bytes": 1013674752,
+          "full": {
+            "ms": 19.0917,
+            "minMs": 19.0821,
+            "maxMs": 19.1282
+          },
+          "without": {
+            "ms": 10.6004,
+            "minMs": 10.5694,
+            "maxMs": 10.6484
+          },
+          "only": {
+            "ms": 49.8847,
+            "minMs": 26.8839,
+            "maxMs": 87.4113
+          },
+          "shareMs": 8.4913
+        },
+        {
+          "kind": "winoOut",
+          "at": "2026-11-26T21:36:38.057Z",
+          "dispatches": 78,
+          "flops": 2727936000,
+          "bytes": 653168640,
+          "full": {
+            "ms": 25.1496,
+            "minMs": 20.6503,
+            "maxMs": 27.0615
+          },
+          "without": {
+            "ms": 16.8391,
+            "minMs": 16.7965,
+            "maxMs": 17.0524
+          },
+          "only": {
+            "ms": 2.3213,
+            "minMs": 2.3211,
+            "maxMs": 2.3218
+          },
+          "shareMs": 8.3105
+        },
+        {
+          "kind": "bnAct",
+          "at": "2026-11-26T21:36:41.367Z",
+          "dispatches": 45,
+          "flops": 129567232,
+          "bytes": 259134464,
+          "full": {
+            "ms": 25.2255,
+            "minMs": 19.5619,
+            "maxMs": 25.4501
+          },
+          "without": {
+            "ms": 18.2977,
+            "minMs": 17.0025,
+            "maxMs": 18.8264
+          },
+          "only": {
+            "ms": 1.3458,
+            "minMs": 1.3373,
+            "maxMs": 1.3529
+          },
+          "shareMs": 6.9278
+        },
+        {
+          "kind": "conv1x1",
+          "at": "2026-11-26T21:36:44.544Z",
+          "dispatches": 41,
+          "flops": 31301853696,
+          "bytes": 340958688,
+          "full": {
+            "ms": 17.8531,
+            "minMs": 17.793,
+            "maxMs": 17.8766
+          },
+          "without": {
+            "ms": 14.091,
+            "minMs": 14.0899,
+            "maxMs": 14.0939
+          },
+          "only": {
+            "ms": 3.4033,
+            "minMs": 3.403,
+            "maxMs": 3.4039
+          },
+          "shareMs": 3.7622
+        },
+        {
+          "kind": "gpool",
+          "at": "2026-11-26T21:36:47.592Z",
+          "dispatches": 7,
+          "flops": 2402816,
+          "bytes": 4885504,
+          "full": {
+            "ms": 17.7815,
+            "minMs": 17.7671,
+            "maxMs": 17.8706
+          },
+          "without": {
+            "ms": 17.7737,
+            "minMs": 17.7475,
+            "maxMs": 17.8034
+          },
+          "only": {
+            "ms": 0.0453,
+            "minMs": 0.0451,
+            "maxMs": 0.0492
+          },
+          "shareMs": 0.0078
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "at": "2026-11-26T21:36:50.190Z",
+      "full": {
+        "ms": 61.7975,
+        "minMs": 61.7564,
+        "maxMs": 61.9552
+      },
+      "kinds": [
+        {
+          "kind": "matvec",
+          "at": "2026-11-26T21:36:52.644Z",
+          "dispatches": 11,
+          "flops": 20090880,
+          "bytes": 1364608,
+          "full": {
+            "ms": 62.061,
+            "minMs": 61.9592,
+            "maxMs": 62.1019
+          },
+          "without": {
+            "ms": 61.5592,
+            "minMs": 61.46,
+            "maxMs": 61.6161
+          },
+          "only": {
+            "ms": 0.2769,
+            "minMs": 0.276,
+            "maxMs": 0.2806
+          },
+          "shareMs": 0.5018
+        },
+        {
+          "kind": "winoIn",
+          "at": "2026-11-26T21:36:57.659Z",
+          "dispatches": 78,
+          "flops": 20025446400,
+          "bytes": 2339172864,
+          "full": {
+            "ms": 61.7906,
+            "minMs": 61.7071,
+            "maxMs": 61.8484
+          },
+          "without": {
+            "ms": 53.0774,
+            "minMs": 53.0025,
+            "maxMs": 53.2536
+          },
+          "only": {
+            "ms": 8.8807,
+            "minMs": 8.8794,
+            "maxMs": 8.9525
+          },
+          "shareMs": 8.7132
+        },
+        {
+          "kind": "winoGemm",
+          "at": "2026-11-26T21:37:03.409Z",
+          "dispatches": 78,
+          "flops": 299660083200,
+          "bytes": 3492836352,
+          "full": {
+            "ms": 61.9678,
+            "minMs": 61.8313,
+            "maxMs": 62.0439
+          },
+          "without": {
+            "ms": 36.3976,
+            "minMs": 36.3227,
+            "maxMs": 36.4622
+          },
+          "only": {
+            "ms": 26.1165,
+            "minMs": 25.976,
+            "maxMs": 26.1413
+          },
+          "shareMs": 25.5702
+        },
+        {
+          "kind": "winoOut",
+          "at": "2026-11-26T21:37:09.144Z",
+          "dispatches": 78,
+          "flops": 10911744000,
+          "bytes": 2612674560,
+          "full": {
+            "ms": 62.1334,
+            "minMs": 61.9878,
+            "maxMs": 62.1697
+          },
+          "without": {
+            "ms": 51.9393,
+            "minMs": 51.8641,
+            "maxMs": 52.0587
+          },
+          "only": {
+            "ms": 8.2223,
+            "minMs": 8.2195,
+            "maxMs": 8.2251
+          },
+          "shareMs": 10.1941
+        },
+        {
+          "kind": "bnAct",
+          "at": "2026-11-26T21:37:14.796Z",
+          "dispatches": 45,
+          "flops": 518268928,
+          "bytes": 1036537856,
+          "full": {
+            "ms": 62.0142,
+            "minMs": 61.8882,
+            "maxMs": 62.5626
+          },
+          "without": {
+            "ms": 57.1063,
+            "minMs": 56.9881,
+            "maxMs": 57.2713
+          },
+          "only": {
+            "ms": 5.1792,
+            "minMs": 5.1528,
+            "maxMs": 5.1854
+          },
+          "shareMs": 4.9079
+        },
+        {
+          "kind": "conv1x1",
+          "at": "2026-11-26T21:37:20.504Z",
+          "dispatches": 41,
+          "flops": 125207414784,
+          "bytes": 1347576864,
+          "full": {
+            "ms": 62.0725,
+            "minMs": 62.0534,
+            "maxMs": 62.0784
+          },
+          "without": {
+            "ms": 46.9661,
+            "minMs": 46.9397,
+            "maxMs": 47.0415
+          },
+          "only": {
+            "ms": 12.7422,
+            "minMs": 12.7377,
+            "maxMs": 12.823
+          },
+          "shareMs": 15.1065
+        },
+        {
+          "kind": "gpool",
+          "at": "2026-11-26T21:37:26.194Z",
+          "dispatches": 7,
+          "flops": 9611264,
+          "bytes": 19542016,
+          "full": {
+            "ms": 61.9495,
+            "minMs": 61.8356,
+            "maxMs": 61.9905
+          },
+          "without": {
+            "ms": 61.8342,
+            "minMs": 61.8062,
+            "maxMs": 61.8401
+          },
+          "only": {
+            "ms": 0.1164,
+            "minMs": 0.1156,
+            "maxMs": 0.1248
+          },
+          "shareMs": 0.1153
+        }
+      ]
+    }
+  ],
+  "ok": true,
+  "steps": [
+    "21:36:17.414 warming the GPU for 2 s",
+    "21:36:19.431 ceilings",
+    "21:36:22.803 loading the model",
+    "21:36:23.326 building the network {\"winograd\":true,\"fuse\":true,\"precision\":\"f16\",\"gemm\":\"v3\"} for maxBatch 64",
+    "21:36:26.373 network at batch 16",
+    "21:36:27.622 network at batch 16: matvec",
+    "21:36:30.257 network at batch 16: winoIn",
+    "21:36:33.386 network at batch 16: winoGemm",
+    "21:36:38.057 network at batch 16: winoOut",
+    "21:36:41.367 network at batch 16: bnAct",
+    "21:36:44.544 network at batch 16: conv1x1",
+    "21:36:47.592 network at batch 16: gpool",
+    "21:36:50.190 network at batch 64",
+    "21:36:52.644 network at batch 64: matvec",
+    "21:36:57.659 network at batch 64: winoIn",
+    "21:37:03.409 network at batch 64: winoGemm",
+    "21:37:09.144 network at batch 64: winoOut",
+    "21:37:14.796 network at batch 64: bnAct",
+    "21:37:20.504 network at batch 64: conv1x1",
+    "21:37:26.194 network at batch 64: gpool"
+  ]
+}

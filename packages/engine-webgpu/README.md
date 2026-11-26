@@ -105,6 +105,11 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
     are runs of 50 tiles, and issues its residual reads before its writes. On the owner's laptop, at batch 16: input
     −25% against v2, output −24% against v1, batch-16 pass −6.9% in the budget benchmark, review −3.7%
     (`docs/spikes/results/2026-11-b18-transform-ladder.md`).
+  - **Batch norm v3** (`bnAct`, the default): batch norm, activation and mask with 8 values per thread, loaded and
+    stored 4 at a time (v2: 4 per thread; v1: one). It's used for layers whose channels are a multiple of 8, which is
+    all of b18's. On the owner's laptop, each alone: batch 16 at 78.4–85.1% of copy bandwidth (median 83.7%) against
+    v1's 55.1–56.1%, and batch 64 at 93.3–95.1% against 57.2–58.1%. The review's change was too small to measure
+    (`docs/spikes/results/2026-11-b18-bn-act.md`).
   - Mish is computed as x · n/(n + 2) with n = eˣ(eˣ + 2), which equals x · tanh(log(1 + eˣ)) exactly but needs only
     `exp`: `log(1 + eˣ)` lost most of its precision for negative x in f32, and WGSL has no `log1p`.
   - `src/gpu/webgpu.ts` declares the part of the WebGPU API the engine uses, because TypeScript's DOM library doesn't

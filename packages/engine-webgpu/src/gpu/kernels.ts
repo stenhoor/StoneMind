@@ -196,6 +196,55 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(num_workgroups) nwg: vec3
 `;
 
 /**
+ * {@link BN_ACT}, `per` (4 or 8) consecutive values per thread: vector loads and stores of 4, with the channel and point
+ * found by one division per thread and stepped from there. Needs C a multiple of `per`, so that C × area is (the
+ * boards' area is odd); the same bindings and parameters as BN_ACT, and the same results.
+ */
+export const BN_ACT_V2 = (inT: Elem, outT: Elem, per: 4 | 8 = 4) => /* wgsl */ `${enableFor(inT, outT)}
+${DYN}
+${ACTIVATE}
+struct Params { C: u32, area: u32, flags: u32, act: u32, maskStride: u32, _pad0: u32, _pad1: u32, _pad2: u32 }
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> inp: array<vec4<${inT}>>;
+@group(0) @binding(3) var<storage, read> sb: array<f32>;
+@group(0) @binding(4) var<storage, read_write> outp: array<vec4<${outT}>>;
+@group(0) @binding(5) var<storage, read> pre: array<f32>;
+@group(0) @binding(6) var<storage, read> mask: array<f32>;
+
+@compute @workgroup_size(256)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(num_workgroups) nwg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let t = (wg.y * nwg.x + wg.x) * 256u + li;
+  if (t * ${per}u >= dyn.n * P.C * P.area) { return; }
+  let e0 = t * ${per}u;
+  // row = b · C + c: one (board, channel) plane of area values.
+  var row = e0 / P.area;
+  var pos = e0 - row * P.area;
+  var c = row % P.C;
+  var b = row / P.C;
+  for (var h = 0u; h < ${per / 4}u; h++) {
+    let q = t * ${per / 4}u + h;
+    let v = vec4<f32>(inp[q]);
+    var o = vec4<f32>(0.0);
+    for (var j = 0u; j < 4u; j++) {
+      if (pos == P.area) {
+        pos = 0u;
+        row += 1u;
+        c += 1u;
+        if (c == P.C) { c = 0u; b += 1u; }
+      }
+      var x = v[j];
+      if ((P.flags & 1u) != 0u) { x += pre[row]; }
+      let y = activate(x * sb[c] + sb[P.C + c], P.act);
+      o[j] = select(0.0, y, mask[b * P.maskStride + pos] == 1.0);
+      pos += 1u;
+    }
+    outp[q] = vec4<${outT}>(o);
+  }
+}
+`;
+
+/**
  * Global pooling, one workgroup per (channel, batch). Writes out[b][3C]: [means, means · (√n − 14)/10, third], where
  * n counts the on-board points and the third is the max over them (mode 0) or the mean · ((√n − 14)²/100 − 0.1) the
  * value head uses (mode 1). Inputs are already masked to 0 off the board.

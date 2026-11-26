@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_MMA, gemmMmaTile, MATRIX_GEMM_BY_BATCH, matrixGemmFits, type GemmMmaConfig, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_IN_V3, WINO_OUT, WINO_OUT_V2, WINO_OUT_V3, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, BN_ACT_V2, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_MMA, gemmMmaTile, MATRIX_GEMM_BY_BATCH, matrixGemmFits, type GemmMmaConfig, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_IN_V3, WINO_OUT, WINO_OUT_V2, WINO_OUT_V3, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePassEncoder, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -87,6 +87,13 @@ export interface GpuNetworkOptions {
    * with it; of v1 and v2, neither had been consistently faster.
    */
   winoOut?: 'v1' | 'v2' | 'v3';
+  /**
+   * The batch norm + activation kernel (default 'v3'): v1 handles one value per thread (`BN_ACT`), v2 4 and v3 8
+   * (`BN_ACT_V2`), where the layer's channels are a multiple of that; other layers use v1. On the owner's laptop at
+   * batch 16, each alone: v1 at 55.1–56.1% of copy bandwidth, v2 78.9–84.1%, v3 78.4–85.1% (median 83.7%)
+   * (`docs/spikes/results/2026-11-b18-bn-act.md`).
+   */
+  bnAct?: 'v1' | 'v2' | 'v3';
   /**
    * How many {@link GpuNetwork.evaluate} calls may be in flight at once (default 2). While one call's outputs are read
    * back, the next call's inputs are written and its work submitted, so the GPU doesn't wait for the page between calls.
@@ -317,6 +324,7 @@ export class GpuNetwork {
   /** Tensors with room after them for the matrix GEMM's reads past N (\`GemmMmaConfig.overreadN\`). */
   readonly #padded = new Set<GPUBuffer>();
   #winoIn: 'v1' | 'v2' | 'v3' = 'v3';
+  #bnActVersion: 'v1' | 'v2' | 'v3' = 'v3';
   #winoOut: 'v1' | 'v2' | 'v3' = 'v3';
   /** The Winograd input and output transforms the plan uses. */
   get winoTransforms(): { in: 'v1' | 'v2' | 'v3'; out: 'v1' | 'v2' | 'v3' } {
@@ -355,6 +363,7 @@ export class GpuNetwork {
     net.#gemmConfig = options.gemmConfig ?? defaultGemmConfig(engine.adapterInfo.vendor, net.#elem);
     net.#gemmV3Config = options.gemmV3Config ?? GEMM_V3_DEFAULT;
     net.#winoIn = options.winoIn ?? options.winoTransforms ?? 'v3';
+    net.#bnActVersion = options.bnAct ?? 'v3';
     net.#winoOut = options.winoOut ?? options.winoTransforms ?? 'v3';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
@@ -809,11 +818,13 @@ export class GpuNetwork {
     const area = this.#area;
     const params = this.#uniform([C, area, pre ? 1 : 0, ACT[activation], this.#desc.numInputChannels * area, 0, 0, 0]);
     const sb = mergedScaleBias(bn);
+    const per = this.#bnActVersion === 'v3' ? 8 : this.#bnActVersion === 'v2' ? 4 : 1;
+    const v2 = per > 1 && C % per === 0;
     this.#specs.push({
       kind: 'bnAct',
-      code: BN_ACT(this.#elemOf(input), this.#elemOf(output)),
+      code: v2 ? BN_ACT_V2(this.#elemOf(input), this.#elemOf(output), per as 4 | 8) : BN_ACT(this.#elemOf(input), this.#elemOf(output)),
       buffers: [params, this.#dyn, input, this.#upload(sb), output, pre ?? this.#dummy, this.#input],
-      workgroups: (n) => splitGroups(Math.ceil((n * C * area) / 256)),
+      workgroups: (n) => splitGroups(Math.ceil((n * C * area) / (256 * (v2 ? per : 1)))),
       work: (n) => ({ flops: 2 * n * C * area, bytes: n * C * area * (this.#eb(input) + this.#eb(output)) }),
     });
   }
