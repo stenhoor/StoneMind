@@ -3,8 +3,10 @@
  * location numbering and move semantics, and the same ladder search, so the input features match KataGo's.
  *
  * Chains are kept incrementally, as in KataGo: a circular list of stones per chain, with the stone and liberty counts
- * held by the chain's head, updated by each placement, capture and merge. A recorded move is undone by restoring copies
- * of these arrays, which is what the ladder search does at every node.
+ * held by the chain's head, updated by each placement, capture and merge, in KataGo's order. A recorded move is undone
+ * as KataGo undoes it (`Board::undo`): the captured chains are filled back in and the stone taken off, which the ladder
+ * search does at every node. As in KataGo, an undo leaves the same stones, chains and counts, but not always the same
+ * heads or order of stones within a chain.
  */
 
 export const EMPTY = 0;
@@ -19,16 +21,15 @@ export const PASS_LOC = 1;
 
 export const opp = (p: Stone): Stone => (p === BLACK ? WHITE : BLACK);
 
-/** A recorded move: copies of the board's state, enough to undo it. Can be passed back to be reused. */
+/**
+ * A recorded move, KataGo's `Board::MoveRecord`: the move, the ko location before it, and which directions it captured
+ * in (bits 0–3, by `adj` index) or 0x10 for a suicide. Can be passed back to be reused.
+ */
 export interface MoveRecord {
-  colors: Uint8Array;
-  head: Int32Array;
-  next: Int32Array;
-  size: Int32Array;
-  libs: Int32Array;
+  pla: Stone;
+  loc: number;
   koLoc: number;
-  numBlackCaptures: number;
-  numWhiteCaptures: number;
+  capDirs: number;
 }
 
 const LADDER_NODE_BUDGET = 25000; // KataGo MAX_LADDER_SEARCH_NODE_BUDGET
@@ -47,7 +48,7 @@ export class Board {
   /** White stones captured (by Black). */
   numWhiteCaptures = 0;
 
-  /** The head of each stone's chain; -1 off stones. */
+  /** The head of each stone's chain; only meaningful on stones. */
   #head: Int32Array;
   /** The next stone in the chain (a circular list). */
   #next: Int32Array;
@@ -55,9 +56,6 @@ export class Board {
   #size: Int32Array;
   /** Liberties of the chain, by head. */
   #libs: Int32Array;
-  /** Scratch marks for counting each liberty once. */
-  #mark: Int32Array;
-  #stamp = 0;
   /** Reused records for the ladder search, which plays and undoes many moves (by stack depth, and for the first move). */
   #ladderRecords: MoveRecord[] = [];
   #ladderRecordFirst: MoveRecord | undefined;
@@ -70,7 +68,6 @@ export class Board {
     this.stride = xSize + 1;
     this.arraySize = (ySize + 2) * this.stride + 1;
     this.adj = [-this.stride, -1, 1, this.stride];
-    this.#mark = new Int32Array(this.arraySize);
     if (from) {
       // A copy: the arrays as they are, without building an empty board first.
       this.colors = from.colors.slice();
@@ -113,102 +110,118 @@ export class Board {
 
   // ---------------------------------------------------------------- chains
 
-  #newStamp(): number {
-    if (++this.#stamp > 0x3fffffff) {
-      this.#mark.fill(0);
-      this.#stamp = 1;
-    }
-    return this.#stamp;
-  }
-
-  /** Count the chain's liberties by walking it, each empty point once. */
-  #countLiberties(head: number): number {
-    const stamp = this.#newStamp();
-    let libs = 0;
-    let s = head;
-    do {
-      for (const d of this.adj) {
-        const a = s + d;
-        if (this.colors[a] === EMPTY && this.#mark[a] !== stamp) {
-          this.#mark[a] = stamp;
-          libs++;
-        }
-      }
-      s = this.#next[s]!;
-    } while (s !== head);
-    return libs;
-  }
-
-  /** Put a stone on an empty point, merging chains and updating liberties; no captures. */
-  #placeStone(loc: number, pla: Stone): void {
-    this.colors[loc] = pla;
-    this.#head[loc] = loc;
-    this.#next[loc] = loc;
-    this.#size[loc] = 1;
-    // The point was a liberty of each neighbouring chain (once per chain).
-    const seen: number[] = [];
+  /** KataGo `isLibertyOf`: is the empty point loc next to a stone of the chain with this head? */
+  #isLibertyOf(loc: number, head: number): boolean {
+    const c = this.colors[head];
     for (const d of this.adj) {
-      const c = this.colors[loc + d];
-      if (c !== BLACK && c !== WHITE) continue;
-      const h = this.#head[loc + d]!;
-      if (seen.includes(h)) continue;
-      seen.push(h);
-      this.#libs[h]!--;
+      const a = loc + d;
+      if (this.colors[a] === c && this.#head[a] === head) return true;
     }
-    let head = loc;
-    let merged = false;
-    for (const h0 of seen) {
-      if (this.colors[h0] !== pla) continue;
-      const h = this.#head[h0]!;
-      if (h === head) continue;
-      head = this.#merge(head, h);
-      merged = true;
-    }
-    this.#libs[head] = merged ? this.#countLiberties(head) : this.getNumImmediateLiberties(loc);
+    return false;
   }
 
-  /** Merge two chains: the smaller is relabelled to the larger's head. Returns the new head. */
-  #merge(a: number, b: number): number {
-    let [big, small] = this.#size[a]! >= this.#size[b]! ? [a, b] : [b, a];
-    let s = small;
-    do {
-      this.#head[s] = big;
-      s = this.#next[s]!;
-    } while (s !== small);
-    const t = this.#next[big]!;
-    this.#next[big] = this.#next[small]!;
-    this.#next[small] = t;
-    this.#size[big]! += this.#size[small]!;
-    return big;
+  /** KataGo `changeSurroundingLiberties`: add delta to the liberties of each distinct chain of pla next to loc. */
+  #changeSurroundingLiberties(loc: number, pla: Stone, delta: number): void {
+    const [d0, d1, d2, d3] = this.adj;
+    const a0 = loc + d0, a1 = loc + d1, a2 = loc + d2, a3 = loc + d3;
+    const c = this.colors, h = this.#head;
+    if (c[a0] === pla) this.#libs[h[a0]!]! += delta;
+    if (c[a1] === pla && !(c[a0] === pla && h[a0] === h[a1])) this.#libs[h[a1]!]! += delta;
+    if (c[a2] === pla && !(c[a0] === pla && h[a0] === h[a2]) && !(c[a1] === pla && h[a1] === h[a2])) this.#libs[h[a2]!]! += delta;
+    if (
+      c[a3] === pla && !(c[a0] === pla && h[a0] === h[a3]) && !(c[a1] === pla && h[a1] === h[a3]) && !(c[a2] === pla && h[a2] === h[a3])
+    )
+      this.#libs[h[a3]!]! += delta;
   }
 
-  /** Remove a chain; each emptied point becomes a liberty of each neighbouring chain. Returns the stones removed. */
-  #removeChain(loc: number): number {
-    const head = this.#head[loc]!;
-    const n = this.#size[head]!;
-    const stones: number[] = [];
-    let s = head;
-    do {
-      stones.push(s);
-      s = this.#next[s]!;
-    } while (s !== head);
-    for (const st of stones) {
-      this.colors[st] = EMPTY;
-      this.#head[st] = -1;
-      this.#next[st] = -1;
-    }
-    for (const st of stones) {
-      const seen: number[] = [];
+  /** KataGo `mergeChains`: the smaller chain joins the larger (loc1's on a tie), counting its new liberties. */
+  #mergeChains(loc1: number, loc2: number): void {
+    let head1 = this.#head[loc1]!;
+    let head2 = this.#head[loc2]!;
+    if (this.#size[head1]! < this.#size[head2]!) [head1, head2] = [head2, head1];
+    this.#size[head1]! += this.#size[head2]!;
+    let newLibs = 0;
+    let loc = head2;
+    for (;;) {
       for (const d of this.adj) {
-        const c = this.colors[st + d];
-        if (c !== BLACK && c !== WHITE) continue;
-        const h = this.#head[st + d]!;
-        if (seen.includes(h)) continue;
-        seen.push(h);
-        this.#libs[h]!++;
+        const a = loc + d;
+        if (this.colors[a] === EMPTY && !this.#isLibertyOf(a, head1)) newLibs++;
       }
+      this.#head[loc] = head1;
+      if (this.#next[loc] !== head2) loc = this.#next[loc]!;
+      else break;
     }
+    this.#libs[head1]! += newLibs;
+    // head1 → head2 → … → last2 → next1 → … → last1 → head1
+    this.#next[loc] = this.#next[head1]!;
+    this.#next[head1] = head2;
+  }
+
+  /** KataGo `removeChain`: empty the chain's points, each giving a liberty back to the chains around it. */
+  #removeChain(loc: number): number {
+    const o = opp(this.colors[loc] as Stone);
+    let n = 0;
+    let cur = loc;
+    do {
+      this.colors[cur] = EMPTY;
+      n++;
+      this.#changeSurroundingLiberties(cur, o, +1);
+      cur = this.#next[cur]!;
+    } while (cur !== loc);
     return n;
+  }
+
+  /** KataGo `addChain`: fill the empty region at loc with a chain of pla whose head is loc. */
+  #addChain(loc: number, pla: Stone): void {
+    this.#libs[loc] = 0;
+    this.#size[loc] = 0;
+    const front = this.#addChainHelper(loc, loc, loc, pla);
+    this.#next[loc] = front;
+  }
+
+  #addChainHelper(head: number, tailTarget: number, loc: number, pla: Stone): number {
+    this.colors[loc] = pla;
+    this.#head[loc] = head;
+    this.#size[head]!++;
+    this.#next[loc] = tailTarget;
+    this.#changeSurroundingLiberties(loc, opp(pla), -1);
+    let nextTailTarget = loc;
+    for (const d of this.adj) {
+      const a = loc + d;
+      if (this.colors[a] === EMPTY) nextTailTarget = this.#addChainHelper(head, nextTailTarget, a, pla);
+    }
+    return nextTailTarget;
+  }
+
+  /** KataGo `rebuildChain`: relink and recount the chain of pla at loc, whose heads point nowhere; loc becomes its head. */
+  #rebuildChain(loc: number, pla: Stone): void {
+    this.#libs[loc] = 0;
+    this.#size[loc] = 0;
+    const front = this.#rebuildChainHelper(loc, loc, loc, pla);
+    this.#next[loc] = front;
+  }
+
+  #rebuildChainHelper(head: number, tailTarget: number, loc: number, pla: Stone): number {
+    let add = 0;
+    for (const d of this.adj) {
+      const a = loc + d;
+      if (this.colors[a] === EMPTY && !this.#isLibertyOf(a, head)) add++;
+    }
+    this.#libs[head]! += add;
+    this.#head[loc] = head;
+    this.#size[head]!++;
+    this.#next[loc] = tailTarget;
+    let nextTailTarget = loc;
+    for (const d of this.adj) {
+      const a = loc + d;
+      if (this.colors[a] === pla && this.#head[a] !== head) nextTailTarget = this.#rebuildChainHelper(head, nextTailTarget, a, pla);
+    }
+    return nextTailTarget;
+  }
+
+  /** The next stone in loc's chain (a circular list): KataGo's `next_in_chain`. */
+  nextInChain(loc: number): number {
+    return this.#next[loc]!;
   }
 
   chainHead(loc: number): number {
@@ -320,89 +333,154 @@ export class Board {
       return;
     }
     const o = opp(pla);
-    this.#placeStone(loc, pla);
+    this.colors[loc] = pla;
+    this.#size[loc] = 1;
+    this.#libs[loc] = this.getNumImmediateLiberties(loc);
+    this.#head[loc] = loc;
+    this.#next[loc] = loc;
     let numCaptured = 0;
     let possibleKoLoc = NULL_LOC;
+    const oppHeadsSeen: number[] = [];
     for (const d of this.adj) {
       const a = loc + d;
-      // A captured chain's stones are already empty when a later neighbour of the same chain is reached.
-      if (this.colors[a] !== o || this.getNumLiberties(a) !== 0) continue;
-      numCaptured += this.#removeChain(a);
-      possibleKoLoc = a;
+      const c = this.colors[a];
+      if (c === pla) {
+        if (this.#head[a] === this.#head[loc]) continue;
+        this.#libs[this.#head[a]!]!--;
+        this.#mergeChains(a, loc);
+      } else if (c === o) {
+        const oppHead = this.#head[a]!;
+        if (oppHeadsSeen.includes(oppHead)) continue;
+        this.#libs[oppHead]!--;
+        oppHeadsSeen.push(oppHead);
+        if (this.getNumLiberties(a) === 0) {
+          numCaptured += this.#removeChain(a);
+          possibleKoLoc = a;
+        }
+      }
     }
     if (numCaptured === 1 && this.getChainSize(loc) === 1 && this.getNumLiberties(loc) === 1) this.koLoc = possibleKoLoc;
     else this.koLoc = NULL_LOC;
     if (pla === BLACK) this.numWhiteCaptures += numCaptured;
     else this.numBlackCaptures += numCaptured;
     if (this.getNumLiberties(loc) === 0) {
-      const suicided = this.#removeChain(loc);
+      const suicided = this.getChainSize(loc);
+      this.#removeChain(loc);
       if (pla === BLACK) this.numBlackCaptures += suicided;
       else this.numWhiteCaptures += suicided;
     }
   }
 
-  /** Play a move, recording what's needed to undo it; `reuse` is a record to overwrite instead of allocating one. */
+  /** KataGo `playMoveRecorded`: play a move, recording what's needed to undo it; `reuse` is a record to overwrite. */
   playMoveRecorded(loc: number, pla: Stone, reuse?: MoveRecord): MoveRecord {
-    const record: MoveRecord = reuse ?? {
-      colors: new Uint8Array(this.arraySize),
-      head: new Int32Array(this.arraySize),
-      next: new Int32Array(this.arraySize),
-      size: new Int32Array(this.arraySize),
-      libs: new Int32Array(this.arraySize),
-      koLoc: 0,
-      numBlackCaptures: 0,
-      numWhiteCaptures: 0,
-    };
-    record.colors.set(this.colors);
-    record.head.set(this.#head);
-    record.next.set(this.#next);
-    record.size.set(this.#size);
-    record.libs.set(this.#libs);
+    const record: MoveRecord = reuse ?? { pla, loc, koLoc: 0, capDirs: 0 };
+    record.pla = pla;
+    record.loc = loc;
     record.koLoc = this.koLoc;
-    record.numBlackCaptures = this.numBlackCaptures;
-    record.numWhiteCaptures = this.numWhiteCaptures;
+    record.capDirs = 0;
+    if (loc !== PASS_LOC) {
+      const o = opp(pla);
+      for (let i = 0; i < 4; i++) {
+        const a = loc + this.adj[i]!;
+        if (this.colors[a] === o && this.getNumLiberties(a) === 1) record.capDirs |= 1 << i;
+      }
+      if (record.capDirs === 0 && this.isSuicide(loc, pla)) record.capDirs = 0x10;
+    }
     this.playMoveAssumeLegal(loc, pla);
     return record;
   }
 
+  /** KataGo `undo`: undo a recorded move. Moves must be undone in the reverse order they were played. */
   undo(record: MoveRecord): void {
-    this.colors.set(record.colors);
-    this.#head.set(record.head);
-    this.#next.set(record.next);
-    this.#size.set(record.size);
-    this.#libs.set(record.libs);
     this.koLoc = record.koLoc;
-    this.numBlackCaptures = record.numBlackCaptures;
-    this.numWhiteCaptures = record.numWhiteCaptures;
-  }
-
-  /** A stone placed during setup (KataGo `setStoneFailIfNoLibs`): no captures; fails if it would leave a chain with no liberties. */
-  setStone(loc: number, color: Stone): boolean {
-    if (this.colors[loc] !== EMPTY) return false;
-    const record = this.playMoveRecordedNoCapture(loc, color);
-    for (const l of [loc, ...this.adj.map((d) => loc + d)]) {
-      const c = this.colors[l];
-      if ((c === BLACK || c === WHITE) && this.getNumLiberties(l) === 0) {
-        this.undo(record);
-        return false;
+    const loc = record.loc;
+    if (loc === PASS_LOC) return;
+    const o = opp(record.pla);
+    // Fill the captured chains back in.
+    for (let i = 0; i < 4; i++) {
+      const a = loc + this.adj[i]!;
+      if ((record.capDirs & (1 << i)) !== 0 && this.colors[a] === EMPTY) {
+        this.#addChain(a, o);
+        const n = this.#size[this.#head[a]!]!;
+        if (record.pla === BLACK) this.numWhiteCaptures -= n;
+        else this.numBlackCaptures -= n;
       }
     }
+    // Fill a suicided chain back in.
+    if (record.capDirs === 0x10) {
+      this.#addChain(loc, record.pla);
+      const n = this.#size[this.#head[loc]!]!;
+      if (record.pla === BLACK) this.numBlackCaptures -= n;
+      else this.numWhiteCaptures -= n;
+    }
+    // Take the stone off.
+    this.colors[loc] = EMPTY;
+    this.#changeSurroundingLiberties(loc, o, +1);
+    if (this.#size[this.#head[loc]!]! > 1) {
+      let numNeighbors = 0;
+      for (const d of this.adj) if (this.colors[loc + d] === record.pla) numNeighbors++;
+      if (numNeighbors <= 1) {
+        // One neighbour: taking the stone off can't split the chain.
+        let head = this.#head[loc]!;
+        if (head === loc) {
+          const newHead = this.#next[loc]!;
+          let cur = loc;
+          do {
+            this.#head[cur] = newHead;
+            cur = this.#next[cur]!;
+          } while (cur !== loc);
+          this.#size[newHead] = this.#size[head]!;
+          this.#libs[newHead] = this.#libs[head]!;
+          head = newHead;
+        }
+        let cur = head;
+        while (this.#next[cur] !== loc) cur = this.#next[cur]!;
+        this.#next[cur] = this.#next[loc]!;
+        let delta = 0;
+        for (const d of this.adj) {
+          const a = loc + d;
+          if (this.colors[a] === EMPTY && !this.#isLibertyOf(a, head)) delta--;
+        }
+        delta++;
+        this.#libs[head]! += delta;
+        this.#size[head]!--;
+      } else {
+        // More than one: the chain may have split, so rebuild the chains around the point.
+        let cur = loc;
+        do {
+          this.#head[cur] = NULL_LOC;
+          cur = this.#next[cur]!;
+        } while (cur !== loc);
+        for (const d of this.adj) {
+          const a = loc + d;
+          if (this.colors[a] === record.pla && this.#head[a] === NULL_LOC) this.#rebuildChain(a, record.pla);
+        }
+      }
+    }
+  }
+
+  /**
+   * A stone placed during setup (KataGo `setStoneFailIfNoLibs` on an empty point): fails, changing nothing, if the stone
+   * would capture or have no liberties. The ko location is kept.
+   */
+  setStone(loc: number, color: Stone): boolean {
+    if (this.colors[loc] !== EMPTY) return false;
+    if (this.isSuicide(loc, color) || this.#wouldBeCapture(loc, color)) return false;
+    const ko = this.koLoc;
+    this.playMoveAssumeLegal(loc, color);
+    this.koLoc = ko;
     return true;
   }
 
-  private playMoveRecordedNoCapture(loc: number, color: Stone): MoveRecord {
-    const record: MoveRecord = {
-      colors: this.colors.slice(),
-      head: this.#head.slice(),
-      next: this.#next.slice(),
-      size: this.#size.slice(),
-      libs: this.#libs.slice(),
-      koLoc: this.koLoc,
-      numBlackCaptures: this.numBlackCaptures,
-      numWhiteCaptures: this.numWhiteCaptures,
-    };
-    this.#placeStone(loc, color);
-    return record;
+  /** KataGo `wouldBeCapture`. */
+  #wouldBeCapture(loc: number, pla: Stone): boolean {
+    if (this.colors[loc] !== EMPTY) return false;
+    const o = opp(pla);
+    for (const d of this.adj) {
+      const a = loc + d;
+      if (this.colors[a] === o && this.getNumLiberties(a) === 1) return true;
+    }
+    return false;
   }
 
   // --------------------------------------------------------- ladder support
@@ -424,8 +502,7 @@ export class Board {
   /** The chain's liberties, appended to buf from bufIdx, skipping ones already in buf[bufStart..]. */
   findLiberties(loc: number, buf: number[], bufStart: number, bufIdx: number): number {
     let found = 0;
-    const head = this.#head[loc]!;
-    let s = head;
+    let s = loc;
     do {
       for (const d of this.adj) {
         const lib = s + d;
@@ -435,7 +512,7 @@ export class Board {
         if (!dup) buf[bufIdx + found++] = lib;
       }
       s = this.#next[s]!;
-    } while (s !== head);
+    } while (s !== loc);
     return found;
   }
 
@@ -443,7 +520,7 @@ export class Board {
     const o = opp(this.colors[loc] as Stone);
     const checked: number[] = [];
     let found = 0;
-    const chain = this.#head[loc]!;
+    const chain = loc;
     let s = chain;
     do {
       for (const d of this.adj) {
@@ -462,7 +539,7 @@ export class Board {
 
   hasLibertyGainingCaptures(loc: number): boolean {
     const o = opp(this.colors[loc] as Stone);
-    const chain = this.#head[loc]!;
+    const chain = loc;
     let s = chain;
     do {
       for (const d of this.adj) {
