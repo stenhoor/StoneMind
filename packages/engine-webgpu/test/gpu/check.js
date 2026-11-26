@@ -131,6 +131,12 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     // boards per workgroup).
     { winograd: true, fuse: true, gemm: 'v3', winoTransforms: 'v3' },
     { winograd: true, fuse: false, gemm: 'v3', winoTransforms: 'v3' },
+    // Batch norm: v1 one value per thread, v2 four, v3 eight (the default). Unfused, every batch norm runs on its own.
+    { winograd: true, fuse: true, gemm: 'v3', bnAct: 'v1' },
+    { winograd: true, fuse: false, gemm: 'v3', bnAct: 'v1' },
+    { winograd: true, fuse: true, gemm: 'v3', bnAct: 'v2' },
+    { winograd: true, fuse: false, gemm: 'v3', bnAct: 'v2' },
+    { winograd: true, fuse: false, gemm: 'v3', bnAct: 'v3' },
     // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
     { winograd: true, fuse: true, scale8: true, gemm: 'v2' },
   ];
@@ -148,6 +154,11 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
       { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', winoTransforms: 'v1' },
       { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', winoTransforms: 'v3' },
       { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', winoTransforms: 'v3' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', bnAct: 'v1' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', bnAct: 'v1' },
+      { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', bnAct: 'v2' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', bnAct: 'v2' },
+      { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', bnAct: 'v3' },
     );
   }
   // Matrix hardware, where the device offers it (today only behind a browser switch): the Winograd GEMMs and 1×1
@@ -157,6 +168,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     variants.push(
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', matrix: 'auto' },
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v3', matrix: 'auto' },
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', matrix: 'auto', bnAct: 'v2' },
       { winograd: true, fuse: true, precision: 'f16', matrix: 'off', gemm: 'v3', winoGemm: 'mma' },
       { winograd: true, fuse: false, precision: 'f16', matrix: 'off', gemm: 'v3', winoGemm: 'mma' },
     );
