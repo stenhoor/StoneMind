@@ -16,7 +16,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
 - **Rules engine** (`src/rules/`): a port of the parts of KataGo's `Board` and `BoardHistory` that the network's inputs
   depend on: captures, suicide, simple ko, positional and situational superko, the ladder search, pass-alive area, the
   named rule sets, territory scoring's per-stone adjustment and the white handicap bonus, and passes: consecutive
-  ending passes, simple ko's spight-like ending, and the end and score of an area-scored game. The territory-scoring
+  ending passes, simple ko's spight-like ending, and the end and score of an area-scored game. Moves are played, recorded and
+  undone with KataGo's own chain bookkeeping (`Board::playMoveRecorded` and `Board::undo`), and pass-alive area uses
+  KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). The territory-scoring
   encore (a pass that would end the main phase under territory scoring), ending a game with a group tax, no-result long
   cycles and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
 - **V7 input encoder** (`src/features/v7.ts`): `encodePositionV7` builds KataGo's 22 spatial planes and 19 globals from

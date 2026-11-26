@@ -1,0 +1,6 @@
+{"turns":100,"visits":100,"batch":16,"evals":10000,"calls":700,"cpuMsRuns":[1586.5,1588,1595.9,1614.4,1744.8],"cpuMsMedian":1595.9,"msPerCall":2.28,"msPerEval":0.1596,"build":"base","round":1}
+{"turns":100,"visits":100,"batch":16,"evals":10000,"calls":700,"cpuMsRuns":[1375.6,1393.1,1412.1,1480.2,1538.8],"cpuMsMedian":1412.1,"msPerCall":2.017,"msPerEval":0.1412,"build":"undo","round":1}
+{"turns":100,"visits":100,"batch":16,"evals":10000,"calls":700,"cpuMsRuns":[1261.4,1271.6,1282.5,1296.5,1406.3],"cpuMsMedian":1282.5,"msPerCall":1.832,"msPerEval":0.1283,"build":"area","round":1}
+{"turns":100,"visits":100,"batch":16,"evals":10000,"calls":700,"cpuMsRuns":[1591.2,1594.2,1595.8,1610.7,1756],"cpuMsMedian":1595.8,"msPerCall":2.28,"msPerEval":0.1596,"build":"base","round":2}
+{"turns":100,"visits":100,"batch":16,"evals":10000,"calls":700,"cpuMsRuns":[1404.1,1410.4,1435.5,1457.3,1610.9],"cpuMsMedian":1435.5,"msPerCall":2.051,"msPerEval":0.1436,"build":"undo","round":2}
+{"turns":100,"visits":100,"batch":16,"evals":10000,"calls":700,"cpuMsRuns":[1266.5,1271.2,1279,1281.1,1407.3],"cpuMsMedian":1279,"msPerCall":1.827,"msPerEval":0.1279,"build":"area","round":2}
