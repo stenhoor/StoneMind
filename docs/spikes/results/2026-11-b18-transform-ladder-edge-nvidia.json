@@ -1,0 +1,1349 @@
+{
+  "kind": "transforms",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query"
+  ],
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T17:54:37.098Z",
+  "batches": [
+    16,
+    64
+  ],
+  "repeat": 30,
+  "runs": 7,
+  "channels": 192,
+  "elem": "f16",
+  "act": 4,
+  "timing": "gpu timestamps, passes submitted back to back after a warm-up (timing.js)",
+  "ladder": true,
+  "repeats": 3,
+  "rounds": 7,
+  "warmUpMs": 2000,
+  "rows": [
+    {
+      "batch": 16,
+      "transform": "in",
+      "minBytes": 7747584,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.0565,
+          "gbPerSecond": 137.2,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0225,
+          "ofStream": 0.398
+        },
+        {
+          "kernel": "v1",
+          "stage": "move",
+          "msPerDispatch": 0.0515,
+          "gbPerSecond": 150.5,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0225,
+          "ofStream": 0.436
+        },
+        {
+          "kernel": "v1",
+          "stage": "reads",
+          "msPerDispatch": 0.0399,
+          "gbPerSecond": 194,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0025,
+          "ofStream": 0.063
+        },
+        {
+          "kernel": "v1",
+          "stage": "writes",
+          "msPerDispatch": 0.0169,
+          "gbPerSecond": 459.7,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0169,
+          "ofStream": 1
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0484,
+          "gbPerSecond": 160.2,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0247,
+          "ofStream": 0.51,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v2",
+          "stage": "move",
+          "msPerDispatch": 0.0449,
+          "gbPerSecond": 172.4,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0225,
+          "ofStream": 0.5
+        },
+        {
+          "kernel": "v2",
+          "stage": "reads",
+          "msPerDispatch": 0.0222,
+          "gbPerSecond": 349.7,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0025,
+          "ofStream": 0.113
+        },
+        {
+          "kernel": "v2",
+          "stage": "reads",
+          "unfused": true,
+          "msPerDispatch": 0.0131,
+          "gbPerSecond": 591.1,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0028,
+          "ofStream": 0.214
+        },
+        {
+          "kernel": "v2",
+          "stage": "writes",
+          "msPerDispatch": 0.0193,
+          "gbPerSecond": 400.4,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0162,
+          "ofStream": 0.839
+        },
+        {
+          "kernel": "v2 unroll",
+          "msPerDispatch": 0.0406,
+          "gbPerSecond": 191,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.562,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v2 unroll",
+          "stage": "move",
+          "msPerDispatch": 0.0403,
+          "gbPerSecond": 192.4,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0225,
+          "ofStream": 0.558
+        },
+        {
+          "kernel": "v2 unroll",
+          "stage": "reads",
+          "msPerDispatch": 0.0181,
+          "gbPerSecond": 428,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0028,
+          "ofStream": 0.155
+        },
+        {
+          "kernel": "v2 unroll",
+          "stage": "writes",
+          "msPerDispatch": 0.019,
+          "gbPerSecond": 407,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0162,
+          "ofStream": 0.852
+        },
+        {
+          "kernel": "v3",
+          "msPerDispatch": 0.0356,
+          "gbPerSecond": 217.8,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0225,
+          "ofStream": 0.632,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3",
+          "stage": "move",
+          "msPerDispatch": 0.0353,
+          "gbPerSecond": 219.7,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.646
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "msPerDispatch": 0.0153,
+          "gbPerSecond": 506.7,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0025,
+          "ofStream": 0.163
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "identity": true,
+          "msPerDispatch": 0.0134,
+          "gbPerSecond": 577.3,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0028,
+          "ofStream": 0.209
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "unfused": true,
+          "msPerDispatch": 0.0084,
+          "gbPerSecond": 919.5,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0025,
+          "ofStream": 0.296
+        },
+        {
+          "kernel": "v3",
+          "stage": "writes",
+          "msPerDispatch": 0.019,
+          "gbPerSecond": 407,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0162,
+          "ofStream": 0.852
+        },
+        {
+          "kernel": "v3 4x2",
+          "msPerDispatch": 0.0359,
+          "gbPerSecond": 215.9,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.635,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 4x2",
+          "stage": "move",
+          "msPerDispatch": 0.0359,
+          "gbPerSecond": 215.9,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.635
+        },
+        {
+          "kernel": "v3 4x2",
+          "stage": "reads",
+          "msPerDispatch": 0.0162,
+          "gbPerSecond": 477.4,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0028,
+          "ofStream": 0.173
+        },
+        {
+          "kernel": "v3 4x2",
+          "stage": "writes",
+          "msPerDispatch": 0.0178,
+          "gbPerSecond": 435.5,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0165,
+          "ofStream": 0.93
+        },
+        {
+          "kernel": "v3 cpw4",
+          "msPerDispatch": 0.0374,
+          "gbPerSecond": 206.9,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.608,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 cpw4",
+          "stage": "move",
+          "msPerDispatch": 0.0359,
+          "gbPerSecond": 215.9,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.635
+        },
+        {
+          "kernel": "v3 cpw4",
+          "stage": "reads",
+          "msPerDispatch": 0.0175,
+          "gbPerSecond": 443.3,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0025,
+          "ofStream": 0.143
+        },
+        {
+          "kernel": "v3 cpw4",
+          "stage": "writes",
+          "msPerDispatch": 0.0209,
+          "gbPerSecond": 370.5,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0181,
+          "ofStream": 0.866
+        },
+        {
+          "kernel": "v3 words",
+          "msPerDispatch": 0.0374,
+          "gbPerSecond": 206.9,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.608,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 words",
+          "stage": "move",
+          "msPerDispatch": 0.0362,
+          "gbPerSecond": 214,
+          "readBytes": 2217984,
+          "writeBytes": 5529600,
+          "streamMs": 0.0228,
+          "ofStream": 0.629
+        },
+        {
+          "kernel": "v3 words",
+          "stage": "reads",
+          "msPerDispatch": 0.0156,
+          "gbPerSecond": 496.5,
+          "readBytes": 2217984,
+          "writeBytes": 153600,
+          "streamMs": 0.0025,
+          "ofStream": 0.16
+        },
+        {
+          "kernel": "v3 words",
+          "stage": "writes",
+          "msPerDispatch": 0.02,
+          "gbPerSecond": 387.9,
+          "readBytes": 0,
+          "writeBytes": 5529600,
+          "streamMs": 0.0165,
+          "ofStream": 0.828
+        }
+      ]
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "minBytes": 9965568,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.0512,
+          "gbPerSecond": 194.7,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0306,
+          "ofStream": 0.598
+        },
+        {
+          "kernel": "v1",
+          "stage": "move",
+          "msPerDispatch": 0.0474,
+          "gbPerSecond": 210.1,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0281,
+          "ofStream": 0.592
+        },
+        {
+          "kernel": "v1",
+          "stage": "reads",
+          "msPerDispatch": 0.0215,
+          "gbPerSecond": 462.8,
+          "readBytes": 5529600,
+          "writeBytes": 153600,
+          "streamMs": 0.0172,
+          "ofStream": 0.797
+        },
+        {
+          "kernel": "v1",
+          "stage": "writes",
+          "msPerDispatch": 0.0237,
+          "gbPerSecond": 420.2,
+          "readBytes": 2217984,
+          "writeBytes": 2217984,
+          "streamMs": 0.0072,
+          "ofStream": 0.303
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.0515,
+          "gbPerSecond": 193.5,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0284,
+          "ofStream": 0.552,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v2",
+          "stage": "move",
+          "msPerDispatch": 0.0521,
+          "gbPerSecond": 191.2,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0284,
+          "ofStream": 0.545
+        },
+        {
+          "kernel": "v2",
+          "stage": "reads",
+          "msPerDispatch": 0.0212,
+          "gbPerSecond": 469.6,
+          "readBytes": 5529600,
+          "writeBytes": 153600,
+          "streamMs": 0.0172,
+          "ofStream": 0.809
+        },
+        {
+          "kernel": "v2",
+          "stage": "writes",
+          "msPerDispatch": 0.0125,
+          "gbPerSecond": 798.3,
+          "readBytes": 2217984,
+          "writeBytes": 2217984,
+          "streamMs": 0.0072,
+          "ofStream": 0.575
+        },
+        {
+          "kernel": "v3",
+          "msPerDispatch": 0.0362,
+          "gbPerSecond": 275.3,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0281,
+          "ofStream": 0.776,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3",
+          "stage": "move",
+          "msPerDispatch": 0.0356,
+          "gbPerSecond": 280.1,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0284,
+          "ofStream": 0.798
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "msPerDispatch": 0.0215,
+          "gbPerSecond": 462.8,
+          "readBytes": 5529600,
+          "writeBytes": 153600,
+          "streamMs": 0.0172,
+          "ofStream": 0.797
+        },
+        {
+          "kernel": "v3",
+          "stage": "writes",
+          "msPerDispatch": 0.0094,
+          "gbPerSecond": 1064.4,
+          "readBytes": 2217984,
+          "writeBytes": 2217984,
+          "streamMs": 0.0069,
+          "ofStream": 0.733
+        },
+        {
+          "kernel": "v3 8x1",
+          "msPerDispatch": 0.0378,
+          "gbPerSecond": 263.9,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0284,
+          "ofStream": 0.752,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 8x1",
+          "stage": "move",
+          "msPerDispatch": 0.0371,
+          "gbPerSecond": 268.3,
+          "readBytes": 7747584,
+          "writeBytes": 2217984,
+          "streamMs": 0.0284,
+          "ofStream": 0.765
+        },
+        {
+          "kernel": "v3 8x1",
+          "stage": "reads",
+          "msPerDispatch": 0.0228,
+          "gbPerSecond": 437.4,
+          "readBytes": 5529600,
+          "writeBytes": 153600,
+          "streamMs": 0.0172,
+          "ofStream": 0.753
+        },
+        {
+          "kernel": "v3 8x1",
+          "stage": "writes",
+          "msPerDispatch": 0.0087,
+          "gbPerSecond": 1140.5,
+          "readBytes": 2217984,
+          "writeBytes": 2217984,
+          "streamMs": 0.0072,
+          "ofStream": 0.821
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "minBytes": 30990336,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.1957,
+          "gbPerSecond": 158.4,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.451
+        },
+        {
+          "kernel": "v1",
+          "stage": "move",
+          "msPerDispatch": 0.1735,
+          "gbPerSecond": 178.6,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.509
+        },
+        {
+          "kernel": "v1",
+          "stage": "reads",
+          "msPerDispatch": 0.1738,
+          "gbPerSecond": 178.3,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0275,
+          "ofStream": 0.158
+        },
+        {
+          "kernel": "v1",
+          "stage": "writes",
+          "msPerDispatch": 0.0637,
+          "gbPerSecond": 486.8,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.0693,
+          "ofStream": 1.088
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.1585,
+          "gbPerSecond": 195.5,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0886,
+          "ofStream": 0.559,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v2",
+          "stage": "move",
+          "msPerDispatch": 0.1598,
+          "gbPerSecond": 194,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0886,
+          "ofStream": 0.555
+        },
+        {
+          "kernel": "v2",
+          "stage": "reads",
+          "msPerDispatch": 0.0939,
+          "gbPerSecond": 329.9,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0275,
+          "ofStream": 0.292
+        },
+        {
+          "kernel": "v2",
+          "stage": "reads",
+          "unfused": true,
+          "msPerDispatch": 0.0618,
+          "gbPerSecond": 501.5,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0272,
+          "ofStream": 0.439
+        },
+        {
+          "kernel": "v2",
+          "stage": "writes",
+          "msPerDispatch": 0.0796,
+          "gbPerSecond": 389.4,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.069,
+          "ofStream": 0.867
+        },
+        {
+          "kernel": "v2 unroll",
+          "msPerDispatch": 0.1426,
+          "gbPerSecond": 217.3,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.619,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v2 unroll",
+          "stage": "move",
+          "msPerDispatch": 0.1398,
+          "gbPerSecond": 221.7,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.632
+        },
+        {
+          "kernel": "v2 unroll",
+          "stage": "reads",
+          "msPerDispatch": 0.0783,
+          "gbPerSecond": 395.6,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0275,
+          "ofStream": 0.351
+        },
+        {
+          "kernel": "v2 unroll",
+          "stage": "writes",
+          "msPerDispatch": 0.0796,
+          "gbPerSecond": 389.4,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.0693,
+          "ofStream": 0.871
+        },
+        {
+          "kernel": "v3",
+          "msPerDispatch": 0.1167,
+          "gbPerSecond": 265.5,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.757,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3",
+          "stage": "move",
+          "msPerDispatch": 0.1127,
+          "gbPerSecond": 275.1,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.784
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "msPerDispatch": 0.0609,
+          "gbPerSecond": 509.3,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0278,
+          "ofStream": 0.456
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "identity": true,
+          "msPerDispatch": 0.0568,
+          "gbPerSecond": 545.6,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0275,
+          "ofStream": 0.484
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "unfused": true,
+          "msPerDispatch": 0.0343,
+          "gbPerSecond": 902.8,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0275,
+          "ofStream": 0.8
+        },
+        {
+          "kernel": "v3",
+          "stage": "writes",
+          "msPerDispatch": 0.0783,
+          "gbPerSecond": 395.6,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.069,
+          "ofStream": 0.88
+        },
+        {
+          "kernel": "v3 4x2",
+          "msPerDispatch": 0.1217,
+          "gbPerSecond": 254.6,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0886,
+          "ofStream": 0.728,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 4x2",
+          "stage": "move",
+          "msPerDispatch": 0.1205,
+          "gbPerSecond": 257.3,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.733
+        },
+        {
+          "kernel": "v3 4x2",
+          "stage": "reads",
+          "msPerDispatch": 0.069,
+          "gbPerSecond": 449.3,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0275,
+          "ofStream": 0.398
+        },
+        {
+          "kernel": "v3 4x2",
+          "stage": "writes",
+          "msPerDispatch": 0.0743,
+          "gbPerSecond": 417.2,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.069,
+          "ofStream": 0.929
+        },
+        {
+          "kernel": "v3 cpw4",
+          "msPerDispatch": 0.122,
+          "gbPerSecond": 254,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0886,
+          "ofStream": 0.726,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 cpw4",
+          "stage": "move",
+          "msPerDispatch": 0.1167,
+          "gbPerSecond": 265.5,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0883,
+          "ofStream": 0.757
+        },
+        {
+          "kernel": "v3 cpw4",
+          "stage": "reads",
+          "msPerDispatch": 0.0727,
+          "gbPerSecond": 426.2,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0303,
+          "ofStream": 0.416
+        },
+        {
+          "kernel": "v3 cpw4",
+          "stage": "writes",
+          "msPerDispatch": 0.0733,
+          "gbPerSecond": 422.6,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.0693,
+          "ofStream": 0.945
+        },
+        {
+          "kernel": "v3 words",
+          "msPerDispatch": 0.1217,
+          "gbPerSecond": 254.6,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0886,
+          "ofStream": 0.728,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 words",
+          "stage": "move",
+          "msPerDispatch": 0.1192,
+          "gbPerSecond": 260,
+          "readBytes": 8871936,
+          "writeBytes": 22118400,
+          "streamMs": 0.0886,
+          "ofStream": 0.743
+        },
+        {
+          "kernel": "v3 words",
+          "stage": "reads",
+          "msPerDispatch": 0.0618,
+          "gbPerSecond": 501.5,
+          "readBytes": 8871936,
+          "writeBytes": 614400,
+          "streamMs": 0.0278,
+          "ofStream": 0.449
+        },
+        {
+          "kernel": "v3 words",
+          "stage": "writes",
+          "msPerDispatch": 0.0786,
+          "gbPerSecond": 394.1,
+          "readBytes": 0,
+          "writeBytes": 22118400,
+          "streamMs": 0.0693,
+          "ofStream": 0.881
+        }
+      ]
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "minBytes": 39862272,
+      "kernels": [
+        {
+          "kernel": "v1",
+          "msPerDispatch": 0.1854,
+          "gbPerSecond": 215,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1123,
+          "ofStream": 0.606
+        },
+        {
+          "kernel": "v1",
+          "stage": "move",
+          "msPerDispatch": 0.1788,
+          "gbPerSecond": 222.9,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1123,
+          "ofStream": 0.628
+        },
+        {
+          "kernel": "v1",
+          "stage": "reads",
+          "msPerDispatch": 0.0774,
+          "gbPerSecond": 515.1,
+          "readBytes": 22118400,
+          "writeBytes": 614400,
+          "streamMs": 0.063,
+          "ofStream": 0.815
+        },
+        {
+          "kernel": "v1",
+          "stage": "writes",
+          "msPerDispatch": 0.128,
+          "gbPerSecond": 311.5,
+          "readBytes": 8871936,
+          "writeBytes": 8871936,
+          "streamMs": 0.0521,
+          "ofStream": 0.407
+        },
+        {
+          "kernel": "v2",
+          "msPerDispatch": 0.1882,
+          "gbPerSecond": 211.8,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1123,
+          "ofStream": 0.597,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v2",
+          "stage": "move",
+          "msPerDispatch": 0.1913,
+          "gbPerSecond": 208.4,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.112,
+          "ofStream": 0.586
+        },
+        {
+          "kernel": "v2",
+          "stage": "reads",
+          "msPerDispatch": 0.0877,
+          "gbPerSecond": 454.6,
+          "readBytes": 22118400,
+          "writeBytes": 614400,
+          "streamMs": 0.0634,
+          "ofStream": 0.722
+        },
+        {
+          "kernel": "v2",
+          "stage": "writes",
+          "msPerDispatch": 0.0849,
+          "gbPerSecond": 469.6,
+          "readBytes": 8871936,
+          "writeBytes": 8871936,
+          "streamMs": 0.0524,
+          "ofStream": 0.618
+        },
+        {
+          "kernel": "v3",
+          "msPerDispatch": 0.1333,
+          "gbPerSecond": 299.1,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1123,
+          "ofStream": 0.843,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3",
+          "stage": "move",
+          "msPerDispatch": 0.1333,
+          "gbPerSecond": 299.1,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1233,
+          "ofStream": 0.925
+        },
+        {
+          "kernel": "v3",
+          "stage": "reads",
+          "msPerDispatch": 0.0833,
+          "gbPerSecond": 478.4,
+          "readBytes": 22118400,
+          "writeBytes": 614400,
+          "streamMs": 0.0634,
+          "ofStream": 0.76
+        },
+        {
+          "kernel": "v3",
+          "stage": "writes",
+          "msPerDispatch": 0.0524,
+          "gbPerSecond": 760.3,
+          "readBytes": 8871936,
+          "writeBytes": 8871936,
+          "streamMs": 0.0521,
+          "ofStream": 0.994
+        },
+        {
+          "kernel": "v3 8x1",
+          "msPerDispatch": 0.1432,
+          "gbPerSecond": 278.3,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1127,
+          "ofStream": 0.786,
+          "maxAbsDiffFromV1": 0
+        },
+        {
+          "kernel": "v3 8x1",
+          "stage": "move",
+          "msPerDispatch": 0.1429,
+          "gbPerSecond": 278.9,
+          "readBytes": 30990336,
+          "writeBytes": 8871936,
+          "streamMs": 0.1123,
+          "ofStream": 0.786
+        },
+        {
+          "kernel": "v3 8x1",
+          "stage": "reads",
+          "msPerDispatch": 0.0918,
+          "gbPerSecond": 434.5,
+          "readBytes": 22118400,
+          "writeBytes": 614400,
+          "streamMs": 0.0634,
+          "ofStream": 0.69
+        },
+        {
+          "kernel": "v3 8x1",
+          "stage": "writes",
+          "msPerDispatch": 0.0524,
+          "gbPerSecond": 760.3,
+          "readBytes": 8871936,
+          "writeBytes": 8871936,
+          "streamMs": 0.0521,
+          "ofStream": 0.994
+        }
+      ]
+    }
+  ],
+  "interleaved": [
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v1",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.058,
+      "minMs": 0.0577,
+      "maxMs": 0.058,
+      "ofStream": 0.392
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v2",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0471,
+      "minMs": 0.0465,
+      "maxMs": 0.068,
+      "ofStream": 0.483
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v2 unroll",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0415,
+      "minMs": 0.0409,
+      "maxMs": 0.0418,
+      "ofStream": 0.549
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v3",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0368,
+      "minMs": 0.0365,
+      "maxMs": 0.0371,
+      "ofStream": 0.619
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v3 4x2",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0368,
+      "minMs": 0.0365,
+      "maxMs": 0.0371,
+      "ofStream": 0.619
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v3 cpw4",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0368,
+      "minMs": 0.0365,
+      "maxMs": 0.0381,
+      "ofStream": 0.619
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "v3 words",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0368,
+      "minMs": 0.0365,
+      "maxMs": 0.0371,
+      "ofStream": 0.619
+    },
+    {
+      "batch": 16,
+      "transform": "in",
+      "kernel": "stream",
+      "readBytes": 2217984,
+      "writeBytes": 5529600,
+      "msPerDispatch": 0.0228,
+      "minMs": 0.0222,
+      "maxMs": 0.0415,
+      "ofStream": 1
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "kernel": "v1",
+      "readBytes": 7747584,
+      "writeBytes": 2217984,
+      "msPerDispatch": 0.0487,
+      "minMs": 0.0484,
+      "maxMs": 0.069,
+      "ofStream": 0.583
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "kernel": "v2",
+      "readBytes": 7747584,
+      "writeBytes": 2217984,
+      "msPerDispatch": 0.0518,
+      "minMs": 0.0515,
+      "maxMs": 0.0521,
+      "ofStream": 0.548
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "kernel": "v3",
+      "readBytes": 7747584,
+      "writeBytes": 2217984,
+      "msPerDispatch": 0.0362,
+      "minMs": 0.0362,
+      "maxMs": 0.0365,
+      "ofStream": 0.784
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "kernel": "v3 8x1",
+      "readBytes": 7747584,
+      "writeBytes": 2217984,
+      "msPerDispatch": 0.0374,
+      "minMs": 0.0374,
+      "maxMs": 0.0378,
+      "ofStream": 0.758
+    },
+    {
+      "batch": 16,
+      "transform": "out",
+      "kernel": "stream",
+      "readBytes": 7747584,
+      "writeBytes": 2217984,
+      "msPerDispatch": 0.0284,
+      "minMs": 0.0278,
+      "maxMs": 0.0284,
+      "ofStream": 1
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v1",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.2437,
+      "minMs": 0.2007,
+      "maxMs": 0.7952,
+      "ofStream": 0.364
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v2",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.1729,
+      "minMs": 0.1595,
+      "maxMs": 0.2253,
+      "ofStream": 0.513
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v2 unroll",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.1526,
+      "minMs": 0.1436,
+      "maxMs": 0.2309,
+      "ofStream": 0.581
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v3",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.1217,
+      "minMs": 0.1173,
+      "maxMs": 0.2078,
+      "ofStream": 0.728
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v3 4x2",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.1248,
+      "minMs": 0.1233,
+      "maxMs": 0.2166,
+      "ofStream": 0.71
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v3 cpw4",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.1255,
+      "minMs": 0.1223,
+      "maxMs": 0.2344,
+      "ofStream": 0.706
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "v3 words",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.1273,
+      "minMs": 0.1223,
+      "maxMs": 0.2141,
+      "ofStream": 0.696
+    },
+    {
+      "batch": 64,
+      "transform": "in",
+      "kernel": "stream",
+      "readBytes": 8871936,
+      "writeBytes": 22118400,
+      "msPerDispatch": 0.0886,
+      "minMs": 0.0883,
+      "maxMs": 0.108,
+      "ofStream": 1
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "kernel": "v1",
+      "readBytes": 30990336,
+      "writeBytes": 8871936,
+      "msPerDispatch": 0.1838,
+      "minMs": 0.1826,
+      "maxMs": 0.3963,
+      "ofStream": 0.611
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "kernel": "v2",
+      "readBytes": 30990336,
+      "writeBytes": 8871936,
+      "msPerDispatch": 0.1879,
+      "minMs": 0.1876,
+      "maxMs": 0.1885,
+      "ofStream": 0.598
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "kernel": "v3",
+      "readBytes": 30990336,
+      "writeBytes": 8871936,
+      "msPerDispatch": 0.1333,
+      "minMs": 0.1329,
+      "maxMs": 0.1336,
+      "ofStream": 0.843
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "kernel": "v3 8x1",
+      "readBytes": 30990336,
+      "writeBytes": 8871936,
+      "msPerDispatch": 0.1432,
+      "minMs": 0.1429,
+      "maxMs": 0.1439,
+      "ofStream": 0.784
+    },
+    {
+      "batch": 64,
+      "transform": "out",
+      "kernel": "stream",
+      "readBytes": 30990336,
+      "writeBytes": 8871936,
+      "msPerDispatch": 0.1123,
+      "minMs": 0.1123,
+      "maxMs": 0.1329,
+      "ofStream": 1
+    }
+  ],
+  "copy": [
+    {
+      "batch": 16,
+      "bytes": 7747584,
+      "msPerDispatch": 0.0231,
+      "gbPerSecond": 335.5
+    },
+    {
+      "batch": 64,
+      "bytes": 30990336,
+      "msPerDispatch": 0.0899,
+      "gbPerSecond": 344.8
+    }
+  ],
+  "perNetwork": [
+    {
+      "batch": 16,
+      "in v1": 4.407,
+      "in v2": 3.775,
+      "in v2 unroll": 3.167,
+      "in v3": 2.777,
+      "in v3 4x2": 2.8,
+      "in v3 cpw4": 2.917,
+      "in v3 words": 2.917,
+      "out v1": 3.994,
+      "out v2": 4.017,
+      "out v3": 2.824,
+      "out v3 8x1": 2.948
+    },
+    {
+      "batch": 64,
+      "in v1": 15.265,
+      "in v2": 12.363,
+      "in v2 unroll": 11.123,
+      "in v3": 9.103,
+      "in v3 4x2": 9.493,
+      "in v3 cpw4": 9.516,
+      "in v3 words": 9.493,
+      "out v1": 14.461,
+      "out v2": 14.68,
+      "out v3": 10.397,
+      "out v3 8x1": 11.17
+    }
+  ],
+  "ok": true,
+  "model": "transforms",
+  "steps": [
+    "17:54:37.352 compiling 47 kernels",
+    "17:54:37.910 warming up for 2000 ms",
+    "17:54:39.920 batch 16, input transform",
+    "17:54:54.626 batch 16, output transform",
+    "17:55:03.737 batch 64, input transform",
+    "17:55:40.856 batch 64, output transform",
+    "17:56:02.426 batch 16, input transform, interleaved",
+    "17:56:08.979 batch 16, output transform, interleaved",
+    "17:56:13.172 batch 64, input transform, interleaved",
+    "17:56:27.377 batch 64, output transform, interleaved",
+    "17:56:35.886 copy baseline"
+  ]
+}
