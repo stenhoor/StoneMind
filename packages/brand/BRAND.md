@@ -36,9 +36,12 @@ A single slate stone with its shine: the spark of insight.
 | `logos/lit-stone-mark-on-dark.svg` | The mark on dark grounds: the same stone with a light rim and shine. |
 | `logos/wordmark.svg` | The wordmark, with the stone as its "o". Light grounds. |
 | `logos/wordmark-on-dark.svg` | The wordmark on dark grounds. |
-| `logos/app-icon.svg` | App and PWA icons, social avatars: the stone on a kaya tile. |
-| `logos/favicon-32.svg` | Browser tabs. |
+| `logos/app-icon.svg` | App and PWA icons, social avatars: the stone alone, on a transparent background. |
+| `logos/favicon-32.svg` | Browser tabs: the stone alone, on a transparent background. |
 | `logos/favicon-16.svg` | 16px tabs. Drops the small highlight dot and thickens the shine. |
+
+The icons have no background tile. In dark mode (`prefers-color-scheme: dark`, inside the SVG) the stone takes the
+on-dark mark's light rim and shine, so it stays visible on dark tab bars and home screens.
 
 The wordmark is Manrope 800 with -0.03em tracking, converted to paths (from Google Fonts, OFL), so it renders the same everywhere with no font loading. Because the wordmark already contains the mark, there is no separate lockup.
 
