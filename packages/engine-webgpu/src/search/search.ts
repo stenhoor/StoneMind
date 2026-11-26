@@ -206,14 +206,19 @@ export class Search {
   readonly stats: SearchStats = { visits: 0, nnEvals: 0, cacheHits: 0, terminalVisits: 0, batches: 0, collisions: 0, nnMs: 0, cpuMs: 0 };
   readonly #model: ModelDesc;
   readonly #evaluator: NetEvaluator;
-  readonly #cache = new Map<string, Evaluation>();
+  readonly #cache: Map<string, Evaluation>;
   readonly #random: () => number;
   readonly #sqrtBoardArea: number;
   readonly #area: number;
   #recentScoreCenter = 0;
   #rootPrepared = false;
 
-  constructor(model: ModelDesc, evaluator: NetEvaluator, rootHistory: GameHistory, params: Partial<SearchParams> = {}) {
+  /**
+   * @param cache An evaluation cache to share with other searches (KataGo's analysis engine shares one across the turns
+   *   of a query); by default each search has its own.
+   */
+  constructor(model: ModelDesc, evaluator: NetEvaluator, rootHistory: GameHistory, params: Partial<SearchParams> = {}, cache: Map<string, Evaluation> = new Map()) {
+    this.#cache = cache;
     if (rootHistory.rules.scoringRule !== 'AREA' || rootHistory.rules.taxRule !== 'NONE') {
       // The territory encore and ending a game with a group tax aren't ported yet (docs/OPEN-QUESTIONS.md).
       throw new UnsupportedPositionError('the search supports area scoring with no group tax only, for now');

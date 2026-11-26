@@ -29,6 +29,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   pruning, value weighting, uncertainty weighting, subtree value bias, LCB ordering, policy optimism, wide root noise,
   passing hacks, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
   the reference forward pass.
+- **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
+  small batch (16 by default), sharing one evaluation cache across turns as KataGo's analysis engine does.
+  `SharedEvaluator` combines the concurrent searches' leaves into one network call of up to the network's batch size.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
   - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.
   - `GpuNetwork.create(engine, model, { maxBatch })` uploads the weights and builds a plan for a 19×19 board (smaller
@@ -108,11 +111,13 @@ tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 
 **Search benchmark.** The GPU check page's **Search benchmark** button (or `scripts/gpu-check.mjs --search`) runs the
 search on the WebGPU network:
 - **Live:** visits per second on one 19×19 position (`fight-19`), 2000 visits, at batches 16, 32 and 64.
-- **Review:** a game played by the search from an empty board, 250 moves at 100 visits each, timed. The report includes
-  the game.
+- **Review:** the fixed 250-move game of `test/goldens/agreement-game.json` at 100 visits a turn, in three modes: one turn
+  at a time at batch 64, one at a time at batch 16, and four at once at batch 16 (`reviewGame`). The report includes the
+  game and each mode's recommended moves.
 
 `scripts/native-search-bench.mjs` runs native KataGo's analysis engine on the same work from that report: the same
-position and visits, and every turn of the same game at the same visits. It clears KataGo's evaluation cache before
+position and visits, and every turn of the same game at the same visits. It also reports how often each browser review
+mode recommends native's move. It clears KataGo's evaluation cache before
 each timed query, as the browser starts each search with an empty one.
 
 **Top-move agreement.** The page's **Agreement positions** button (or `scripts/gpu-check.mjs --agreement`) records the

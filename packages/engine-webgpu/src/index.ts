@@ -27,3 +27,4 @@ export { applyScale8 } from './model/scale8.js';
 export { toFloat16Bits, fromFloat16Bits, toFloat16Array } from './gpu/f16.js';
 export { Search, DEFAULT_SEARCH_PARAMS, type NetEvaluator, type SearchParams, type SearchAnalysis, type SearchMoveInfo, type SearchStats } from './search/search.js';
 export { expectedWhiteScoreValue, getScoreStdev } from './search/scorevalue.js';
+export { reviewGame, SharedEvaluator, type ReviewOptions } from './search/review.js';

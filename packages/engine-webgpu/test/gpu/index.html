@@ -13,8 +13,8 @@
   <h1>engine-webgpu: GPU check</h1>
   <p>Runs the WebGPU network on the golden positions and compares it with the outputs captured from native KataGo;
     optionally measures evaluations per second by batch size. <b>Search benchmark</b> measures the search: visits per
-    second on one position at batches 16, 32 and 64, and the time to review a 250-move game at 100 visits a move (the
-    game is played by the search, and its moves are in the report). <b>Agreement positions</b> records the search's
+    second on one position at batches 16, 32 and 64, and the time to review a fixed 250-move game at 100 visits a turn,
+    one turn at a time at batches 64 and 16, and four turns at once at batch 16. <b>Agreement positions</b> records the search's
     recommended move on 50 positions of a fixed game at 100 and 500 visits, at batches 16 and 64, for comparison with
     native KataGo (<code>scripts/native-agreement.mjs</code>). A developer page, served by
     <code>scripts/gpu-check.mjs</code> or from the project's GitHub Pages site.</p>
