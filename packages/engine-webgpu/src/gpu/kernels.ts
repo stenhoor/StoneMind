@@ -674,12 +674,14 @@ export interface GemmV3Config {
   tk: 8 | 16 | 32;
   /** Two buffers of workgroup memory, alternating, so each chunk needs one barrier (default false). */
   double?: boolean;
-  /** Threads along M (default 16): the workgroup is 16 × wy threads and its tile wy·rm × 16·rn. */
+  /** Threads along M (default 16): the workgroup is wx × wy threads and its tile wy·rm × wx·rn. */
   wy?: 8 | 16;
+  /** Threads along N (default 16). Fewer make a narrower tile, for small batches. */
+  wx?: 4 | 8 | 16;
 }
 
 /** GEMM v3's tile: rows (M) and columns (N) of C per workgroup. */
-export const gemmV3Tile = (c: GemmV3Config) => ({ tm: (c.wy ?? 16) * c.rm, tn: 16 * c.rn });
+export const gemmV3Tile = (c: GemmV3Config) => ({ tm: (c.wy ?? 16) * c.rm, tn: (c.wx ?? 16) * c.rn });
 
 /**
  * The GEMM kernel to use on a device: 'v3' everywhere except Apple GPUs, which keep 'v2' with the shape measured
@@ -700,9 +702,10 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
   const { rm, rn, tk: TK } = config;
   const DB = config.double === true;
   const WY = config.wy ?? 16;
-  const THREADS = 16 * WY;
+  const WX = config.wx ?? 16;
+  const THREADS = WX * WY;
   const TM = WY * rm;
-  const TN = 16 * rn;
+  const TN = WX * rn;
   const GM = rm / 4;
   const GN = rn / 4;
   const NA = (TK * TM) / 4; // vec4s of A per chunk
@@ -742,7 +745,7 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
   for (let kk = 0; kk < TK; kk++) {
     inner += '    {\n';
     for (let g = 0; g < GM; g++) inner += `      let a${g} = As[${DB ? 'ab + ' : ''}${kk * (TM / 4) + g * WY}u + ty];\n`;
-    for (let h = 0; h < GN; h++) inner += `      let b${h} = Bs[${DB ? 'bb + ' : ''}${kk * (TN / 4) + h * 16}u + tx];\n`;
+    for (let h = 0; h < GN; h++) inner += `      let b${h} = Bs[${DB ? 'bb + ' : ''}${kk * (TN / 4) + h * WX}u + tx];\n`;
     for (let g = 0; g < GM; g++)
       for (let i = 0; i < 4; i++)
         for (let h = 0; h < GN; h++) inner += `      c${g * 4 + i}_${h} = fma(vec4<f32>(a${g}.${comps[i]}), b${h}, c${g * 4 + i}_${h});\n`;
@@ -755,7 +758,7 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
       store += `      var bias = 0.0;\n      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }\n`;
       for (let h = 0; h < GN; h++)
         for (let j = 0; j < 4; j++) {
-          store += `      { let n = n0 + ${h * 64 + j}u + 4u * tx;\n        if (n < N) {\n`;
+          store += `      { let n = n0 + ${h * 4 * WX + j}u + 4u * tx;\n        if (n < N) {\n`;
           store += `          let o = z * P.cBatch + m * P.cRow + n;\n          var v = c${g * 4 + i}_${h}.${comps[j]} + bias;\n`;
           store += `          if ((P.flags & 1u) != 0u) { v += f32(C[o]); }\n          C[o] = ${cT}(v);\n        }\n      }\n`;
         }
@@ -778,11 +781,11 @@ struct Params {
 var<workgroup> As: array<vec4<f32>, ${DB ? 2 * NA : NA}>; // [${DB ? '2][' : ''}TK][TM / 4]
 var<workgroup> Bs: array<vec4<f32>, ${DB ? 2 * NB : NB}>; // [${DB ? '2][' : ''}TK][TN / 4]
 
-@compute @workgroup_size(16, ${WY})
+@compute @workgroup_size(${WX}, ${WY})
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
   let tx = l.x;
   let ty = l.y;
-  let tid = ty * 16u + tx;
+  let tid = ty * ${WX}u + tx;
   let z = wg.z;
   let m0 = wg.y * ${TM}u;
   let n0 = wg.x * ${TN}u;

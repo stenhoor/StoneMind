@@ -200,7 +200,8 @@ time by call size.
 same work for at least 300 ms, then the timed passes, all submitted at once with no waiting between them, so the GPU
 doesn't go idle and lower its clocks mid-measurement. The figure is the timed passes' whole GPU span divided by their
 number. On the GEMM benchmark, `?gemmBatches=16,64` runs only those batches and `?gemmReverse=1` measures the v3
-shapes in the opposite order.
+shapes in the opposite order. `?gemmShapes=small` measures narrower v3 tiles instead (`GemmV3Config.wx`, threads
+along N), for small batches.
 
 **The dispatch benchmark** (the page's "Dispatch benchmark" button) measures what a dispatch costs beyond its own
 work: a near-empty kernel dispatched 500 times in one pass, each waiting for the one before (one buffer) or not (a buffer
