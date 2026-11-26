@@ -1,0 +1,425 @@
+{
+  "modelUrl": "/model.bin.gz",
+  "referenceCompared": false,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T22:53:46.819Z",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "shader-f16",
+    "subgroups",
+    "timestamp-query",
+    "chromium-experimental-subgroup-matrix"
+  ],
+  "adapterFeatures": [
+    "atomic-vec2u-min-max",
+    "bgra8unorm-storage",
+    "chromium-experimental-multi-draw-indirect",
+    "chromium-experimental-sampling-resource-table",
+    "chromium-experimental-subgroup-matrix",
+    "chromium-experimental-timestamp-query-inside-passes",
+    "clip-distances",
+    "core-features-and-limits",
+    "depth-clip-control",
+    "depth32float-stencil8",
+    "dual-source-blending",
+    "float32-blendable",
+    "float32-filterable",
+    "indirect-first-instance",
+    "primitive-index",
+    "rg11b10ufloat-renderable",
+    "shader-f16",
+    "subgroup-size-control",
+    "subgroups",
+    "texture-component-swizzle",
+    "texture-compression-bc",
+    "texture-compression-bc-sliced-3d",
+    "texture-compression-unaligned",
+    "texture-formats-tier1",
+    "texture-formats-tier2",
+    "timestamp-query"
+  ],
+  "subgroupMatrixConfigs": [
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f16",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 16,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 16
+    },
+    {
+      "componentType": "f16",
+      "resultComponentType": "f32",
+      "M": 16,
+      "N": 8,
+      "K": 8
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 16,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "u32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "u8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    },
+    {
+      "componentType": "i8",
+      "resultComponentType": "i32",
+      "M": 16,
+      "N": 8,
+      "K": 32
+    }
+  ],
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "goldenUrl": "/golden.json",
+  "activations": {
+    "ok": true,
+    "maxError": {
+      "identity": 0,
+      "relu": 0,
+      "mish": 1.591954282162815e-7,
+      "silu": 1.3881428386509228e-7,
+      "mish_scale8": 1.591954282162815e-7
+    },
+    "worstAt": {
+      "identity": {
+        "x": -30,
+        "gpu": -30,
+        "want": -30
+      },
+      "relu": {
+        "x": -30,
+        "gpu": 0,
+        "want": 0
+      },
+      "mish": {
+        "x": 8.75,
+        "gpu": 8.750000953674316,
+        "want": 8.74999956071439
+      },
+      "silu": {
+        "x": 2.5859375,
+        "gpu": 2.404794931411743,
+        "want": 2.4047952652316757
+      },
+      "mish_scale8": {
+        "x": 1.09375,
+        "gpu": 1.0937501192092896,
+        "want": 1.0937499450892987
+      }
+    }
+  },
+  "variants": [
+    {
+      "variant": {
+        "winograd": true,
+        "fuse": true,
+        "precision": "f16",
+        "gemm": "v3",
+        "matrix": "auto",
+        "winoFused": true
+      },
+      "dispatches": 338,
+      "gemm": "v3",
+      "winoTransforms": {
+        "in": "v3",
+        "out": "v3"
+      },
+      "matrix": true,
+      "matrixUse": {
+        "winoGemm": {
+          "gemms": 11,
+          "matrix": 10,
+          "byRange": [
+            10,
+            10,
+            0
+          ]
+        },
+        "conv1x1": {
+          "gemms": 41,
+          "matrix": 36,
+          "byRange": [
+            36,
+            36,
+            36
+          ]
+        }
+      },
+      "gemmConfig": {
+        "rm": 4,
+        "rn": 8,
+        "tk": 16
+      },
+      "positions": [
+        {
+          "id": "empty-19",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[1] -0.054287574030509794 vs KataGo -0.0545004",
+            "ownership[3] -0.028387241622248992 vs KataGo -0.0290147",
+            "ownership[4] -0.018375488763918476 vs KataGo -0.0179139",
+            "ownership[6] -0.06214257116764154 vs KataGo -0.061904",
+            "ownership[9] -0.02839008545030131 vs KataGo -0.0287125"
+          ]
+        },
+        {
+          "id": "opening-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6178782594513451 vs KataGo 0.61753",
+            "whiteLoss 0.3821217405486548 vs KataGo 0.38247",
+            "whiteLead 0.7361043989658356 vs KataGo 0.734",
+            "whiteScoreSelfplay 1.5286381542682648 vs KataGo 1.524",
+            "ownership[1] -0.08258400691003698 vs KataGo -0.0823399"
+          ]
+        },
+        {
+          "id": "opening-19-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "ownership[0] -0.03446483351507062 vs KataGo -0.0357231",
+            "ownership[1] -0.03829694801623444 vs KataGo -0.0393883",
+            "ownership[2] -0.01788639419371164 vs KataGo -0.0186621",
+            "ownership[3] 0.0023671519035205284 vs KataGo 0.0019937",
+            "ownership[6] -0.006159195555663937 vs KataGo -0.0058191"
+          ]
+        },
+        {
+          "id": "fight-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 0.5182815343141556 vs KataGo 0.522",
+            "whiteScoreSelfplay 1.1970172822475433 vs KataGo 1.2",
+            "ownership[0] 0.09115762508969588 vs KataGo 0.0896974",
+            "ownership[1] 0.04592046380997434 vs KataGo 0.0445708",
+            "ownership[2] 0.039857778091735095 vs KataGo 0.038729"
+          ]
+        },
+        {
+          "id": "ladder-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.4115243284966273 vs KataGo 0.410634",
+            "whiteLoss 0.5884756715033728 vs KataGo 0.589366",
+            "whiteLead -0.9239133447408676 vs KataGo -0.929",
+            "whiteScoreSelfplay -2.2953829169273376 vs KataGo -2.311",
+            "ownership[2] 0.16475745511982812 vs KataGo 0.1643442"
+          ]
+        },
+        {
+          "id": "capture-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 5.249538421630859 vs KataGo 5.245",
+            "whiteScoreSelfplay 5.9600454568862915 vs KataGo 5.955",
+            "ownership[0] 0.07685772903382193 vs KataGo 0.0772119",
+            "ownership[1] 0.06433981198453818 vs KataGo 0.0648968",
+            "ownership[2] 0.10719402687955423 vs KataGo 0.1076437"
+          ]
+        },
+        {
+          "id": "ko-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.11276398757918743 vs KataGo 0.111894",
+            "whiteLoss 0.8872360124208125 vs KataGo 0.888106",
+            "whiteLead -2.5365036725997925 vs KataGo -2.549",
+            "whiteScoreSelfplay -2.5948429107666016 vs KataGo -2.606",
+            "ownership[2] -0.061803016240433245 vs KataGo -0.0620315"
+          ]
+        },
+        {
+          "id": "area-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead 2.5197136402130127 vs KataGo 2.525",
+            "whiteScoreSelfplay 3.01497220993042 vs KataGo 3.018",
+            "ownership[0] -0.011232206381779599 vs KataGo -0.0118003",
+            "ownership[2] 0.13234041271750538 vs KataGo 0.1318882",
+            "ownership[3] 0.2549889257964405 vs KataGo 0.2547161"
+          ]
+        },
+        {
+          "id": "opening-13",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteScoreSelfplay 1.611393392086029 vs KataGo 1.609",
+            "ownership[0] 0.2230255964367598 vs KataGo 0.221711",
+            "ownership[1] 0.1903667395150086 vs KataGo 0.1892069",
+            "ownership[2] 0.12219655357478311 vs KataGo 0.1216753",
+            "ownership[3] 0.044144427581334994 vs KataGo 0.0430928"
+          ]
+        },
+        {
+          "id": "opening-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteWin 0.6527901348463356 vs KataGo 0.653372",
+            "whiteLoss 0.3464944959392716 vs KataGo 0.345909",
+            "ownership[0] 0.03627452508123644 vs KataGo 0.0365449",
+            "ownership[1] 0.02720209639535653 vs KataGo 0.0266679",
+            "ownership[2] -0.014674729467635204 vs KataGo -0.0141217"
+          ]
+        },
+        {
+          "id": "pass-19",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead -13.596330881118774 vs KataGo -13.615",
+            "whiteScoreSelfplay -17.77682065963745 vs KataGo -17.803",
+            "ownership[0] -0.040716138643727966 vs KataGo -0.0414136",
+            "ownership[1] -0.017047323783427347 vs KataGo -0.0175371",
+            "ownership[2] -0.03225459736541301 vs KataGo -0.0330655"
+          ]
+        },
+        {
+          "id": "pass-ends-9",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead -11.80448055267334 vs KataGo -11.789",
+            "whiteScoreSelfplay -12.193186283111572 vs KataGo -12.177",
+            "ownership[0] -0.09195902212693927 vs KataGo -0.0914923",
+            "ownership[1] -0.14363870349625185 vs KataGo -0.1432975",
+            "ownership[2] -0.22770690677623592 vs KataGo -0.2274234"
+          ]
+        },
+        {
+          "id": "pass-ends-9-chinese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead -11.872737592622174 vs KataGo -11.86",
+            "whiteScoreSelfplay -12.418962921905235 vs KataGo -12.406",
+            "ownership[0] -0.12680445069898588 vs KataGo -0.1264089",
+            "ownership[1] -0.1829457416075436 vs KataGo -0.1831774",
+            "ownership[2] -0.24470922764594374 vs KataGo -0.2449443"
+          ]
+        },
+        {
+          "id": "pass-9-japanese",
+          "matchesKataGo": false,
+          "failures": [
+            "whiteLead -8.315250701095495 vs KataGo -8.321",
+            "whiteScoreSelfplay -8.515277694937854 vs KataGo -8.521",
+            "ownership[0] -0.148566694655555 vs KataGo -0.1499423",
+            "ownership[1] -0.13023558591702877 vs KataGo -0.1321779",
+            "ownership[2] -0.14144506180595143 vs KataGo -0.1433823"
+          ]
+        }
+      ],
+      "batchOfOneMatchesBatched": true,
+      "maxInFlight": 2,
+      "concurrentCallsMatchBatched": true,
+      "katagoErrorStats": {
+        "percentile99": {
+          "winrateError": 0.0008699875791875478,
+          "leadError": 0.015480552673340142,
+          "scoreMeanError": 0.016186283111572664,
+          "topPolicyDiff": 0.0020685873167753943,
+          "policyKLDiv": 0.00003164377547695219,
+          "ownershipError": 0.002402543169564675
+        },
+        "max": {
+          "winrateError": 0.0008903284966273461,
+          "leadError": 0.0186691188812258,
+          "scoreMeanError": 0.026179340362549652,
+          "topPolicyDiff": 0.0025885517626966226,
+          "policyKLDiv": 0.000033443970204508704,
+          "ownershipError": 0.003999723790907465
+        },
+        "fp16LimitRatio99": {
+          "winrateError": 0.04349937895937739,
+          "leadError": 0.015480552673340142,
+          "scoreMeanError": 0.016186283111572664,
+          "topPolicyDiff": 0.08274349267101577,
+          "policyKLDiv": 0.015821887738476096,
+          "ownershipError": 0.0686440905589907
+        },
+        "fp16LimitRatioMax": {
+          "winrateError": 0.017806569932546923,
+          "leadError": 0.006223039627075266,
+          "scoreMeanError": 0.00872644678751655,
+          "topPolicyDiff": 0.04314252937827704,
+          "policyKLDiv": 0.008360992551127176,
+          "ownershipError": 0.019998618954537323
+        },
+        "worstFp16LimitRatio": 0.08274349267101577,
+        "fp16LimitsPass": true
+      },
+      "ok": true
+    }
+  ],
+  "goldensCompared": true,
+  "ok": true,
+  "steps": [
+    "22:53:46.819 requesting a WebGPU device",
+    "22:53:46.984 device: {\"vendor\":\"nvidia\",\"architecture\":\"ampere\",\"device\":\"\",\"description\":\"\"}, features shader-f16, subgroups, timestamp-query, chromium-experimental-subgroup-matrix",
+    "22:53:46.984 adapter offers: atomic-vec2u-min-max, bgra8unorm-storage, chromium-experimental-multi-draw-indirect, chromium-experimental-sampling-resource-table, chromium-experimental-subgroup-matrix, chromium-experimental-timestamp-query-inside-passes, clip-distances, core-features-and-limits, depth-clip-control, depth32float-stencil8, dual-source-blending, float32-blendable, float32-filterable, indirect-first-instance, primitive-index, rg11b10ufloat-renderable, shader-f16, subgroup-size-control, subgroups, texture-component-swizzle, texture-compression-bc, texture-compression-bc-sliced-3d, texture-compression-unaligned, texture-formats-tier1, texture-formats-tier2, timestamp-query",
+    "22:53:47.106 loading the model (97898094 bytes)",
+    "22:53:47.669 model kata1-b18c384nbt-s9996604416-d4316597426",
+    "22:53:47.690 checking activations",
+    "22:53:47.711 activations ok: true",
+    "22:53:47.711 variant {\"winograd\":true,\"fuse\":true,\"precision\":\"f16\",\"gemm\":\"v3\",\"matrix\":\"auto\",\"winoFused\":true}",
+    "22:53:47.711   building the network",
+    "22:53:51.135   evaluating the positions"
+  ]
+}
