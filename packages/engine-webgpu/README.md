@@ -184,7 +184,8 @@ search on the WebGPU network:
 `scripts/native-search-bench.mjs` runs native KataGo's analysis engine on the same work from that report: the same
 position and visits, and every turn of the same game at the same visits. It also reports how often each browser review
 mode recommends native's move. It clears KataGo's evaluation cache before
-each timed query, as the browser starts each search with an empty one.
+each timed query, as the browser starts each search with an empty one. `--count-review` runs only the review and reports the network evaluations it made,
+from the "NN rows" KataGo writes to its log as it exits (`docs/spikes/results/2026-11-b18-eval-count.md`).
 
 **Top-move agreement.** The page's **Agreement positions** button (or `scripts/gpu-check.mjs --agreement`) records the
 search's recommended move on every 5th position of `test/goldens/agreement-game.json` (the game from the owner's
