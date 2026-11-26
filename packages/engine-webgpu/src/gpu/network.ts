@@ -169,6 +169,18 @@ function nestingDepth(blocks: readonly Block[]): number {
   return d;
 }
 
+/** One network call recorded by {@link GpuNetwork.startTrace} (measurement only). */
+export interface CallTrace extends CallTiming {
+  /** performance.now() when the call started (packing), was submitted, its outputs could be read, and it returned. */
+  startMs: number;
+  submittedMs: number;
+  mappedMs: number;
+  doneMs: number;
+  /** GPU timestamps (ns, the browser's timebase) at the start and end of the call's compute pass. */
+  gpuBeginNs: number;
+  gpuEndNs: number;
+}
+
 /** See {@link GpuNetwork.lastCallTiming}. */
 export interface CallTiming {
   batch: number;
@@ -229,6 +241,24 @@ export class GpuNetwork {
     return { code: GEMM_V2(aT, bT, cT, this.#gemmConfig), ...gemmTile(this.#gemmConfig) };
   }
   #lastCallTiming: CallTiming | null = null;
+  #trace: CallTrace[] | null = null;
+  #traceQueries = new Map<GPUBuffer, { set: GPUQuerySet; resolve: GPUBuffer }>();
+
+  /**
+   * Start recording every network call's wall-clock times and its compute pass's GPU timestamps (measurement only:
+   * the timestamps travel back in the call's own readback, so no extra wait is added). Needs \`timestamp-query\`.
+   */
+  startTrace(): void {
+    if (!this.#timestamps) throw new Error('this device has no timestamp-query');
+    this.#trace = [];
+  }
+
+  /** Stop recording, and return the calls recorded since {@link startTrace}. */
+  stopTrace(): CallTrace[] {
+    const t = this.#trace ?? [];
+    this.#trace = null;
+    return t;
+  }
   /** The GEMM v2 shape the plan uses (the option, or the device's default). */
   get gemmConfig(): GemmConfig {
     return this.#gemmConfig;
@@ -483,7 +513,8 @@ export class GpuNetwork {
       offset += B * perBatch;
     }
     this.#stagingFloats = offset;
-    for (let i = 0; i < this.maxInFlight; i++) this.#stagings.push(this.#buffer(offset, BufferUsage.MAP_READ | BufferUsage.COPY_DST));
+    // 4 floats more than the outputs: room for a traced call's two GPU timestamps (startTrace).
+    for (let i = 0; i < this.maxInFlight; i++) this.#stagings.push(this.#buffer(offset + 4, BufferUsage.MAP_READ | BufferUsage.COPY_DST));
     await this.#compile();
   }
 
@@ -812,6 +843,18 @@ export class GpuNetwork {
       const [x, y, z = 1] = op.workgroups(n);
       pass.dispatchWorkgroups(x, y, z);
     };
+    let traceQuery: { set: GPUQuerySet; resolve: GPUBuffer } | undefined;
+    if (this.#trace && !profile) {
+      traceQuery = this.#traceQueries.get(staging);
+      if (!traceQuery) {
+        traceQuery = {
+          set: device.createQuerySet({ type: 'timestamp', count: 2 }),
+          resolve: device.createBuffer({ size: 16, usage: BufferUsage.QUERY_RESOLVE | BufferUsage.COPY_SRC }),
+        };
+        this.#traceQueries.set(staging, traceQuery);
+        this.#owned.push(traceQuery.resolve);
+      }
+    }
     if (profile === 'ops') {
       this.#ops.forEach((op, i) => {
         const pass = encoder.beginComputePass({ timestampWrites: { querySet: query!.set, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } });
@@ -819,13 +862,18 @@ export class GpuNetwork {
         pass.end();
       });
     } else {
+      const timed = query ?? traceQuery;
       const pass = encoder.beginComputePass(
-        query ? { timestampWrites: { querySet: query.set, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {},
+        timed ? { timestampWrites: { querySet: timed.set, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {},
       );
       for (const op of this.#ops) dispatch(pass, op);
       pass.end();
     }
     for (const out of this.#outputs) encoder.copyBufferToBuffer(out.buffer, 0, staging, out.stagingOffset * 4, n * out.perBatch * 4);
+    if (traceQuery) {
+      encoder.resolveQuerySet(traceQuery.set, 0, 2, traceQuery.resolve, 0);
+      encoder.copyBufferToBuffer(traceQuery.resolve, 0, staging, this.#stagingFloats * 4, 16);
+    }
     if (query) {
       encoder.resolveQuerySet(query.set, 0, query.count, query.resolve, 0);
       encoder.copyBufferToBuffer(query.resolve, 0, query.read, 0, query.count * 8);
@@ -835,9 +883,10 @@ export class GpuNetwork {
     device.queue.submit([commands]);
     const tSubmitted = performance.now();
 
-    await staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4);
+    await staging.mapAsync(MapMode.READ, 0, this.#stagingFloats * 4 + (traceQuery ? 16 : 0));
     const tMapped = performance.now();
     const data = new Float32Array(staging.getMappedRange(0, this.#stagingFloats * 4).slice(0));
+    const traceTs = traceQuery ? new BigUint64Array(staging.getMappedRange(this.#stagingFloats * 4, 16).slice(0)) : null;
     staging.unmap();
     // Undo scale8: every raw output came out 1/8 as large. Multiplying by 8 is exact in f32.
     if (this.#outputFactor !== 1) for (let i = 0; i < data.length; i++) data[i]! *= this.#outputFactor;
@@ -887,12 +936,25 @@ export class GpuNetwork {
       unpackMs: tDone - tRead,
       totalMs: tDone - t0,
     };
+    if (traceTs && this.#trace) {
+      this.#trace.push({
+        ...this.#lastCallTiming,
+        startMs: t0,
+        submittedMs: tSubmitted,
+        mappedMs: tMapped,
+        doneMs: tDone,
+        gpuBeginNs: Number(traceTs[0]!),
+        gpuEndNs: Number(traceTs[1]!),
+      });
+    }
     return { outputs, ...(timestamps ? { timestamps } : {}) };
   }
 
   /** Free the network's GPU buffers. The device is left alone. */
   destroy(): void {
     this.#destroyed = true;
+    for (const q of this.#traceQueries.values()) q.set.destroy();
+    this.#traceQueries.clear();
     for (const b of this.#owned) b.destroy();
     this.#owned.length = 0;
   }

@@ -1,0 +1,72 @@
+2026-11-26 09:37:34-0600: Running with following config:
+allowResignation = true
+cudaDeviceToUseThread0 = 0
+cudaDeviceToUseThread1 = 0
+friendlyPassOk = false
+hasButton = false
+koRule = POSITIONAL
+lagBuffer = 1.0
+logAllGTPCommunication = true
+logDir = gtp_logs
+logSearchInfo = true
+logSearchInfoForChosenMove = false
+logToStderr = false
+multiStoneSuicideLegal = true
+nnCacheSizePowerOfTwo = 20
+nnMutexPoolSizePowerOfTwo = 16
+numNNServerThreadsPerModel = 2
+numSearchThreads = 16
+ponderingEnabled = false
+resignConsecTurns = 3
+resignThreshold = -0.90
+scoringRule = AREA
+searchFactorAfterOnePass = 0.50
+searchFactorAfterTwoPass = 0.25
+searchFactorWhenWinning = 0.40
+searchFactorWhenWinningThreshold = 0.95
+taxRule = NONE
+whiteHandicapBonus = 0
+2026-11-26 09:37:34-0600: Loading model and initializing benchmark...
+2026-11-26 09:37:34-0600: Testing with default positions for board size: 19
+2026-11-26 09:37:34-0600: nnRandSeed0 = 17260056105342488526
+2026-11-26 09:37:34-0600: After dedups: nnModelFile0 = ~/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz useFP16 auto
+2026-11-26 09:37:34-0600: Initializing neural net buffer to be size 19 * 19 exactly
+2026-11-26 09:37:35-0600: Cuda backend thread 0: Found GPU NVIDIA GeForce RTX 3080 Laptop GPU memory 16781344768 compute capability major 8 minor 6
+2026-11-26 09:37:35-0600: Cuda backend thread 0: Model version 14 useFP16 = true useNHWC = true
+2026-11-26 09:37:35-0600: Cuda backend thread 0: Model name: kata1-b18c384nbt-s9996604416-d4316597426 (nbt convnet, 26326985 params)
+2026-11-26 09:37:35-0600: Cuda backend thread 1: Found GPU NVIDIA GeForce RTX 3080 Laptop GPU memory 16781344768 compute capability major 8 minor 6
+2026-11-26 09:37:35-0600: Cuda backend thread 1: Model version 14 useFP16 = true useNHWC = true
+2026-11-26 09:37:35-0600: Cuda backend thread 1: Model name: kata1-b18c384nbt-s9996604416-d4316597426 (nbt convnet, 26326985 params)
+2026-11-26 09:37:35-0600: CUDA backend: running 1x1 NHWC convolutions as a GEMM
+2026-11-26 09:37:35-0600: CUDA backend: running 1x1 NHWC convolutions as a GEMM
+2026-11-26 09:37:36-0600: Loaded config ~/katago/gtp_cuda.cfg
+2026-11-26 09:37:36-0600: Loaded model ~/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
+Testing using 800 visits.
+  If you have a good GPU, you might increase this using "-visits N" to get more accurate results.
+  If you have a weak GPU and this is taking forever, you can decrease it instead to finish the benchmark faster.
+Your GTP config is currently set to cudaUseFP16 = auto
+Your GTP config is currently set to use numSearchThreads = 16
+Testing different numbers of threads (board size 19x19): 
+
+numSearchThreads = 16: 10 / 10 positions, visits/s = 1399.65 nnEvals/s = 1206.99 nnBatches/s = 279.96 avgBatchSize = 4.31 (5.8 secs) (EloDiff baseline)
+
+numSearchThreads = 32: 10 / 10 positions, visits/s = 1435.83 nnEvals/s = 1290.29 nnBatches/s = 151.25 avgBatchSize = 8.53 (5.8 secs) (EloDiff -19)
+Based on some test data, each speed doubling gains perhaps ~250 Elo by searching deeper.
+Based on some test data, each thread costs perhaps 7 Elo if using 800 visits, and 2 Elo if using 5000 visits (by making MCTS worse).
+So APPROXIMATELY based on this benchmark, if you intend to do a 5 second search: 
+numSearchThreads = 16: (baseline) (recommended)
+numSearchThreads = 32:   -19 Elo
+If you care about performance, you may want to edit numSearchThreads in ~/katago/gtp_cuda.cfg based on the above results!
+If you intend to do much longer searches, configure the seconds per game move you expect with the '-time' flag and benchmark again.
+If you intend to do short or fixed-visit searches, use lower numSearchThreads for better strength, high threads will weaken strength.
+If interested see also other notes about performance and mem usage in the top of ~/katago/gtp_cuda.cfg
+Running additional tests of a few other settings at numSearchThreads = 16.
+Re-measuring the current recommendation as a baseline:
+
+numSearchThreads = 16: 10 / 10 positions, visits/s = 1424.24 nnEvals/s = 1209.98 nnBatches/s = 286.67 avgBatchSize = 4.22 (5.7 secs)
+Testing a max batch size of 8, half the search threads, which can pipeline better on some GPUs:
+
+numSearchThreads = 16: 10 / 10 positions, visits/s = 1388.78 nnEvals/s = 1200.10 nnBatches/s = 235.04 avgBatchSize = 5.11 (5.9 secs) (EloDiff -10)
+Half batch size was not at least 3% faster (measured -2.5%), keeping the default.
+2026-11-26 09:37:59-0600: GPU 0 finishing, processed 14057 rows 2753 batches
+2026-11-26 09:37:59-0600: GPU 0 finishing, processed 14386 rows 2773 batches

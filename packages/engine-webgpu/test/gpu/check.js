@@ -557,9 +557,12 @@ export async function runSearchBench({
     report.review = { rules: agreementGame.rules, komi: agreementGame.komi, visitsPerMove: reviewVisits, moves: game.length, game, modes: [] };
     for (const mode of reviewModes) {
       step(`review: ${game.length} turns × ${reviewVisits} visits, batch ${mode.batchSize}, ${mode.concurrency} at once`);
+      const tracing = net.canProfile;
+      if (tracing) net.startTrace();
       const t0 = performance.now();
       const results = await reviewGame(model, net, histories, { visits: reviewVisits, batchSize: mode.batchSize, concurrency: mode.concurrency });
       const totalMs = performance.now() - t0;
+      const trace = tracing ? summariseTrace(net.stopTrace(), totalMs) : null;
       const visits = results.reduce((sum, r) => sum + r.rootVisits, 0);
       const run = {
         ...mode,
@@ -569,6 +572,7 @@ export async function runSearchBench({
         minutesFor250Moves: +((totalMs / game.length) * 250 / 60000).toFixed(2),
         bestMoves: results.map((r) => gtpOf(histories[0].board, r.moveInfos[0].loc)),
       };
+      if (trace) run.trace = trace;
       report.review.modes.push(run);
       step(`  ${(totalMs / 1000).toFixed(1)} s (${run.visitsPerSecond} visits/s)`);
     }
@@ -578,6 +582,60 @@ export async function runSearchBench({
   report.steps = [...steps];
   report.ok = !report.deviceLost;
   return report;
+}
+
+/**
+ * Where a review's time went, from GpuNetwork's call trace: the network calls (count and inputs), the time with at least
+ * one call in flight, the GPU's busy time (the union of the calls' compute passes, from GPU timestamps), the network
+ * code's own JavaScript time (packing, writing, encoding, submitting, reading and unpacking), and the time each call
+ * waited for its outputs. All in ms.
+ */
+function summariseTrace(calls, wallMs) {
+  const union = (intervals) => {
+    const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
+    let total = 0;
+    let end = -Infinity;
+    let start = -Infinity;
+    for (const [a, b] of sorted) {
+      if (a > end) {
+        if (end > start) total += end - start;
+        start = a;
+        end = b;
+      } else end = Math.max(end, b);
+    }
+    if (end > start) total += end - start;
+    return total;
+  };
+  const sum = (f) => calls.reduce((t, c) => t + f(c), 0);
+  const sortedPass = calls.map((c) => (c.gpuEndNs - c.gpuBeginNs) / 1e6).sort((a, b) => a - b);
+  const r = (x) => +x.toFixed(1);
+  const gpuSpanMs = calls.length ? (Math.max(...calls.map((c) => c.gpuEndNs)) - Math.min(...calls.map((c) => c.gpuBeginNs))) / 1e6 : 0;
+  const busy = union(calls.map((c) => [c.gpuBeginNs / 1e6, c.gpuEndNs / 1e6]));
+  return {
+    calls: calls.length,
+    inputs: sum((c) => c.batch),
+    meanBatch: calls.length ? +(sum((c) => c.batch) / calls.length).toFixed(2) : 0,
+    wallMs: r(wallMs),
+    callInFlightMs: r(union(calls.map((c) => [c.startMs, c.doneMs]))),
+    gpuBusyMs: r(busy),
+    gpuSpanMs: r(gpuSpanMs),
+    gpuPassMsMedian: sortedPass.length ? +sortedPass[sortedPass.length >> 1].toFixed(3) : 0,
+    networkJsMs: r(sum((c) => c.packMs + c.writeMs + c.encodeMs + c.submitMs + c.readMs + c.unpackMs)),
+    networkJsParts: {
+      packMs: r(sum((c) => c.packMs)), writeMs: r(sum((c) => c.writeMs)), encodeMs: r(sum((c) => c.encodeMs)),
+      submitMs: r(sum((c) => c.submitMs)), readMs: r(sum((c) => c.readMs)), unpackMs: r(sum((c) => c.unpackMs)),
+    },
+    waitMs: r(sum((c) => c.waitMs)),
+    // Calls by their number of inputs: how many, and their compute passes' mean GPU time. With more than one call in
+    // flight a pass's interval can include waiting for the one before, so the means are the GPU's own time only when
+    // calls run one at a time.
+    byBatch: Object.values(calls.reduce((m, c) => {
+      const e = (m[c.batch] ??= { batch: c.batch, calls: 0, passMs: 0 });
+      e.calls += 1;
+      e.passMs += (c.gpuEndNs - c.gpuBeginNs) / 1e6;
+      return m;
+    }, {})).map((e) => ({ batch: e.batch, calls: e.calls, meanPassMs: +(e.passMs / e.calls).toFixed(3) })),
+  };
 }
 
 /**

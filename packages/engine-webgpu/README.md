@@ -191,6 +191,11 @@ time over b18's 62 + 18 + 18 such GEMMs.
 times a plain copy of the input transform's minimum bytes, as the device's practical ceiling, and reports each
 transform's bytes per second against it.
 
+**Call trace:** `GpuNetwork.startTrace()` / `stopTrace()` record every network call's wall-clock times, the network
+code's own JavaScript parts and its compute pass's GPU timestamps (carried back in the call's own readback, so tracing
+adds no wait). The search benchmark reports each review mode's `trace`: GPU busy time, calls, inputs per call, and GPU
+time by call size.
+
 **Kernel timing** in the GEMM, transform and dispatch benchmarks goes through `test/gpu/timing.js`: a warm-up of the
 same work for at least 300 ms, then the timed passes, all submitted at once with no waiting between them, so the GPU
 doesn't go idle and lower its clocks mid-measurement. The figure is the timed passes' whole GPU span divided by their
