@@ -123,6 +123,8 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     { winograd: true, fuse: false, gemm: 'v2', winoTransforms: 'v2' },
     // GEMM v3: GEMM v2's tiles with vec4 workgroup reads and the next chunk prefetched.
     { winograd: true, fuse: true, gemm: 'v3' },
+    // Both v1 Winograd transforms (the input transform's default is v2).
+    { winograd: true, fuse: true, gemm: 'v3', winoTransforms: 'v1' },
     // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
     { winograd: true, fuse: true, scale8: true, gemm: 'v2' },
   ];
@@ -136,6 +138,7 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v3' },
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v3' },
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3', winoTransforms: 'v1' },
     );
   }
   // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
@@ -307,6 +310,7 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   step('  evaluating the positions');
   report.dispatches = net.dispatchCount;
   report.gemm = net.gemm;
+  report.winoTransforms = net.winoTransforms;
   report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
@@ -485,6 +489,7 @@ export async function runSearchBench({
   const maxBatch = Math.max(...liveBatches, ...reviewModes.map((m) => m.batchSize * m.concurrency));
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch });
   report.gemm = net.gemm;
+  report.winoTransforms = net.winoTransforms;
   report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   report.maxInFlight = net.maxInFlight;
   const cols = 'ABCDEFGHJKLMNOPQRST';
