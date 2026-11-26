@@ -1,0 +1,4295 @@
+{
+  "kind": "agreement",
+  "modelUrl": "/model.bin.gz",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+  "date": "2026-11-26T09:42:13.381Z",
+  "adapter": {
+    "vendor": "nvidia",
+    "architecture": "ampere",
+    "device": "",
+    "description": ""
+  },
+  "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+  "variant": {
+    "winograd": true,
+    "fuse": true,
+    "gemm": "v2",
+    "precision": "f16"
+  },
+  "game": {
+    "rules": "tromp-taylor",
+    "komi": 7.5,
+    "moves": 250
+  },
+  "every": 5,
+  "batches": [
+    16,
+    64
+  ],
+  "positions": [
+    {
+      "turn": 0,
+      "byVisits": {
+        "100@16": {
+          "best": "Q16",
+          "top": [
+            {
+              "move": "Q16",
+              "visits": 7,
+              "winrate": 0.3822
+            },
+            {
+              "move": "D16",
+              "visits": 7,
+              "winrate": 0.382
+            },
+            {
+              "move": "Q4",
+              "visits": 7,
+              "winrate": 0.3804
+            }
+          ]
+        },
+        "100@64": {
+          "best": "D4",
+          "top": [
+            {
+              "move": "D4",
+              "visits": 2,
+              "winrate": 0.3873
+            },
+            {
+              "move": "D16",
+              "visits": 2,
+              "winrate": 0.3871
+            },
+            {
+              "move": "Q4",
+              "visits": 2,
+              "winrate": 0.387
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q16",
+          "top": [
+            {
+              "move": "Q16",
+              "visits": 45,
+              "winrate": 0.3749
+            },
+            {
+              "move": "D16",
+              "visits": 44,
+              "winrate": 0.3763
+            },
+            {
+              "move": "Q4",
+              "visits": 44,
+              "winrate": 0.3744
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D16",
+          "top": [
+            {
+              "move": "D16",
+              "visits": 15,
+              "winrate": 0.3791
+            },
+            {
+              "move": "Q16",
+              "visits": 14,
+              "winrate": 0.3818
+            },
+            {
+              "move": "D4",
+              "visits": 12,
+              "winrate": 0.3831
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 5,
+      "byVisits": {
+        "100@16": {
+          "best": "Q3",
+          "top": [
+            {
+              "move": "Q3",
+              "visits": 16,
+              "winrate": 0.6414
+            },
+            {
+              "move": "R4",
+              "visits": 7,
+              "winrate": 0.6152
+            },
+            {
+              "move": "C17",
+              "visits": 6,
+              "winrate": 0.6125
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q3",
+          "top": [
+            {
+              "move": "Q3",
+              "visits": 3,
+              "winrate": 0.6505
+            },
+            {
+              "move": "R4",
+              "visits": 2,
+              "winrate": 0.6185
+            },
+            {
+              "move": "C3",
+              "visits": 2,
+              "winrate": 0.6169
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q3",
+          "top": [
+            {
+              "move": "Q3",
+              "visits": 252,
+              "winrate": 0.6241
+            },
+            {
+              "move": "R4",
+              "visits": 54,
+              "winrate": 0.6141
+            },
+            {
+              "move": "C3",
+              "visits": 49,
+              "winrate": 0.6132
+            }
+          ]
+        },
+        "500@64": {
+          "best": "Q3",
+          "top": [
+            {
+              "move": "Q3",
+              "visits": 69,
+              "winrate": 0.6354
+            },
+            {
+              "move": "R4",
+              "visits": 16,
+              "winrate": 0.6106
+            },
+            {
+              "move": "C3",
+              "visits": 13,
+              "winrate": 0.6141
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 10,
+      "byVisits": {
+        "100@16": {
+          "best": "D17",
+          "top": [
+            {
+              "move": "D17",
+              "visits": 13,
+              "winrate": 0.3696
+            },
+            {
+              "move": "C16",
+              "visits": 13,
+              "winrate": 0.3691
+            },
+            {
+              "move": "R17",
+              "visits": 8,
+              "winrate": 0.3749
+            }
+          ]
+        },
+        "100@64": {
+          "best": "D17",
+          "top": [
+            {
+              "move": "D17",
+              "visits": 3,
+              "winrate": 0.3635
+            },
+            {
+              "move": "C16",
+              "visits": 3,
+              "winrate": 0.3627
+            },
+            {
+              "move": "R17",
+              "visits": 2,
+              "winrate": 0.3581
+            }
+          ]
+        },
+        "500@16": {
+          "best": "D17",
+          "top": [
+            {
+              "move": "D17",
+              "visits": 166,
+              "winrate": 0.3748
+            },
+            {
+              "move": "C16",
+              "visits": 164,
+              "winrate": 0.3788
+            },
+            {
+              "move": "R17",
+              "visits": 64,
+              "winrate": 0.3711
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D17",
+          "top": [
+            {
+              "move": "D17",
+              "visits": 60,
+              "winrate": 0.4313
+            },
+            {
+              "move": "C16",
+              "visits": 51,
+              "winrate": 0.4231
+            },
+            {
+              "move": "R17",
+              "visits": 18,
+              "winrate": 0.3752
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 15,
+      "byVisits": {
+        "100@16": {
+          "best": "K16",
+          "top": [
+            {
+              "move": "K16",
+              "visits": 7,
+              "winrate": 0.6277
+            },
+            {
+              "move": "F3",
+              "visits": 7,
+              "winrate": 0.6247
+            },
+            {
+              "move": "K17",
+              "visits": 7,
+              "winrate": 0.6226
+            }
+          ]
+        },
+        "100@64": {
+          "best": "M17",
+          "top": [
+            {
+              "move": "M17",
+              "visits": 2,
+              "winrate": 0.6254
+            },
+            {
+              "move": "K16",
+              "visits": 2,
+              "winrate": 0.622
+            },
+            {
+              "move": "R6",
+              "visits": 2,
+              "winrate": 0.6212
+            }
+          ]
+        },
+        "500@16": {
+          "best": "F3",
+          "top": [
+            {
+              "move": "F3",
+              "visits": 64,
+              "winrate": 0.6266
+            },
+            {
+              "move": "K17",
+              "visits": 49,
+              "winrate": 0.6264
+            },
+            {
+              "move": "C6",
+              "visits": 33,
+              "winrate": 0.6222
+            }
+          ]
+        },
+        "500@64": {
+          "best": "K17",
+          "top": [
+            {
+              "move": "K17",
+              "visits": 12,
+              "winrate": 0.6277
+            },
+            {
+              "move": "F3",
+              "visits": 12,
+              "winrate": 0.6241
+            },
+            {
+              "move": "K16",
+              "visits": 8,
+              "winrate": 0.6292
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 20,
+      "byVisits": {
+        "100@16": {
+          "best": "D5",
+          "top": [
+            {
+              "move": "D5",
+              "visits": 20,
+              "winrate": 0.3932
+            },
+            {
+              "move": "C5",
+              "visits": 13,
+              "winrate": 0.3755
+            },
+            {
+              "move": "C6",
+              "visits": 7,
+              "winrate": 0.3731
+            }
+          ]
+        },
+        "100@64": {
+          "best": "D5",
+          "top": [
+            {
+              "move": "D5",
+              "visits": 5,
+              "winrate": 0.3915
+            },
+            {
+              "move": "C5",
+              "visits": 4,
+              "winrate": 0.3776
+            },
+            {
+              "move": "C14",
+              "visits": 2,
+              "winrate": 0.367
+            }
+          ]
+        },
+        "500@16": {
+          "best": "D5",
+          "top": [
+            {
+              "move": "D5",
+              "visits": 244,
+              "winrate": 0.3981
+            },
+            {
+              "move": "C5",
+              "visits": 80,
+              "winrate": 0.3766
+            },
+            {
+              "move": "C6",
+              "visits": 74,
+              "winrate": 0.3907
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D5",
+          "top": [
+            {
+              "move": "D5",
+              "visits": 149,
+              "winrate": 0.4662
+            },
+            {
+              "move": "C5",
+              "visits": 100,
+              "winrate": 0.4602
+            },
+            {
+              "move": "C6",
+              "visits": 19,
+              "winrate": 0.3787
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 25,
+      "byVisits": {
+        "100@16": {
+          "best": "J3",
+          "top": [
+            {
+              "move": "J3",
+              "visits": 7,
+              "winrate": 0.6076
+            },
+            {
+              "move": "K3",
+              "visits": 7,
+              "winrate": 0.6063
+            },
+            {
+              "move": "H3",
+              "visits": 7,
+              "winrate": 0.6027
+            }
+          ]
+        },
+        "100@64": {
+          "best": "R6",
+          "top": [
+            {
+              "move": "R6",
+              "visits": 2,
+              "winrate": 0.6217
+            },
+            {
+              "move": "D6",
+              "visits": 2,
+              "winrate": 0.6211
+            },
+            {
+              "move": "O16",
+              "visits": 2,
+              "winrate": 0.6134
+            }
+          ]
+        },
+        "500@16": {
+          "best": "J3",
+          "top": [
+            {
+              "move": "J3",
+              "visits": 59,
+              "winrate": 0.6146
+            },
+            {
+              "move": "K3",
+              "visits": 58,
+              "winrate": 0.607
+            },
+            {
+              "move": "L4",
+              "visits": 50,
+              "winrate": 0.6109
+            }
+          ]
+        },
+        "500@64": {
+          "best": "J3",
+          "top": [
+            {
+              "move": "J3",
+              "visits": 12,
+              "winrate": 0.6128
+            },
+            {
+              "move": "K3",
+              "visits": 12,
+              "winrate": 0.611
+            },
+            {
+              "move": "H3",
+              "visits": 10,
+              "winrate": 0.6001
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 30,
+      "byVisits": {
+        "100@16": {
+          "best": "E6",
+          "top": [
+            {
+              "move": "E6",
+              "visits": 13,
+              "winrate": 0.4023
+            },
+            {
+              "move": "C14",
+              "visits": 7,
+              "winrate": 0.4153
+            },
+            {
+              "move": "C2",
+              "visits": 7,
+              "winrate": 0.3892
+            }
+          ]
+        },
+        "100@64": {
+          "best": "E6",
+          "top": [
+            {
+              "move": "E6",
+              "visits": 3,
+              "winrate": 0.3978
+            },
+            {
+              "move": "C14",
+              "visits": 2,
+              "winrate": 0.4151
+            },
+            {
+              "move": "C8",
+              "visits": 2,
+              "winrate": 0.3881
+            }
+          ]
+        },
+        "500@16": {
+          "best": "E6",
+          "top": [
+            {
+              "move": "E6",
+              "visits": 202,
+              "winrate": 0.4076
+            },
+            {
+              "move": "C14",
+              "visits": 107,
+              "winrate": 0.4116
+            },
+            {
+              "move": "C8",
+              "visits": 58,
+              "winrate": 0.3886
+            }
+          ]
+        },
+        "500@64": {
+          "best": "E6",
+          "top": [
+            {
+              "move": "E6",
+              "visits": 60,
+              "winrate": 0.4377
+            },
+            {
+              "move": "C8",
+              "visits": 26,
+              "winrate": 0.3938
+            },
+            {
+              "move": "C14",
+              "visits": 25,
+              "winrate": 0.4128
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 35,
+      "byVisits": {
+        "100@16": {
+          "best": "F7",
+          "top": [
+            {
+              "move": "F7",
+              "visits": 21,
+              "winrate": 0.5769
+            },
+            {
+              "move": "D9",
+              "visits": 12,
+              "winrate": 0.5756
+            },
+            {
+              "move": "F8",
+              "visits": 11,
+              "winrate": 0.56
+            }
+          ]
+        },
+        "100@64": {
+          "best": "F7",
+          "top": [
+            {
+              "move": "F7",
+              "visits": 5,
+              "winrate": 0.577
+            },
+            {
+              "move": "D9",
+              "visits": 3,
+              "winrate": 0.6106
+            },
+            {
+              "move": "F8",
+              "visits": 2,
+              "winrate": 0.5724
+            }
+          ]
+        },
+        "500@16": {
+          "best": "F7",
+          "top": [
+            {
+              "move": "F7",
+              "visits": 232,
+              "winrate": 0.568
+            },
+            {
+              "move": "D9",
+              "visits": 102,
+              "winrate": 0.5788
+            },
+            {
+              "move": "F8",
+              "visits": 64,
+              "winrate": 0.5575
+            }
+          ]
+        },
+        "500@64": {
+          "best": "F7",
+          "top": [
+            {
+              "move": "F7",
+              "visits": 147,
+              "winrate": 0.5974
+            },
+            {
+              "move": "D9",
+              "visits": 55,
+              "winrate": 0.5985
+            },
+            {
+              "move": "F8",
+              "visits": 33,
+              "winrate": 0.5657
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 40,
+      "byVisits": {
+        "100@16": {
+          "best": "D11",
+          "top": [
+            {
+              "move": "D11",
+              "visits": 18,
+              "winrate": 0.4493
+            },
+            {
+              "move": "C2",
+              "visits": 12,
+              "winrate": 0.4666
+            },
+            {
+              "move": "C12",
+              "visits": 11,
+              "winrate": 0.4169
+            }
+          ]
+        },
+        "100@64": {
+          "best": "D11",
+          "top": [
+            {
+              "move": "D11",
+              "visits": 4,
+              "winrate": 0.4544
+            },
+            {
+              "move": "C2",
+              "visits": 3,
+              "winrate": 0.5239
+            },
+            {
+              "move": "C12",
+              "visits": 3,
+              "winrate": 0.4311
+            }
+          ]
+        },
+        "500@16": {
+          "best": "D11",
+          "top": [
+            {
+              "move": "D11",
+              "visits": 311,
+              "winrate": 0.4554
+            },
+            {
+              "move": "C12",
+              "visits": 57,
+              "winrate": 0.4096
+            },
+            {
+              "move": "C2",
+              "visits": 52,
+              "winrate": 0.4207
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D11",
+          "top": [
+            {
+              "move": "D11",
+              "visits": 121,
+              "winrate": 0.4768
+            },
+            {
+              "move": "C2",
+              "visits": 73,
+              "winrate": 0.4571
+            },
+            {
+              "move": "C12",
+              "visits": 59,
+              "winrate": 0.459
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 45,
+      "byVisits": {
+        "100@16": {
+          "best": "C1",
+          "top": [
+            {
+              "move": "C1",
+              "visits": 26,
+              "winrate": 0.581
+            },
+            {
+              "move": "B12",
+              "visits": 6,
+              "winrate": 0.503
+            },
+            {
+              "move": "F3",
+              "visits": 6,
+              "winrate": 0.4943
+            }
+          ]
+        },
+        "100@64": {
+          "best": "C1",
+          "top": [
+            {
+              "move": "C1",
+              "visits": 4,
+              "winrate": 0.5552
+            },
+            {
+              "move": "F3",
+              "visits": 2,
+              "winrate": 0.5041
+            },
+            {
+              "move": "D10",
+              "visits": 2,
+              "winrate": 0.504
+            }
+          ]
+        },
+        "500@16": {
+          "best": "C1",
+          "top": [
+            {
+              "move": "C1",
+              "visits": 403,
+              "winrate": 0.5795
+            },
+            {
+              "move": "F3",
+              "visits": 12,
+              "winrate": 0.4814
+            },
+            {
+              "move": "E11",
+              "visits": 11,
+              "winrate": 0.5032
+            }
+          ]
+        },
+        "500@64": {
+          "best": "C1",
+          "top": [
+            {
+              "move": "C1",
+              "visits": 138,
+              "winrate": 0.6122
+            },
+            {
+              "move": "F3",
+              "visits": 22,
+              "winrate": 0.5003
+            },
+            {
+              "move": "E11",
+              "visits": 12,
+              "winrate": 0.5107
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 50,
+      "byVisits": {
+        "100@16": {
+          "best": "D12",
+          "top": [
+            {
+              "move": "D12",
+              "visits": 28,
+              "winrate": 0.4727
+            },
+            {
+              "move": "C15",
+              "visits": 11,
+              "winrate": 0.3868
+            },
+            {
+              "move": "C14",
+              "visits": 10,
+              "winrate": 0.3058
+            }
+          ]
+        },
+        "100@64": {
+          "best": "D12",
+          "top": [
+            {
+              "move": "D12",
+              "visits": 4,
+              "winrate": 0.4355
+            },
+            {
+              "move": "E9",
+              "visits": 3,
+              "winrate": 0.4537
+            },
+            {
+              "move": "C15",
+              "visits": 3,
+              "winrate": 0.3874
+            }
+          ]
+        },
+        "500@16": {
+          "best": "D12",
+          "top": [
+            {
+              "move": "D12",
+              "visits": 389,
+              "winrate": 0.4293
+            },
+            {
+              "move": "C15",
+              "visits": 37,
+              "winrate": 0.376
+            },
+            {
+              "move": "E9",
+              "visits": 17,
+              "winrate": 0.3922
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D12",
+          "top": [
+            {
+              "move": "D12",
+              "visits": 161,
+              "winrate": 0.5219
+            },
+            {
+              "move": "C15",
+              "visits": 80,
+              "winrate": 0.4491
+            },
+            {
+              "move": "E9",
+              "visits": 38,
+              "winrate": 0.4258
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 55,
+      "byVisits": {
+        "100@16": {
+          "best": "B16",
+          "top": [
+            {
+              "move": "B16",
+              "visits": 67,
+              "winrate": 0.5906
+            },
+            {
+              "move": "G4",
+              "visits": 4,
+              "winrate": 0.317
+            },
+            {
+              "move": "D10",
+              "visits": 3,
+              "winrate": 0.3068
+            }
+          ]
+        },
+        "100@64": {
+          "best": "B16",
+          "top": [
+            {
+              "move": "B16",
+              "visits": 13,
+              "winrate": 0.5532
+            },
+            {
+              "move": "G4",
+              "visits": 3,
+              "winrate": 0.3523
+            },
+            {
+              "move": "G3",
+              "visits": 2,
+              "winrate": 0.3423
+            }
+          ]
+        },
+        "500@16": {
+          "best": "B16",
+          "top": [
+            {
+              "move": "B16",
+              "visits": 467,
+              "winrate": 0.5726
+            },
+            {
+              "move": "G4",
+              "visits": 4,
+              "winrate": 0.317
+            },
+            {
+              "move": "D10",
+              "visits": 3,
+              "winrate": 0.3068
+            }
+          ]
+        },
+        "500@64": {
+          "best": "B16",
+          "top": [
+            {
+              "move": "B16",
+              "visits": 362,
+              "winrate": 0.6229
+            },
+            {
+              "move": "G4",
+              "visits": 7,
+              "winrate": 0.3402
+            },
+            {
+              "move": "G3",
+              "visits": 7,
+              "winrate": 0.331
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 60,
+      "byVisits": {
+        "100@16": {
+          "best": "E3",
+          "top": [
+            {
+              "move": "E3",
+              "visits": 12,
+              "winrate": 0.4178
+            },
+            {
+              "move": "O15",
+              "visits": 10,
+              "winrate": 0.3956
+            },
+            {
+              "move": "R14",
+              "visits": 6,
+              "winrate": 0.3735
+            }
+          ]
+        },
+        "100@64": {
+          "best": "F6",
+          "top": [
+            {
+              "move": "F6",
+              "visits": 2,
+              "winrate": 0.3839
+            },
+            {
+              "move": "O15",
+              "visits": 2,
+              "winrate": 0.3809
+            },
+            {
+              "move": "E3",
+              "visits": 2,
+              "winrate": 0.3777
+            }
+          ]
+        },
+        "500@16": {
+          "best": "E3",
+          "top": [
+            {
+              "move": "E3",
+              "visits": 227,
+              "winrate": 0.4229
+            },
+            {
+              "move": "O15",
+              "visits": 122,
+              "winrate": 0.4048
+            },
+            {
+              "move": "R2",
+              "visits": 23,
+              "winrate": 0.3696
+            }
+          ]
+        },
+        "500@64": {
+          "best": "E3",
+          "top": [
+            {
+              "move": "E3",
+              "visits": 30,
+              "winrate": 0.4141
+            },
+            {
+              "move": "O15",
+              "visits": 29,
+              "winrate": 0.4039
+            },
+            {
+              "move": "F6",
+              "visits": 13,
+              "winrate": 0.3599
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 65,
+      "byVisits": {
+        "100@16": {
+          "best": "M4",
+          "top": [
+            {
+              "move": "M4",
+              "visits": 7,
+              "winrate": 0.6534
+            },
+            {
+              "move": "Q18",
+              "visits": 7,
+              "winrate": 0.6348
+            },
+            {
+              "move": "Q13",
+              "visits": 7,
+              "winrate": 0.6315
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q13",
+          "top": [
+            {
+              "move": "Q13",
+              "visits": 2,
+              "winrate": 0.6554
+            },
+            {
+              "move": "J16",
+              "visits": 2,
+              "winrate": 0.6376
+            },
+            {
+              "move": "R13",
+              "visits": 2,
+              "winrate": 0.6308
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q18",
+          "top": [
+            {
+              "move": "Q18",
+              "visits": 109,
+              "winrate": 0.6345
+            },
+            {
+              "move": "Q13",
+              "visits": 54,
+              "winrate": 0.6311
+            },
+            {
+              "move": "M4",
+              "visits": 52,
+              "winrate": 0.6293
+            }
+          ]
+        },
+        "500@64": {
+          "best": "Q18",
+          "top": [
+            {
+              "move": "Q18",
+              "visits": 25,
+              "winrate": 0.6407
+            },
+            {
+              "move": "Q13",
+              "visits": 15,
+              "winrate": 0.6321
+            },
+            {
+              "move": "M4",
+              "visits": 13,
+              "winrate": 0.6375
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 70,
+      "byVisits": {
+        "100@16": {
+          "best": "K15",
+          "top": [
+            {
+              "move": "K15",
+              "visits": 16,
+              "winrate": 0.3558
+            },
+            {
+              "move": "Q14",
+              "visits": 9,
+              "winrate": 0.3358
+            },
+            {
+              "move": "P2",
+              "visits": 6,
+              "winrate": 0.3468
+            }
+          ]
+        },
+        "100@64": {
+          "best": "K15",
+          "top": [
+            {
+              "move": "K15",
+              "visits": 3,
+              "winrate": 0.3475
+            },
+            {
+              "move": "P2",
+              "visits": 2,
+              "winrate": 0.353
+            },
+            {
+              "move": "Q14",
+              "visits": 2,
+              "winrate": 0.3467
+            }
+          ]
+        },
+        "500@16": {
+          "best": "K15",
+          "top": [
+            {
+              "move": "K15",
+              "visits": 284,
+              "winrate": 0.3455
+            },
+            {
+              "move": "P2",
+              "visits": 53,
+              "winrate": 0.355
+            },
+            {
+              "move": "Q14",
+              "visits": 36,
+              "winrate": 0.3068
+            }
+          ]
+        },
+        "500@64": {
+          "best": "K15",
+          "top": [
+            {
+              "move": "K15",
+              "visits": 65,
+              "winrate": 0.3706
+            },
+            {
+              "move": "Q14",
+              "visits": 30,
+              "winrate": 0.3824
+            },
+            {
+              "move": "P2",
+              "visits": 15,
+              "winrate": 0.3571
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 75,
+      "byVisits": {
+        "100@16": {
+          "best": "L4",
+          "top": [
+            {
+              "move": "L4",
+              "visits": 11,
+              "winrate": 0.673
+            },
+            {
+              "move": "H17",
+              "visits": 10,
+              "winrate": 0.6403
+            },
+            {
+              "move": "M15",
+              "visits": 7,
+              "winrate": 0.638
+            }
+          ]
+        },
+        "100@64": {
+          "best": "L4",
+          "top": [
+            {
+              "move": "L4",
+              "visits": 2,
+              "winrate": 0.6519
+            },
+            {
+              "move": "H17",
+              "visits": 2,
+              "winrate": 0.6511
+            },
+            {
+              "move": "M15",
+              "visits": 2,
+              "winrate": 0.648
+            }
+          ]
+        },
+        "500@16": {
+          "best": "L4",
+          "top": [
+            {
+              "move": "L4",
+              "visits": 175,
+              "winrate": 0.668
+            },
+            {
+              "move": "H17",
+              "visits": 144,
+              "winrate": 0.6566
+            },
+            {
+              "move": "M15",
+              "visits": 31,
+              "winrate": 0.6205
+            }
+          ]
+        },
+        "500@64": {
+          "best": "L4",
+          "top": [
+            {
+              "move": "L4",
+              "visits": 35,
+              "winrate": 0.6716
+            },
+            {
+              "move": "H17",
+              "visits": 29,
+              "winrate": 0.6577
+            },
+            {
+              "move": "M15",
+              "visits": 15,
+              "winrate": 0.6355
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 80,
+      "byVisits": {
+        "100@16": {
+          "best": "J16",
+          "top": [
+            {
+              "move": "J16",
+              "visits": 35,
+              "winrate": 0.4145
+            },
+            {
+              "move": "L16",
+              "visits": 33,
+              "winrate": 0.4217
+            },
+            {
+              "move": "L17",
+              "visits": 4,
+              "winrate": 0.2578
+            }
+          ]
+        },
+        "100@64": {
+          "best": "J16",
+          "top": [
+            {
+              "move": "J16",
+              "visits": 8,
+              "winrate": 0.4419
+            },
+            {
+              "move": "L16",
+              "visits": 7,
+              "winrate": 0.427
+            },
+            {
+              "move": "J17",
+              "visits": 4,
+              "winrate": 0.2835
+            }
+          ]
+        },
+        "500@16": {
+          "best": "J16",
+          "top": [
+            {
+              "move": "J16",
+              "visits": 238,
+              "winrate": 0.2847
+            },
+            {
+              "move": "L16",
+              "visits": 227,
+              "winrate": 0.2892
+            },
+            {
+              "move": "J17",
+              "visits": 7,
+              "winrate": 0.1354
+            }
+          ]
+        },
+        "500@64": {
+          "best": "J16",
+          "top": [
+            {
+              "move": "J16",
+              "visits": 209,
+              "winrate": 0.4548
+            },
+            {
+              "move": "L16",
+              "visits": 154,
+              "winrate": 0.4531
+            },
+            {
+              "move": "J17",
+              "visits": 17,
+              "winrate": 0.2817
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 85,
+      "byVisits": {
+        "100@16": {
+          "best": "Q15",
+          "top": [
+            {
+              "move": "Q15",
+              "visits": 46,
+              "winrate": 0.7168
+            },
+            {
+              "move": "R7",
+              "visits": 6,
+              "winrate": 0.5539
+            },
+            {
+              "move": "P15",
+              "visits": 6,
+              "winrate": 0.5471
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q15",
+          "top": [
+            {
+              "move": "Q15",
+              "visits": 7,
+              "winrate": 0.7842
+            },
+            {
+              "move": "P15",
+              "visits": 2,
+              "winrate": 0.5637
+            },
+            {
+              "move": "R5",
+              "visits": 2,
+              "winrate": 0.5433
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q15",
+          "top": [
+            {
+              "move": "Q15",
+              "visits": 446,
+              "winrate": 0.7353
+            },
+            {
+              "move": "R7",
+              "visits": 6,
+              "winrate": 0.5539
+            },
+            {
+              "move": "P15",
+              "visits": 6,
+              "winrate": 0.5471
+            }
+          ]
+        },
+        "500@64": {
+          "best": "Q15",
+          "top": [
+            {
+              "move": "Q15",
+              "visits": 278,
+              "winrate": 0.6577
+            },
+            {
+              "move": "P15",
+              "visits": 10,
+              "winrate": 0.5421
+            },
+            {
+              "move": "R7",
+              "visits": 9,
+              "winrate": 0.5671
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 90,
+      "byVisits": {
+        "100@16": {
+          "best": "R13",
+          "top": [
+            {
+              "move": "R13",
+              "visits": 16,
+              "winrate": 0.2433
+            },
+            {
+              "move": "Q8",
+              "visits": 15,
+              "winrate": 0.2408
+            },
+            {
+              "move": "Q9",
+              "visits": 9,
+              "winrate": 0.2515
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q8",
+          "top": [
+            {
+              "move": "Q8",
+              "visits": 3,
+              "winrate": 0.2626
+            },
+            {
+              "move": "R13",
+              "visits": 3,
+              "winrate": 0.2529
+            },
+            {
+              "move": "Q9",
+              "visits": 2,
+              "winrate": 0.2564
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q8",
+          "top": [
+            {
+              "move": "Q8",
+              "visits": 169,
+              "winrate": 0.2143
+            },
+            {
+              "move": "R13",
+              "visits": 122,
+              "winrate": 0.1897
+            },
+            {
+              "move": "F9",
+              "visits": 74,
+              "winrate": 0.2338
+            }
+          ]
+        },
+        "500@64": {
+          "best": "R13",
+          "top": [
+            {
+              "move": "R13",
+              "visits": 133,
+              "winrate": 0.3803
+            },
+            {
+              "move": "Q8",
+              "visits": 85,
+              "winrate": 0.3195
+            },
+            {
+              "move": "Q9",
+              "visits": 20,
+              "winrate": 0.254
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 95,
+      "byVisits": {
+        "100@16": {
+          "best": "Q17",
+          "top": [
+            {
+              "move": "Q17",
+              "visits": 53,
+              "winrate": 0.693
+            },
+            {
+              "move": "R5",
+              "visits": 6,
+              "winrate": 0.638
+            },
+            {
+              "move": "D14",
+              "visits": 5,
+              "winrate": 0.5552
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q17",
+          "top": [
+            {
+              "move": "Q17",
+              "visits": 8,
+              "winrate": 0.8992
+            },
+            {
+              "move": "R5",
+              "visits": 2,
+              "winrate": 0.6087
+            },
+            {
+              "move": "Q10",
+              "visits": 2,
+              "winrate": 0.5956
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q17",
+          "top": [
+            {
+              "move": "Q17",
+              "visits": 444,
+              "winrate": 0.7306
+            },
+            {
+              "move": "R5",
+              "visits": 15,
+              "winrate": 0.6564
+            },
+            {
+              "move": "D14",
+              "visits": 5,
+              "winrate": 0.5552
+            }
+          ]
+        },
+        "500@64": {
+          "best": "Q17",
+          "top": [
+            {
+              "move": "Q17",
+              "visits": 296,
+              "winrate": 0.6325
+            },
+            {
+              "move": "R5",
+              "visits": 14,
+              "winrate": 0.6642
+            },
+            {
+              "move": "D14",
+              "visits": 10,
+              "winrate": 0.5865
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 100,
+      "byVisits": {
+        "100@16": {
+          "best": "S19",
+          "top": [
+            {
+              "move": "S19",
+              "visits": 74,
+              "winrate": 0.3649
+            },
+            {
+              "move": "G8",
+              "visits": 3,
+              "winrate": 0.1314
+            },
+            {
+              "move": "F9",
+              "visits": 2,
+              "winrate": 0.1073
+            }
+          ]
+        },
+        "100@64": {
+          "best": "S19",
+          "top": [
+            {
+              "move": "S19",
+              "visits": 11,
+              "winrate": 0.3527
+            },
+            {
+              "move": "G8",
+              "visits": 2,
+              "winrate": 0.126
+            },
+            {
+              "move": "F9",
+              "visits": 2,
+              "winrate": 0.1012
+            }
+          ]
+        },
+        "500@16": {
+          "best": "S19",
+          "top": [
+            {
+              "move": "S19",
+              "visits": 474,
+              "winrate": 0.2818
+            },
+            {
+              "move": "G8",
+              "visits": 3,
+              "winrate": 0.1314
+            },
+            {
+              "move": "F9",
+              "visits": 2,
+              "winrate": 0.1073
+            }
+          ]
+        },
+        "500@64": {
+          "best": "S19",
+          "top": [
+            {
+              "move": "S19",
+              "visits": 355,
+              "winrate": 0.4096
+            },
+            {
+              "move": "G8",
+              "visits": 5,
+              "winrate": 0.1566
+            },
+            {
+              "move": "F9",
+              "visits": 3,
+              "winrate": 0.106
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 105,
+      "byVisits": {
+        "100@16": {
+          "best": "N3",
+          "top": [
+            {
+              "move": "N3",
+              "visits": 12,
+              "winrate": 0.7956
+            },
+            {
+              "move": "N8",
+              "visits": 7,
+              "winrate": 0.7251
+            },
+            {
+              "move": "R11",
+              "visits": 6,
+              "winrate": 0.7437
+            }
+          ]
+        },
+        "100@64": {
+          "best": "N3",
+          "top": [
+            {
+              "move": "N3",
+              "visits": 2,
+              "winrate": 0.7855
+            },
+            {
+              "move": "Q10",
+              "visits": 2,
+              "winrate": 0.7376
+            },
+            {
+              "move": "R11",
+              "visits": 2,
+              "winrate": 0.7317
+            }
+          ]
+        },
+        "500@16": {
+          "best": "N3",
+          "top": [
+            {
+              "move": "N3",
+              "visits": 262,
+              "winrate": 0.7903
+            },
+            {
+              "move": "T18",
+              "visits": 33,
+              "winrate": 0.7535
+            },
+            {
+              "move": "O7",
+              "visits": 33,
+              "winrate": 0.726
+            }
+          ]
+        },
+        "500@64": {
+          "best": "N3",
+          "top": [
+            {
+              "move": "N3",
+              "visits": 38,
+              "winrate": 0.797
+            },
+            {
+              "move": "S13",
+              "visits": 19,
+              "winrate": 0.7199
+            },
+            {
+              "move": "R11",
+              "visits": 16,
+              "winrate": 0.7323
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 110,
+      "byVisits": {
+        "100@16": {
+          "best": "O12",
+          "top": [
+            {
+              "move": "O12",
+              "visits": 18,
+              "winrate": 0.3743
+            },
+            {
+              "move": "O11",
+              "visits": 17,
+              "winrate": 0.381
+            },
+            {
+              "move": "N11",
+              "visits": 7,
+              "winrate": 0.3189
+            }
+          ]
+        },
+        "100@64": {
+          "best": "O12",
+          "top": [
+            {
+              "move": "O12",
+              "visits": 3,
+              "winrate": 0.367
+            },
+            {
+              "move": "O11",
+              "visits": 3,
+              "winrate": 0.3645
+            },
+            {
+              "move": "N12",
+              "visits": 2,
+              "winrate": 0.3279
+            }
+          ]
+        },
+        "500@16": {
+          "best": "O12",
+          "top": [
+            {
+              "move": "O12",
+              "visits": 261,
+              "winrate": 0.3661
+            },
+            {
+              "move": "O11",
+              "visits": 153,
+              "winrate": 0.3474
+            },
+            {
+              "move": "N11",
+              "visits": 15,
+              "winrate": 0.2844
+            }
+          ]
+        },
+        "500@64": {
+          "best": "O11",
+          "top": [
+            {
+              "move": "O11",
+              "visits": 93,
+              "winrate": 0.4444
+            },
+            {
+              "move": "O12",
+              "visits": 89,
+              "winrate": 0.4235
+            },
+            {
+              "move": "N12",
+              "visits": 38,
+              "winrate": 0.3298
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 115,
+      "byVisits": {
+        "100@16": {
+          "best": "L13",
+          "top": [
+            {
+              "move": "L13",
+              "visits": 31,
+              "winrate": 0.681
+            },
+            {
+              "move": "M13",
+              "visits": 14,
+              "winrate": 0.6648
+            },
+            {
+              "move": "T18",
+              "visits": 6,
+              "winrate": 0.5669
+            }
+          ]
+        },
+        "100@64": {
+          "best": "L13",
+          "top": [
+            {
+              "move": "L13",
+              "visits": 8,
+              "winrate": 0.702
+            },
+            {
+              "move": "M13",
+              "visits": 4,
+              "winrate": 0.6632
+            },
+            {
+              "move": "T18",
+              "visits": 3,
+              "winrate": 0.7266
+            }
+          ]
+        },
+        "500@16": {
+          "best": "M13",
+          "top": [
+            {
+              "move": "M13",
+              "visits": 274,
+              "winrate": 0.6936
+            },
+            {
+              "move": "L13",
+              "visits": 160,
+              "winrate": 0.6271
+            },
+            {
+              "move": "P11",
+              "visits": 14,
+              "winrate": 0.5765
+            }
+          ]
+        },
+        "500@64": {
+          "best": "L13",
+          "top": [
+            {
+              "move": "L13",
+              "visits": 230,
+              "winrate": 0.6256
+            },
+            {
+              "move": "M13",
+              "visits": 87,
+              "winrate": 0.6369
+            },
+            {
+              "move": "P11",
+              "visits": 24,
+              "winrate": 0.5488
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 120,
+      "byVisits": {
+        "100@16": {
+          "best": "J18",
+          "top": [
+            {
+              "move": "J18",
+              "visits": 53,
+              "winrate": 0.7345
+            },
+            {
+              "move": "L11",
+              "visits": 16,
+              "winrate": 0.4786
+            },
+            {
+              "move": "O13",
+              "visits": 3,
+              "winrate": 0.3302
+            }
+          ]
+        },
+        "100@64": {
+          "best": "J18",
+          "top": [
+            {
+              "move": "J18",
+              "visits": 7,
+              "winrate": 0.7791
+            },
+            {
+              "move": "L11",
+              "visits": 5,
+              "winrate": 0.4469
+            },
+            {
+              "move": "O13",
+              "visits": 2,
+              "winrate": 0.3201
+            }
+          ]
+        },
+        "500@16": {
+          "best": "J18",
+          "top": [
+            {
+              "move": "J18",
+              "visits": 445,
+              "winrate": 0.8085
+            },
+            {
+              "move": "L11",
+              "visits": 24,
+              "winrate": 0.5668
+            },
+            {
+              "move": "O13",
+              "visits": 3,
+              "winrate": 0.3302
+            }
+          ]
+        },
+        "500@64": {
+          "best": "J18",
+          "top": [
+            {
+              "move": "J18",
+              "visits": 256,
+              "winrate": 0.7052
+            },
+            {
+              "move": "L11",
+              "visits": 97,
+              "winrate": 0.5951
+            },
+            {
+              "move": "O13",
+              "visits": 11,
+              "winrate": 0.4285
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 125,
+      "byVisits": {
+        "100@16": {
+          "best": "T18",
+          "top": [
+            {
+              "move": "T18",
+              "visits": 39,
+              "winrate": 0.3202
+            },
+            {
+              "move": "S12",
+              "visits": 16,
+              "winrate": 0.2365
+            },
+            {
+              "move": "K11",
+              "visits": 14,
+              "winrate": 0.1118
+            }
+          ]
+        },
+        "100@64": {
+          "best": "K11",
+          "top": [
+            {
+              "move": "K11",
+              "visits": 5,
+              "winrate": 0.1019
+            },
+            {
+              "move": "S12",
+              "visits": 3,
+              "winrate": 0.2097
+            },
+            {
+              "move": "T18",
+              "visits": 3,
+              "winrate": 0.1976
+            }
+          ]
+        },
+        "500@16": {
+          "best": "T18",
+          "top": [
+            {
+              "move": "T18",
+              "visits": 314,
+              "winrate": 0.1869
+            },
+            {
+              "move": "K11",
+              "visits": 91,
+              "winrate": 0.1713
+            },
+            {
+              "move": "S12",
+              "visits": 39,
+              "winrate": 0.1553
+            }
+          ]
+        },
+        "500@64": {
+          "best": "T18",
+          "top": [
+            {
+              "move": "T18",
+              "visits": 234,
+              "winrate": 0.3783
+            },
+            {
+              "move": "K11",
+              "visits": 53,
+              "winrate": 0.1922
+            },
+            {
+              "move": "S12",
+              "visits": 42,
+              "winrate": 0.2594
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 130,
+      "byVisits": {
+        "100@16": {
+          "best": "M15",
+          "top": [
+            {
+              "move": "M15",
+              "visits": 7,
+              "winrate": 0.9757
+            },
+            {
+              "move": "L10",
+              "visits": 7,
+              "winrate": 0.9737
+            },
+            {
+              "move": "L14",
+              "visits": 7,
+              "winrate": 0.9691
+            }
+          ]
+        },
+        "100@64": {
+          "best": "M15",
+          "top": [
+            {
+              "move": "M15",
+              "visits": 2,
+              "winrate": 0.9787
+            },
+            {
+              "move": "L14",
+              "visits": 2,
+              "winrate": 0.9695
+            },
+            {
+              "move": "L10",
+              "visits": 2,
+              "winrate": 0.9587
+            }
+          ]
+        },
+        "500@16": {
+          "best": "M15",
+          "top": [
+            {
+              "move": "M15",
+              "visits": 86,
+              "winrate": 0.9611
+            },
+            {
+              "move": "L10",
+              "visits": 77,
+              "winrate": 0.969
+            },
+            {
+              "move": "K19",
+              "visits": 53,
+              "winrate": 0.9617
+            }
+          ]
+        },
+        "500@64": {
+          "best": "L10",
+          "top": [
+            {
+              "move": "L10",
+              "visits": 23,
+              "winrate": 0.9759
+            },
+            {
+              "move": "M15",
+              "visits": 23,
+              "winrate": 0.9648
+            },
+            {
+              "move": "L14",
+              "visits": 14,
+              "winrate": 0.9667
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 135,
+      "byVisits": {
+        "100@16": {
+          "best": "S12",
+          "top": [
+            {
+              "move": "S12",
+              "visits": 32,
+              "winrate": 0.0915
+            },
+            {
+              "move": "J3",
+              "visits": 13,
+              "winrate": 0.0643
+            },
+            {
+              "move": "K10",
+              "visits": 10,
+              "winrate": 0.0542
+            }
+          ]
+        },
+        "100@64": {
+          "best": "S12",
+          "top": [
+            {
+              "move": "S12",
+              "visits": 4,
+              "winrate": 0.0859
+            },
+            {
+              "move": "K10",
+              "visits": 3,
+              "winrate": 0.0612
+            },
+            {
+              "move": "J3",
+              "visits": 3,
+              "winrate": 0.0572
+            }
+          ]
+        },
+        "500@16": {
+          "best": "S12",
+          "top": [
+            {
+              "move": "S12",
+              "visits": 393,
+              "winrate": 0.0912
+            },
+            {
+              "move": "J3",
+              "visits": 36,
+              "winrate": 0.0647
+            },
+            {
+              "move": "K10",
+              "visits": 16,
+              "winrate": 0.0499
+            }
+          ]
+        },
+        "500@64": {
+          "best": "R19",
+          "top": [
+            {
+              "move": "R19",
+              "visits": 139,
+              "winrate": 0.3736
+            },
+            {
+              "move": "S12",
+              "visits": 96,
+              "winrate": 0.1507
+            },
+            {
+              "move": "J3",
+              "visits": 25,
+              "winrate": 0.077
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 140,
+      "byVisits": {
+        "100@16": {
+          "best": "J2",
+          "top": [
+            {
+              "move": "J2",
+              "visits": 9,
+              "winrate": 0.898
+            },
+            {
+              "move": "L14",
+              "visits": 7,
+              "winrate": 0.9203
+            },
+            {
+              "move": "H11",
+              "visits": 7,
+              "winrate": 0.8414
+            }
+          ]
+        },
+        "100@64": {
+          "best": "J2",
+          "top": [
+            {
+              "move": "J2",
+              "visits": 3,
+              "winrate": 0.9164
+            },
+            {
+              "move": "L14",
+              "visits": 2,
+              "winrate": 0.9177
+            },
+            {
+              "move": "K19",
+              "visits": 2,
+              "winrate": 0.9138
+            }
+          ]
+        },
+        "500@16": {
+          "best": "J2",
+          "top": [
+            {
+              "move": "J2",
+              "visits": 121,
+              "winrate": 0.8825
+            },
+            {
+              "move": "L14",
+              "visits": 70,
+              "winrate": 0.9064
+            },
+            {
+              "move": "G8",
+              "visits": 63,
+              "winrate": 0.8785
+            }
+          ]
+        },
+        "500@64": {
+          "best": "J2",
+          "top": [
+            {
+              "move": "J2",
+              "visits": 58,
+              "winrate": 0.878
+            },
+            {
+              "move": "K10",
+              "visits": 37,
+              "winrate": 0.8582
+            },
+            {
+              "move": "G8",
+              "visits": 27,
+              "winrate": 0.8788
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 145,
+      "byVisits": {
+        "100@16": {
+          "best": "R19",
+          "top": [
+            {
+              "move": "R19",
+              "visits": 47,
+              "winrate": 0.3662
+            },
+            {
+              "move": "P9",
+              "visits": 10,
+              "winrate": 0.1313
+            },
+            {
+              "move": "L14",
+              "visits": 9,
+              "winrate": 0.1035
+            }
+          ]
+        },
+        "100@64": {
+          "best": "R19",
+          "top": [
+            {
+              "move": "R19",
+              "visits": 4,
+              "winrate": 0.3505
+            },
+            {
+              "move": "L14",
+              "visits": 4,
+              "winrate": 0.1471
+            },
+            {
+              "move": "H2",
+              "visits": 3,
+              "winrate": 0.1204
+            }
+          ]
+        },
+        "500@16": {
+          "best": "R19",
+          "top": [
+            {
+              "move": "R19",
+              "visits": 297,
+              "winrate": 0.1445
+            },
+            {
+              "move": "P9",
+              "visits": 90,
+              "winrate": 0.1481
+            },
+            {
+              "move": "L14",
+              "visits": 46,
+              "winrate": 0.0816
+            }
+          ]
+        },
+        "500@64": {
+          "best": "R19",
+          "top": [
+            {
+              "move": "R19",
+              "visits": 265,
+              "winrate": 0.4254
+            },
+            {
+              "move": "L14",
+              "visits": 32,
+              "winrate": 0.1568
+            },
+            {
+              "move": "P9",
+              "visits": 29,
+              "winrate": 0.171
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 150,
+      "byVisits": {
+        "100@16": {
+          "best": "Q10",
+          "top": [
+            {
+              "move": "Q10",
+              "visits": 18,
+              "winrate": 0.9783
+            },
+            {
+              "move": "L14",
+              "visits": 8,
+              "winrate": 0.9502
+            },
+            {
+              "move": "P9",
+              "visits": 6,
+              "winrate": 0.9281
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q10",
+          "top": [
+            {
+              "move": "Q10",
+              "visits": 4,
+              "winrate": 0.9775
+            },
+            {
+              "move": "L14",
+              "visits": 2,
+              "winrate": 0.9295
+            },
+            {
+              "move": "P10",
+              "visits": 2,
+              "winrate": 0.9167
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q10",
+          "top": [
+            {
+              "move": "Q10",
+              "visits": 278,
+              "winrate": 0.9576
+            },
+            {
+              "move": "L14",
+              "visits": 53,
+              "winrate": 0.9386
+            },
+            {
+              "move": "G8",
+              "visits": 30,
+              "winrate": 0.9317
+            }
+          ]
+        },
+        "500@64": {
+          "best": "Q10",
+          "top": [
+            {
+              "move": "Q10",
+              "visits": 92,
+              "winrate": 0.966
+            },
+            {
+              "move": "L14",
+              "visits": 27,
+              "winrate": 0.9362
+            },
+            {
+              "move": "Q12",
+              "visits": 20,
+              "winrate": 0.8746
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 155,
+      "byVisits": {
+        "100@16": {
+          "best": "D14",
+          "top": [
+            {
+              "move": "D14",
+              "visits": 19,
+              "winrate": 0.0348
+            },
+            {
+              "move": "S11",
+              "visits": 10,
+              "winrate": 0.0123
+            },
+            {
+              "move": "H5",
+              "visits": 9,
+              "winrate": 0.0168
+            }
+          ]
+        },
+        "100@64": {
+          "best": "D14",
+          "top": [
+            {
+              "move": "D14",
+              "visits": 4,
+              "winrate": 0.038
+            },
+            {
+              "move": "S11",
+              "visits": 3,
+              "winrate": 0.0091
+            },
+            {
+              "move": "H2",
+              "visits": 2,
+              "winrate": 0.0212
+            }
+          ]
+        },
+        "500@16": {
+          "best": "D14",
+          "top": [
+            {
+              "move": "D14",
+              "visits": 277,
+              "winrate": 0.0269
+            },
+            {
+              "move": "S11",
+              "visits": 43,
+              "winrate": 0.0121
+            },
+            {
+              "move": "H5",
+              "visits": 41,
+              "winrate": 0.0156
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D14",
+          "top": [
+            {
+              "move": "D14",
+              "visits": 165,
+              "winrate": 0.236
+            },
+            {
+              "move": "S11",
+              "visits": 21,
+              "winrate": 0.0151
+            },
+            {
+              "move": "H5",
+              "visits": 17,
+              "winrate": 0.0198
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 160,
+      "byVisits": {
+        "100@16": {
+          "best": "B8",
+          "top": [
+            {
+              "move": "B8",
+              "visits": 12,
+              "winrate": 0.9922
+            },
+            {
+              "move": "B11",
+              "visits": 10,
+              "winrate": 0.9953
+            },
+            {
+              "move": "A13",
+              "visits": 6,
+              "winrate": 0.9899
+            }
+          ]
+        },
+        "100@64": {
+          "best": "B8",
+          "top": [
+            {
+              "move": "B8",
+              "visits": 4,
+              "winrate": 0.9946
+            },
+            {
+              "move": "B11",
+              "visits": 4,
+              "winrate": 0.9952
+            },
+            {
+              "move": "A13",
+              "visits": 2,
+              "winrate": 0.9858
+            }
+          ]
+        },
+        "500@16": {
+          "best": "B8",
+          "top": [
+            {
+              "move": "B8",
+              "visits": 138,
+              "winrate": 0.9903
+            },
+            {
+              "move": "B11",
+              "visits": 103,
+              "winrate": 0.9933
+            },
+            {
+              "move": "G8",
+              "visits": 47,
+              "winrate": 0.967
+            }
+          ]
+        },
+        "500@64": {
+          "best": "B8",
+          "top": [
+            {
+              "move": "B8",
+              "visits": 92,
+              "winrate": 0.9853
+            },
+            {
+              "move": "B11",
+              "visits": 63,
+              "winrate": 0.993
+            },
+            {
+              "move": "G8",
+              "visits": 21,
+              "winrate": 0.975
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 165,
+      "byVisits": {
+        "100@16": {
+          "best": "S11",
+          "top": [
+            {
+              "move": "S11",
+              "visits": 11,
+              "winrate": 0.0062
+            },
+            {
+              "move": "E4",
+              "visits": 10,
+              "winrate": 0.0175
+            },
+            {
+              "move": "P11",
+              "visits": 9,
+              "winrate": 0.0041
+            }
+          ]
+        },
+        "100@64": {
+          "best": "S11",
+          "top": [
+            {
+              "move": "S11",
+              "visits": 3,
+              "winrate": 0.0045
+            },
+            {
+              "move": "E4",
+              "visits": 2,
+              "winrate": 0.0295
+            },
+            {
+              "move": "D18",
+              "visits": 2,
+              "winrate": 0.0083
+            }
+          ]
+        },
+        "500@16": {
+          "best": "E4",
+          "top": [
+            {
+              "move": "E4",
+              "visits": 278,
+              "winrate": 0.0174
+            },
+            {
+              "move": "S11",
+              "visits": 43,
+              "winrate": 0.005
+            },
+            {
+              "move": "E9",
+              "visits": 36,
+              "winrate": 0.007
+            }
+          ]
+        },
+        "500@64": {
+          "best": "S11",
+          "top": [
+            {
+              "move": "S11",
+              "visits": 28,
+              "winrate": 0.009
+            },
+            {
+              "move": "E4",
+              "visits": 25,
+              "winrate": 0.036
+            },
+            {
+              "move": "P11",
+              "visits": 23,
+              "winrate": 0.006
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 170,
+      "byVisits": {
+        "100@16": {
+          "best": "B10",
+          "top": [
+            {
+              "move": "B10",
+              "visits": 26,
+              "winrate": 0.9814
+            },
+            {
+              "move": "B12",
+              "visits": 23,
+              "winrate": 0.8698
+            },
+            {
+              "move": "C11",
+              "visits": 19,
+              "winrate": 0.8812
+            }
+          ]
+        },
+        "100@64": {
+          "best": "B10",
+          "top": [
+            {
+              "move": "B10",
+              "visits": 6,
+              "winrate": 0.9887
+            },
+            {
+              "move": "B12",
+              "visits": 6,
+              "winrate": 0.9735
+            },
+            {
+              "move": "C11",
+              "visits": 5,
+              "winrate": 0.9793
+            }
+          ]
+        },
+        "500@16": {
+          "best": "B10",
+          "top": [
+            {
+              "move": "B10",
+              "visits": 345,
+              "winrate": 0.9737
+            },
+            {
+              "move": "C11",
+              "visits": 82,
+              "winrate": 0.9363
+            },
+            {
+              "move": "B12",
+              "visits": 41,
+              "winrate": 0.8442
+            }
+          ]
+        },
+        "500@64": {
+          "best": "B10",
+          "top": [
+            {
+              "move": "B10",
+              "visits": 163,
+              "winrate": 0.8499
+            },
+            {
+              "move": "B12",
+              "visits": 87,
+              "winrate": 0.7434
+            },
+            {
+              "move": "C11",
+              "visits": 81,
+              "winrate": 0.7933
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 175,
+      "byVisits": {
+        "100@16": {
+          "best": "A10",
+          "top": [
+            {
+              "move": "A10",
+              "visits": 11,
+              "winrate": 0.0415
+            },
+            {
+              "move": "S18",
+              "visits": 7,
+              "winrate": 0.0085
+            },
+            {
+              "move": "O7",
+              "visits": 7,
+              "winrate": 0.002
+            }
+          ]
+        },
+        "100@64": {
+          "best": "R11",
+          "top": [
+            {
+              "move": "R11",
+              "visits": 2,
+              "winrate": 0.0061
+            },
+            {
+              "move": "D10",
+              "visits": 2,
+              "winrate": 0.0105
+            },
+            {
+              "move": "A10",
+              "visits": 2,
+              "winrate": 0.0143
+            }
+          ]
+        },
+        "500@16": {
+          "best": "A10",
+          "top": [
+            {
+              "move": "A10",
+              "visits": 369,
+              "winrate": 0.0848
+            },
+            {
+              "move": "O7",
+              "visits": 13,
+              "winrate": 0.0033
+            },
+            {
+              "move": "S18",
+              "visits": 11,
+              "winrate": 0.0063
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D10",
+          "top": [
+            {
+              "move": "D10",
+              "visits": 224,
+              "winrate": 0.3482
+            },
+            {
+              "move": "A10",
+              "visits": 15,
+              "winrate": 0.0861
+            },
+            {
+              "move": "O7",
+              "visits": 10,
+              "winrate": 0.0018
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 180,
+      "byVisits": {
+        "100@16": {
+          "best": "S8",
+          "top": [
+            {
+              "move": "S8",
+              "visits": 9,
+              "winrate": 0.9965
+            },
+            {
+              "move": "T8",
+              "visits": 6,
+              "winrate": 0.9962
+            },
+            {
+              "move": "E12",
+              "visits": 6,
+              "winrate": 0.9927
+            }
+          ]
+        },
+        "100@64": {
+          "best": "S8",
+          "top": [
+            {
+              "move": "S8",
+              "visits": 2,
+              "winrate": 0.9964
+            },
+            {
+              "move": "R5",
+              "visits": 2,
+              "winrate": 0.995
+            },
+            {
+              "move": "O7",
+              "visits": 2,
+              "winrate": 0.9949
+            }
+          ]
+        },
+        "500@16": {
+          "best": "S8",
+          "top": [
+            {
+              "move": "S8",
+              "visits": 88,
+              "winrate": 0.9945
+            },
+            {
+              "move": "T8",
+              "visits": 33,
+              "winrate": 0.9958
+            },
+            {
+              "move": "R7",
+              "visits": 33,
+              "winrate": 0.9951
+            }
+          ]
+        },
+        "500@64": {
+          "best": "S8",
+          "top": [
+            {
+              "move": "S8",
+              "visits": 13,
+              "winrate": 0.9969
+            },
+            {
+              "move": "T11",
+              "visits": 9,
+              "winrate": 0.9904
+            },
+            {
+              "move": "T8",
+              "visits": 8,
+              "winrate": 0.996
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 185,
+      "byVisits": {
+        "100@16": {
+          "best": "S10",
+          "top": [
+            {
+              "move": "S10",
+              "visits": 25,
+              "winrate": 0.012
+            },
+            {
+              "move": "A10",
+              "visits": 9,
+              "winrate": 0.0201
+            },
+            {
+              "move": "G9",
+              "visits": 9,
+              "winrate": 0.0013
+            }
+          ]
+        },
+        "100@64": {
+          "best": "S10",
+          "top": [
+            {
+              "move": "S10",
+              "visits": 3,
+              "winrate": 0.0105
+            },
+            {
+              "move": "G9",
+              "visits": 3,
+              "winrate": 0.0014
+            },
+            {
+              "move": "A10",
+              "visits": 2,
+              "winrate": 0.0138
+            }
+          ]
+        },
+        "500@16": {
+          "best": "A8",
+          "top": [
+            {
+              "move": "A8",
+              "visits": 289,
+              "winrate": 0.0457
+            },
+            {
+              "move": "S10",
+              "visits": 71,
+              "winrate": 0.0067
+            },
+            {
+              "move": "G9",
+              "visits": 28,
+              "winrate": 0.0014
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D10",
+          "top": [
+            {
+              "move": "D10",
+              "visits": 148,
+              "winrate": 0.3746
+            },
+            {
+              "move": "S10",
+              "visits": 47,
+              "winrate": 0.0161
+            },
+            {
+              "move": "G9",
+              "visits": 18,
+              "winrate": 0.0013
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 190,
+      "byVisits": {
+        "100@16": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 7,
+              "winrate": 0.9964
+            },
+            {
+              "move": "H6",
+              "visits": 7,
+              "winrate": 0.9989
+            },
+            {
+              "move": "N7",
+              "visits": 7,
+              "winrate": 0.9987
+            }
+          ]
+        },
+        "100@64": {
+          "best": "K19",
+          "top": [
+            {
+              "move": "K19",
+              "visits": 2,
+              "winrate": 0.9989
+            },
+            {
+              "move": "T12",
+              "visits": 2,
+              "winrate": 0.999
+            },
+            {
+              "move": "E12",
+              "visits": 2,
+              "winrate": 0.999
+            }
+          ]
+        },
+        "500@16": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 36,
+              "winrate": 0.9959
+            },
+            {
+              "move": "H6",
+              "visits": 35,
+              "winrate": 0.9979
+            },
+            {
+              "move": "N7",
+              "visits": 32,
+              "winrate": 0.9987
+            }
+          ]
+        },
+        "500@64": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 8,
+              "winrate": 0.997
+            },
+            {
+              "move": "H6",
+              "visits": 8,
+              "winrate": 0.9989
+            },
+            {
+              "move": "K19",
+              "visits": 8,
+              "winrate": 0.999
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 195,
+      "byVisits": {
+        "100@16": {
+          "best": "S18",
+          "top": [
+            {
+              "move": "S18",
+              "visits": 15,
+              "winrate": 0.0008
+            },
+            {
+              "move": "O7",
+              "visits": 11,
+              "winrate": 0.002
+            },
+            {
+              "move": "D10",
+              "visits": 7,
+              "winrate": 0.0014
+            }
+          ]
+        },
+        "100@64": {
+          "best": "O7",
+          "top": [
+            {
+              "move": "O7",
+              "visits": 3,
+              "winrate": 0.0039
+            },
+            {
+              "move": "S18",
+              "visits": 3,
+              "winrate": 0.0007
+            },
+            {
+              "move": "L7",
+              "visits": 2,
+              "winrate": 0.0058
+            }
+          ]
+        },
+        "500@16": {
+          "best": "S18",
+          "top": [
+            {
+              "move": "S18",
+              "visits": 124,
+              "winrate": 0.001
+            },
+            {
+              "move": "O7",
+              "visits": 86,
+              "winrate": 0.0014
+            },
+            {
+              "move": "D10",
+              "visits": 52,
+              "winrate": 0.0031
+            }
+          ]
+        },
+        "500@64": {
+          "best": "D10",
+          "top": [
+            {
+              "move": "D10",
+              "visits": 61,
+              "winrate": 0.3319
+            },
+            {
+              "move": "S18",
+              "visits": 38,
+              "winrate": 0.0009
+            },
+            {
+              "move": "O7",
+              "visits": 29,
+              "winrate": 0.0016
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 200,
+      "byVisits": {
+        "100@16": {
+          "best": "G10",
+          "top": [
+            {
+              "move": "G10",
+              "visits": 7,
+              "winrate": 0.998
+            },
+            {
+              "move": "H10",
+              "visits": 7,
+              "winrate": 0.9979
+            },
+            {
+              "move": "N7",
+              "visits": 7,
+              "winrate": 0.9978
+            }
+          ]
+        },
+        "100@64": {
+          "best": "R5",
+          "top": [
+            {
+              "move": "R5",
+              "visits": 2,
+              "winrate": 0.9976
+            },
+            {
+              "move": "G10",
+              "visits": 2,
+              "winrate": 0.9974
+            },
+            {
+              "move": "H10",
+              "visits": 2,
+              "winrate": 0.9973
+            }
+          ]
+        },
+        "500@16": {
+          "best": "G10",
+          "top": [
+            {
+              "move": "G10",
+              "visits": 32,
+              "winrate": 0.9977
+            },
+            {
+              "move": "H10",
+              "visits": 32,
+              "winrate": 0.9975
+            },
+            {
+              "move": "G14",
+              "visits": 32,
+              "winrate": 0.9978
+            }
+          ]
+        },
+        "500@64": {
+          "best": "G10",
+          "top": [
+            {
+              "move": "G10",
+              "visits": 8,
+              "winrate": 0.998
+            },
+            {
+              "move": "O8",
+              "visits": 8,
+              "winrate": 0.9981
+            },
+            {
+              "move": "H10",
+              "visits": 8,
+              "winrate": 0.998
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 205,
+      "byVisits": {
+        "100@16": {
+          "best": "B9",
+          "top": [
+            {
+              "move": "B9",
+              "visits": 73,
+              "winrate": 0.4082
+            },
+            {
+              "move": "S18",
+              "visits": 3,
+              "winrate": 0.1046
+            },
+            {
+              "move": "K2",
+              "visits": 2,
+              "winrate": 0.0492
+            }
+          ]
+        },
+        "100@64": {
+          "best": "B9",
+          "top": [
+            {
+              "move": "B9",
+              "visits": 8,
+              "winrate": 0.5226
+            },
+            {
+              "move": "S18",
+              "visits": 3,
+              "winrate": 0.2666
+            },
+            {
+              "move": "K2",
+              "visits": 3,
+              "winrate": 0.0397
+            }
+          ]
+        },
+        "500@16": {
+          "best": "B9",
+          "top": [
+            {
+              "move": "B9",
+              "visits": 464,
+              "winrate": 0.361
+            },
+            {
+              "move": "S18",
+              "visits": 7,
+              "winrate": 0.1146
+            },
+            {
+              "move": "F15",
+              "visits": 4,
+              "winrate": 0.0789
+            }
+          ]
+        },
+        "500@64": {
+          "best": "B9",
+          "top": [
+            {
+              "move": "B9",
+              "visits": 304,
+              "winrate": 0.4124
+            },
+            {
+              "move": "S18",
+              "visits": 61,
+              "winrate": 0.4315
+            },
+            {
+              "move": "F15",
+              "visits": 6,
+              "winrate": 0.0836
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 210,
+      "byVisits": {
+        "100@16": {
+          "best": "A14",
+          "top": [
+            {
+              "move": "A14",
+              "visits": 28,
+              "winrate": 0.8081
+            },
+            {
+              "move": "B10",
+              "visits": 23,
+              "winrate": 0.7294
+            },
+            {
+              "move": "C12",
+              "visits": 16,
+              "winrate": 0.6712
+            }
+          ]
+        },
+        "100@64": {
+          "best": "B10",
+          "top": [
+            {
+              "move": "B10",
+              "visits": 6,
+              "winrate": 0.929
+            },
+            {
+              "move": "C12",
+              "visits": 6,
+              "winrate": 0.8432
+            },
+            {
+              "move": "A14",
+              "visits": 5,
+              "winrate": 0.8499
+            }
+          ]
+        },
+        "500@16": {
+          "best": "B10",
+          "top": [
+            {
+              "move": "B10",
+              "visits": 214,
+              "winrate": 0.8322
+            },
+            {
+              "move": "A14",
+              "visits": 210,
+              "winrate": 0.8564
+            },
+            {
+              "move": "C12",
+              "visits": 42,
+              "winrate": 0.7284
+            }
+          ]
+        },
+        "500@64": {
+          "best": "A14",
+          "top": [
+            {
+              "move": "A14",
+              "visits": 130,
+              "winrate": 0.7331
+            },
+            {
+              "move": "B10",
+              "visits": 128,
+              "winrate": 0.6842
+            },
+            {
+              "move": "C12",
+              "visits": 69,
+              "winrate": 0.6559
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 215,
+      "byVisits": {
+        "100@16": {
+          "best": "C12",
+          "top": [
+            {
+              "move": "C12",
+              "visits": 45,
+              "winrate": 0.3763
+            },
+            {
+              "move": "T13",
+              "visits": 30,
+              "winrate": 0.2578
+            },
+            {
+              "move": "K2",
+              "visits": 4,
+              "winrate": 0.0334
+            }
+          ]
+        },
+        "100@64": {
+          "best": "T13",
+          "top": [
+            {
+              "move": "T13",
+              "visits": 9,
+              "winrate": 0.3238
+            },
+            {
+              "move": "C12",
+              "visits": 8,
+              "winrate": 0.5734
+            },
+            {
+              "move": "K2",
+              "visits": 5,
+              "winrate": 0.0393
+            }
+          ]
+        },
+        "500@16": {
+          "best": "C12",
+          "top": [
+            {
+              "move": "C12",
+              "visits": 296,
+              "winrate": 0.2513
+            },
+            {
+              "move": "T13",
+              "visits": 159,
+              "winrate": 0.1945
+            },
+            {
+              "move": "K2",
+              "visits": 14,
+              "winrate": 0.0593
+            }
+          ]
+        },
+        "500@64": {
+          "best": "T13",
+          "top": [
+            {
+              "move": "T13",
+              "visits": 259,
+              "winrate": 0.3886
+            },
+            {
+              "move": "C12",
+              "visits": 116,
+              "winrate": 0.3603
+            },
+            {
+              "move": "F15",
+              "visits": 14,
+              "winrate": 0.1722
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 220,
+      "byVisits": {
+        "100@16": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 57,
+              "winrate": 0.6564
+            },
+            {
+              "move": "E7",
+              "visits": 6,
+              "winrate": 0.6677
+            },
+            {
+              "move": "A16",
+              "visits": 6,
+              "winrate": 0.6231
+            }
+          ]
+        },
+        "100@64": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 16,
+              "winrate": 0.9295
+            },
+            {
+              "move": "A16",
+              "visits": 3,
+              "winrate": 0.6789
+            },
+            {
+              "move": "E8",
+              "visits": 3,
+              "winrate": 0.6194
+            }
+          ]
+        },
+        "500@16": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 452,
+              "winrate": 0.6943
+            },
+            {
+              "move": "A16",
+              "visits": 9,
+              "winrate": 0.6382
+            },
+            {
+              "move": "E7",
+              "visits": 8,
+              "winrate": 0.6079
+            }
+          ]
+        },
+        "500@64": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 319,
+              "winrate": 0.6235
+            },
+            {
+              "move": "A16",
+              "visits": 22,
+              "winrate": 0.6363
+            },
+            {
+              "move": "E7",
+              "visits": 22,
+              "winrate": 0.6029
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 225,
+      "byVisits": {
+        "100@16": {
+          "best": "K2",
+          "top": [
+            {
+              "move": "K2",
+              "visits": 38,
+              "winrate": 0.1675
+            },
+            {
+              "move": "F15",
+              "visits": 14,
+              "winrate": 0.0814
+            },
+            {
+              "move": "H2",
+              "visits": 7,
+              "winrate": 0.0714
+            }
+          ]
+        },
+        "100@64": {
+          "best": "K2",
+          "top": [
+            {
+              "move": "K2",
+              "visits": 8,
+              "winrate": 0.178
+            },
+            {
+              "move": "F15",
+              "visits": 6,
+              "winrate": 0.2996
+            },
+            {
+              "move": "G16",
+              "visits": 4,
+              "winrate": 0.2845
+            }
+          ]
+        },
+        "500@16": {
+          "best": "K2",
+          "top": [
+            {
+              "move": "K2",
+              "visits": 416,
+              "winrate": 0.2849
+            },
+            {
+              "move": "F15",
+              "visits": 32,
+              "winrate": 0.2081
+            },
+            {
+              "move": "H2",
+              "visits": 8,
+              "winrate": 0.0687
+            }
+          ]
+        },
+        "500@64": {
+          "best": "F15",
+          "top": [
+            {
+              "move": "F15",
+              "visits": 276,
+              "winrate": 0.4123
+            },
+            {
+              "move": "K2",
+              "visits": 67,
+              "winrate": 0.2155
+            },
+            {
+              "move": "G16",
+              "visits": 25,
+              "winrate": 0.2693
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 230,
+      "byVisits": {
+        "100@16": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 60,
+              "winrate": 0.5998
+            },
+            {
+              "move": "E7",
+              "visits": 6,
+              "winrate": 0.6748
+            },
+            {
+              "move": "A16",
+              "visits": 6,
+              "winrate": 0.6797
+            }
+          ]
+        },
+        "100@64": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 15,
+              "winrate": 0.9351
+            },
+            {
+              "move": "A16",
+              "visits": 3,
+              "winrate": 0.7491
+            },
+            {
+              "move": "B10",
+              "visits": 3,
+              "winrate": 0.6673
+            }
+          ]
+        },
+        "500@16": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 271,
+              "winrate": 0.711
+            },
+            {
+              "move": "B10",
+              "visits": 151,
+              "winrate": 0.7572
+            },
+            {
+              "move": "A16",
+              "visits": 40,
+              "winrate": 0.7434
+            }
+          ]
+        },
+        "500@64": {
+          "best": "T12",
+          "top": [
+            {
+              "move": "T12",
+              "visits": 304,
+              "winrate": 0.6085
+            },
+            {
+              "move": "B10",
+              "visits": 32,
+              "winrate": 0.6843
+            },
+            {
+              "move": "A16",
+              "visits": 31,
+              "winrate": 0.7192
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 235,
+      "byVisits": {
+        "100@16": {
+          "best": "S16",
+          "top": [
+            {
+              "move": "S16",
+              "visits": 59,
+              "winrate": 0.403
+            },
+            {
+              "move": "F15",
+              "visits": 9,
+              "winrate": 0.3103
+            },
+            {
+              "move": "F2",
+              "visits": 4,
+              "winrate": 0.2438
+            }
+          ]
+        },
+        "100@64": {
+          "best": "S16",
+          "top": [
+            {
+              "move": "S16",
+              "visits": 11,
+              "winrate": 0.7866
+            },
+            {
+              "move": "F15",
+              "visits": 5,
+              "winrate": 0.3344
+            },
+            {
+              "move": "H2",
+              "visits": 4,
+              "winrate": 0.2725
+            }
+          ]
+        },
+        "500@16": {
+          "best": "S16",
+          "top": [
+            {
+              "move": "S16",
+              "visits": 348,
+              "winrate": 0.2536
+            },
+            {
+              "move": "F15",
+              "visits": 61,
+              "winrate": 0.2265
+            },
+            {
+              "move": "F2",
+              "visits": 38,
+              "winrate": 0.2295
+            }
+          ]
+        },
+        "500@64": {
+          "best": "S16",
+          "top": [
+            {
+              "move": "S16",
+              "visits": 314,
+              "winrate": 0.4199
+            },
+            {
+              "move": "F15",
+              "visits": 45,
+              "winrate": 0.3552
+            },
+            {
+              "move": "H2",
+              "visits": 21,
+              "winrate": 0.3271
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 240,
+      "byVisits": {
+        "100@16": {
+          "best": "Q9",
+          "top": [
+            {
+              "move": "Q9",
+              "visits": 52,
+              "winrate": 0.6786
+            },
+            {
+              "move": "P8",
+              "visits": 25,
+              "winrate": 0.7049
+            },
+            {
+              "move": "N14",
+              "visits": 3,
+              "winrate": 0.3253
+            }
+          ]
+        },
+        "100@64": {
+          "best": "Q9",
+          "top": [
+            {
+              "move": "Q9",
+              "visits": 14,
+              "winrate": 0.7223
+            },
+            {
+              "move": "P8",
+              "visits": 8,
+              "winrate": 0.8234
+            },
+            {
+              "move": "N14",
+              "visits": 2,
+              "winrate": 0.3122
+            }
+          ]
+        },
+        "500@16": {
+          "best": "Q9",
+          "top": [
+            {
+              "move": "Q9",
+              "visits": 283,
+              "winrate": 0.5624
+            },
+            {
+              "move": "P8",
+              "visits": 194,
+              "winrate": 0.5971
+            },
+            {
+              "move": "N14",
+              "visits": 3,
+              "winrate": 0.3253
+            }
+          ]
+        },
+        "500@64": {
+          "best": "Q9",
+          "top": [
+            {
+              "move": "Q9",
+              "visits": 273,
+              "winrate": 0.6303
+            },
+            {
+              "move": "P8",
+              "visits": 119,
+              "winrate": 0.6085
+            },
+            {
+              "move": "N14",
+              "visits": 5,
+              "winrate": 0.2894
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 245,
+      "byVisits": {
+        "100@16": {
+          "best": "P8",
+          "top": [
+            {
+              "move": "P8",
+              "visits": 35,
+              "winrate": 0.572
+            },
+            {
+              "move": "F2",
+              "visits": 10,
+              "winrate": 0.4849
+            },
+            {
+              "move": "B9",
+              "visits": 9,
+              "winrate": 0.4641
+            }
+          ]
+        },
+        "100@64": {
+          "best": "P8",
+          "top": [
+            {
+              "move": "P8",
+              "visits": 9,
+              "winrate": 0.63
+            },
+            {
+              "move": "B9",
+              "visits": 4,
+              "winrate": 0.6228
+            },
+            {
+              "move": "F2",
+              "visits": 3,
+              "winrate": 0.5615
+            }
+          ]
+        },
+        "500@16": {
+          "best": "P8",
+          "top": [
+            {
+              "move": "P8",
+              "visits": 358,
+              "winrate": 0.5259
+            },
+            {
+              "move": "B9",
+              "visits": 75,
+              "winrate": 0.5293
+            },
+            {
+              "move": "F2",
+              "visits": 20,
+              "winrate": 0.4836
+            }
+          ]
+        },
+        "500@64": {
+          "best": "P8",
+          "top": [
+            {
+              "move": "P8",
+              "visits": 260,
+              "winrate": 0.5519
+            },
+            {
+              "move": "B9",
+              "visits": 45,
+              "winrate": 0.4939
+            },
+            {
+              "move": "F2",
+              "visits": 24,
+              "winrate": 0.4885
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "visits": [
+    100,
+    500
+  ],
+  "steps": [
+    "09:42:13.381 requesting a WebGPU device",
+    "09:42:13.615 loading the model (97898094 bytes)",
+    "09:42:45.570   10 positions",
+    "09:43:17.753   20 positions",
+    "09:43:52.252   30 positions",
+    "09:44:27.000   40 positions",
+    "09:45:00.100   50 positions"
+  ],
+  "ok": true
+}
