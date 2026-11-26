@@ -4,6 +4,7 @@ import {
   loadModel, encodePositionV7, gtpMove, forward, postProcess, requestEngineDevice, GpuNetwork, ACT, ACTIVATION_PROBE,
   buildHistory, Search, PASS_LOC, reviewGame,
 } from '../../dist/index.js';
+import { runGemmBench } from './gemm-bench.js';
 
 // The same tolerances as test/goldens.test.mjs.
 const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
@@ -118,6 +119,8 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
     // Winograd transforms v2: staged through workgroup memory.
     { winograd: true, fuse: true, gemm: 'v2', winoTransforms: 'v2' },
     { winograd: true, fuse: false, gemm: 'v2', winoTransforms: 'v2' },
+    // GEMM v3: GEMM v2's tiles with vec4 workgroup reads and the next chunk prefetched.
+    { winograd: true, fuse: true, gemm: 'v3' },
     // scale8 in fp32: the same function as the unscaled network, so it must pass the strict goldens check too.
     { winograd: true, fuse: true, scale8: true, gemm: 'v2' },
   ];
@@ -129,6 +132,8 @@ export async function runCheck({ bench = false, batches = [1, 2, 4, 8, 16, 32, 6
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v2' },
       { winograd: true, fuse: true, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
       { winograd: true, fuse: false, precision: 'f16', gemm: 'v2', winoTransforms: 'v2' },
+      { winograd: true, fuse: true, precision: 'f16', gemm: 'v3' },
+      { winograd: true, fuse: false, precision: 'f16', gemm: 'v3' },
     );
   }
   // The implicit-GEMM convolution for every size: the first kernels, as a baseline.
@@ -299,7 +304,8 @@ async function checkVariant({ engine, model, cases, golden, variant, bench, batc
   if (params.get('lose') && JSON.stringify(variant).includes(params.get('lose'))) engine.device.destroy();
   step('  evaluating the positions');
   report.dispatches = net.dispatchCount;
-  report.gemmConfig = net.gemmConfig;
+  report.gemm = net.gemm;
+  report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   const batched = await net.evaluate(cases.map((c) => c.encoded.input));
   const single = await net.evaluate([cases[0].encoded.input]);
   // Calls in flight together (GpuNetwork's maxInFlight): the positions split across three calls made at once, so with
@@ -471,12 +477,13 @@ export async function runSearchBench({
   report.model = model.name;
   const variant = params.get('searchVariant')
     ? JSON.parse(params.get('searchVariant'))
-    : { winograd: true, fuse: true, gemm: 'v2', precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
+    : { winograd: true, fuse: true, precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
   report.variant = variant;
   step(`building the network ${JSON.stringify(variant)}`);
   const maxBatch = Math.max(...liveBatches, ...reviewModes.map((m) => m.batchSize * m.concurrency));
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch });
-  report.gemmConfig = net.gemmConfig;
+  report.gemm = net.gemm;
+  report.gemmConfig = net.gemm === 'v3' ? net.gemmV3Config : net.gemmConfig;
   report.maxInFlight = net.maxInFlight;
   const cols = 'ABCDEFGHJKLMNOPQRST';
   const gtpOf = (board, loc) => (loc === PASS_LOC ? 'pass' : cols[board.x(loc)] + (board.ySize - board.y(loc)));
@@ -577,7 +584,7 @@ export async function runAgreement({ file = null, visits = [100, 500], batches =
   report.model = model.name;
   const variant = params.get('searchVariant')
     ? JSON.parse(params.get('searchVariant'))
-    : { winograd: true, fuse: true, gemm: 'v2', precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
+    : { winograd: true, fuse: true, precision: engine.features.has('shader-f16') ? 'f16' : 'f32' };
   report.variant = variant;
   const net = await GpuNetwork.create(engine, model, { ...variant, maxBatch: Math.max(...batches) });
   const game = await getJson('../goldens/agreement-game.json');
@@ -614,6 +621,12 @@ export async function runAgreement({ file = null, visits = [100, 500], batches =
 
 /** One line per variant: whether it passed, and its evaluations per second at the largest batch benchmarked. */
 function summarise(r) {
+  if (r.kind === 'gemm') {
+    const lines = [`GEMM benchmark · ok: ${r.ok} · adapter ${JSON.stringify(r.adapter)} · ${r.elem} storage · ${r.timing}`];
+    if (r.deviceLost) lines.push(`DEVICE LOST: ${JSON.stringify(r.deviceLost)}`);
+    for (const p of r.perNetwork) lines.push(`batch ${p.batch}: ${p.ms.map((k) => `${k.kernel} ${JSON.stringify(k.config)} ${k.ms} ms`).join(' · ')}`);
+    return lines.join('\n');
+  }
   if (r.kind === 'agreement') {
     return `agreement run · ok: ${r.ok} · model ${r.model} · ${r.positions.length} positions at ${r.visits.join(', ')} visits, batches ${r.batches.join(', ')}. Feed this report to scripts/native-agreement.mjs.`;
   }
@@ -714,6 +727,18 @@ download.addEventListener('click', () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+});
+document.getElementById('gemm').addEventListener('click', () => {
+  summary.textContent = 'Running…';
+  out.textContent = '';
+  download.hidden = true;
+  steps.length = 0;
+  runGemmBench({ step }).then((r) => show({ ...r, model: 'gemm' }), (e) => {
+    const error = describeError(e);
+    summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
+    lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };
+    download.hidden = false;
+  });
 });
 window.runCheck = runCheck;
 window.runSearchBench = runSearchBench;

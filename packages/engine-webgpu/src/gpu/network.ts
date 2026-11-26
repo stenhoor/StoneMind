@@ -11,7 +11,7 @@ import { applyScale8 } from '../model/scale8.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import type { EngineDevice } from './device.js';
 import { toFloat16Array } from './f16.js';
-import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
+import { ACT, BN_ACT, CONV, CONV_TILE_M, CONV_TILE_N, GEMM_DEFAULT, GEMM_V2, GEMM_V3, GEMM_V3_DEFAULT, type GemmV3Config, defaultGemm, defaultGemmConfig, gemmTile, type GemmConfig, GPOOL, MATVEC, WINO_GEMM, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels, winogradWeights, type Elem } from './kernels.js';
 import { BufferUsage, MapMode, type GPUBindGroup, type GPUBuffer, type GPUComputePipeline, type GPUDevice, type GPUQuerySet } from './webgpu.js';
 
 export interface GpuNetworkOptions {
@@ -35,18 +35,22 @@ export interface GpuNetworkOptions {
    */
   scale8?: boolean;
   /**
-   * The matrix-multiply kernel for the Winograd GEMMs and 1×1 convolutions (default 'v2'): 'v2' is the generic
-   * unrolled GEMM (`GEMM_V2`), with 1×1 convolutions as a plain GEMM per batch position; 'v1' keeps the first kernels
-   * (the Winograd GEMM and the implicit-GEMM convolution). On Edge with an RTX 3080 Laptop GPU, v2 was 1.11–1.29× faster
-   * at batches 8–64 in every variant (docs/spikes/results/2026-11-b18-webgpu-gemm-v2.md).
+   * The matrix-multiply kernel for the Winograd GEMMs and 1×1 convolutions (default: `defaultGemm` for the adapter's
+   * vendor, 'v3' except on Apple GPUs): 'v3' is GEMM v2's tiles with vector reads from workgroup memory and the next
+   * chunk prefetched (`GEMM_V3`); 'v2' is the generic unrolled GEMM (`GEMM_V2`). Both run 1×1 convolutions as a
+   * plain GEMM per batch position. 'v1' keeps the first kernels (the Winograd GEMM and the implicit-GEMM convolution).
+   * On Edge with an RTX 3080 Laptop GPU, v2 was 1.11–1.29× faster than v1 at batches 8–64 in every variant
+   * (docs/spikes/results/2026-11-b18-webgpu-gemm-v2.md), and v3 faster than v2 (docs/spikes/results/2026-11-b18-gemm-v3.md).
    */
-  gemm?: 'v1' | 'v2';
+  gemm?: 'v1' | 'v2' | 'v3';
   /**
    * GEMM v2's shape. Default: `defaultGemmConfig` for the adapter's vendor and `precision` (measured per device; f16
    * arithmetic only with f16 storage). arith 'f16' and
    * 'f16x2' need the device feature `shader-f16`.
    */
   gemmConfig?: GemmConfig;
+  /** GEMM v3's shape (default `GEMM_V3_DEFAULT`, 4 × 8 per thread, chunks of 16). */
+  gemmV3Config?: GemmV3Config;
   /**
    * The Winograd input and output transforms (default 'v1'). 'v2' stages each board through workgroup memory
    * (`WINO_IN_V2`, `WINO_OUT_V2`): adjacent reads and writes, and a fused batch norm applied once per point.
@@ -189,8 +193,25 @@ export class GpuNetwork {
   /** What raw outputs are multiplied by on readback: 8 with scale8, else 1. */
   #outputFactor = 1;
   #elem: Elem = 'f32';
-  #gemm: 'v1' | 'v2' = 'v2';
+  #gemm: 'v1' | 'v2' | 'v3' = 'v2';
   #gemmConfig: GemmConfig = GEMM_DEFAULT;
+  #gemmV3Config: GemmV3Config = GEMM_V3_DEFAULT;
+  /** The matrix-multiply kernel the plan uses for the Winograd GEMMs and 1×1 convolutions. */
+  get gemm(): 'v1' | 'v2' | 'v3' {
+    return this.#gemm;
+  }
+  /** GEMM v3's shape, when {@link gemm} is 'v3'. */
+  get gemmV3Config(): GemmV3Config {
+    return this.#gemmV3Config;
+  }
+  /** The GEMM kernel's code and tile for the plan's 'v2' or 'v3' GEMM. */
+  #gemmKernel(aT: Elem, bT: Elem, cT: Elem): { code: string; tm: number; tn: number } {
+    if (this.#gemm === 'v3') {
+      const c = this.#gemmV3Config;
+      return { code: GEMM_V3(aT, bT, cT, c), tm: 16 * c.rm, tn: 16 * c.rn };
+    }
+    return { code: GEMM_V2(aT, bT, cT, this.#gemmConfig), ...gemmTile(this.#gemmConfig) };
+  }
   #lastCallTiming: CallTiming | null = null;
   /** The GEMM v2 shape the plan uses (the option, or the device's default). */
   get gemmConfig(): GemmConfig {
@@ -226,8 +247,9 @@ export class GpuNetwork {
     net.#winograd = options.winograd ?? true;
     net.#timestamps = engine.features.has('timestamp-query');
     net.#elem = options.precision ?? 'f32';
-    net.#gemm = options.gemm ?? 'v2';
+    net.#gemm = options.gemm ?? defaultGemm(engine.adapterInfo.vendor);
     net.#gemmConfig = options.gemmConfig ?? defaultGemmConfig(engine.adapterInfo.vendor, net.#elem);
+    net.#gemmV3Config = options.gemmV3Config ?? GEMM_V3_DEFAULT;
     net.#winoTransforms = options.winoTransforms ?? 'v1';
     if (net.#gemmConfig.arith !== 'f32' && !engine.features.has('shader-f16')) throw new Error(`gemmConfig.arith '${net.#gemmConfig.arith}' needs the device feature shader-f16`);
     if (net.#elem === 'f16' && !engine.features.has('shader-f16')) throw new Error("precision 'f16' needs the device feature shader-f16");
@@ -437,7 +459,7 @@ export class GpuNetwork {
       this.#winogradConv(layer, input, output, opts);
       return;
     }
-    if (this.#gemm === 'v2' && layer.convYSize === 1 && layer.convXSize === 1) {
+    if (this.#gemm !== 'v1' && layer.convYSize === 1 && layer.convXSize === 1) {
       this.#conv1x1(layer, input, output, opts);
       return;
     }
@@ -464,14 +486,15 @@ export class GpuNetwork {
     const area = this.#area;
     const flags = (opts.accumulate ? 1 : 0) | (opts.nbias ? 2 : 0);
     const weights = this.#upload(convWeightsKxOc(layer), this.#elem);
+    const kernel = this.#gemmKernel(this.#elemOf(weights), this.#elemOf(input), this.#elemOf(output));
     this.#specs.push({
       kind: 'conv1x1',
-      code: GEMM_V2(this.#elemOf(weights), this.#elemOf(input), this.#elemOf(output), this.#gemmConfig),
+      code: kernel.code,
       buffers: [
         this.#uniform([oc, ic, area, 0, 0, oc, ic * area, area, oc * area, area, flags, oc]),
         this.#dyn, weights, input, output, opts.nbias ?? this.#dummy,
       ],
-      workgroups: (n) => [Math.ceil(area / gemmTile(this.#gemmConfig).tn), Math.ceil(oc / gemmTile(this.#gemmConfig).tm), n],
+      workgroups: (n) => [Math.ceil(area / kernel.tn), Math.ceil(oc / kernel.tm), n],
     });
   }
 
@@ -533,16 +556,17 @@ export class GpuNetwork {
         : (n) => [Math.ceil((n * tilesPerBoard) / 64), ic],
     });
     const U = this.#upload(winogradWeights(layer.weights, ic, oc), this.#elem);
-    if (this.#gemm === 'v2') {
-      // M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t], as GEMM v2 with z = e.
+    if (this.#gemm !== 'v1') {
+      // M[e][oc][t] = Σ_ic U[e][ic][oc] · V[e][ic][t], as GEMM v2 or v3 with z = e.
+      const kernel = this.#gemmKernel(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M));
       this.#specs.push({
         kind: 'winoGemm',
-        code: GEMM_V2(this.#elemOf(U), this.#elemOf(V), this.#elemOf(M), this.#gemmConfig),
+        code: kernel.code,
         buffers: [
           this.#uniform([oc, ic, 0, tilesPerBoard, ic * oc, oc, ic * tileStride, tileStride, oc * tileStride, tileStride, 0, 0]),
           this.#dyn, U, V, M, this.#dummy,
         ],
-        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / gemmTile(this.#gemmConfig).tn), Math.ceil(oc / gemmTile(this.#gemmConfig).tm), 36],
+        workgroups: (n) => [Math.ceil((n * tilesPerBoard) / kernel.tn), Math.ceil(oc / kernel.tm), 36],
       });
     } else {
       this.#specs.push({

@@ -655,6 +655,141 @@ ${store}}
 `;
 };
 
+// ------------------------------------------------------------------ GEMM v3
+//
+// GEMM v2's tiles, parameters and dispatch, with three changes aimed at the time spent in workgroup memory and waiting
+// on loads:
+// - Each thread owns runs of 4 adjacent rows and 4 adjacent columns (rows 64g + 4ty + i, columns 64h + 4tx + j), so
+//   it reads its operands from workgroup memory as vec4s: rm / 4 + rn / 4 reads per reduction step, where v2 makes
+//   rm + rn scalar reads. Accumulators are vec4s, updated with one vector fma per row.
+// - Workgroup memory holds vec4<f32> (always f32 arithmetic), filled four values at a time.
+// - The next chunk of A and B is read from global memory into registers while the current chunk is multiplied, and
+//   only then stored to workgroup memory.
+// Each output is the same sequence of fma steps over k as v2's f32 arithmetic, so the two give the same results.
+
+/** GEMM v3's shape: rows and columns per thread (multiples of 4) and the reduction chunk. */
+export interface GemmV3Config {
+  rm: 4 | 8;
+  rn: 4 | 8;
+  tk: 8 | 16;
+}
+
+/**
+ * The GEMM kernel to use on a device: 'v3' everywhere except Apple GPUs, which keep 'v2' with the shape measured
+ * fastest there (`defaultGemmConfig`), since v3 hasn't been measured on them. On the owner's RTX 3080 Laptop GPU in
+ * Edge, v3 (4 × 8, chunks of 16) took 15.9, 25.6 and 49.3 ms against v2's 23.8, 71.0 and 90.1 ms for b18's GEMMs at
+ * batches 16, 32 and 64 (docs/spikes/results/2026-11-b18-gemm-v3.md).
+ * @param vendor The adapter's reported vendor (`GPUAdapterInfo.vendor`), if any.
+ */
+export function defaultGemm(vendor: string | undefined): 'v2' | 'v3' {
+  return vendor === 'apple' ? 'v2' : 'v3';
+}
+
+/** GEMM v3's default shape (the same tile as GEMM_DEFAULT). */
+export const GEMM_V3_DEFAULT: GemmV3Config = { rm: 4, rn: 8, tk: 16 };
+
+/** GEMM v3: GEMM v2's bindings, parameters and dispatch, with the tile 16·rm × 16·rn. */
+export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEMM_V3_DEFAULT) => {
+  const { rm, rn, tk: TK } = config;
+  const TM = 16 * rm;
+  const TN = 16 * rn;
+  const GM = rm / 4;
+  const GN = rn / 4;
+  const NA = (TK * TM) / 4; // vec4s of A per chunk
+  const NB = (TK * TN) / 4;
+  const LA = Math.ceil(NA / 256);
+  const LB = Math.ceil(NB / 256);
+  const comps = ['x', 'y', 'z', 'w'];
+  const guard = (r: number, count: number) => ((r + 1) * 256 > count ? `if (tid + ${r * 256}u < ${count}u) ` : '');
+  let decl = '';
+  for (let r = 0; r < LA; r++) decl += `  var ra${r} = vec4<f32>(0.0);\n`;
+  for (let r = 0; r < LB; r++) decl += `  var rb${r} = vec4<f32>(0.0);\n`;
+  for (let i = 0; i < rm; i++) for (let h = 0; h < GN; h++) decl += `  var c${i}_${h} = vec4<f32>(0.0);\n`;
+  // Read the chunk starting at k into registers: A is [K][M] (rows of M), B is [K][N].
+  const loadOne = (reg: string, r: number, count: number, perRow: number, k: string, base: string, row: string, pos: string, limit: string, src: string) => {
+    let s = `    ${guard(r, count)}{\n      let idx = tid + ${r * 256}u;\n      let k = ${k} + idx / ${perRow}u;\n`;
+    s += `      let ${pos} = ${pos}0 + (idx % ${perRow}u) * 4u;\n      var v = vec4<f32>(0.0);\n`;
+    s += `      if (k < P.K) {\n        let o = ${base} + k * ${row} + ${pos};\n`;
+    for (let j = 0; j < 4; j++) s += `        if (${pos} + ${j}u < ${limit}) { v.${comps[j]} = f32(${src}[o + ${j}u]); }\n`;
+    s += `      }\n      ${reg}${r} = v;\n    }\n`;
+    return s;
+  };
+  const load = (k: string) => {
+    let s = '';
+    for (let r = 0; r < LA; r++) s += loadOne('ra', r, NA, TM / 4, k, 'aBase', 'P.aRow', 'm', 'P.M', 'A');
+    for (let r = 0; r < LB; r++) s += loadOne('rb', r, NB, TN / 4, k, 'bBase', 'P.bRow', 'n', 'N', 'B');
+    return s;
+  };
+  let put = '';
+  for (let r = 0; r < LA; r++) put += `    ${guard(r, NA)}{ As[tid + ${r * 256}u] = ra${r}; }\n`;
+  for (let r = 0; r < LB; r++) put += `    ${guard(r, NB)}{ Bs[tid + ${r * 256}u] = rb${r}; }\n`;
+  let inner = '';
+  for (let kk = 0; kk < TK; kk++) {
+    inner += '    {\n';
+    for (let g = 0; g < GM; g++) inner += `      let a${g} = As[${kk * (TM / 4) + g * 16}u + ty];\n`;
+    for (let h = 0; h < GN; h++) inner += `      let b${h} = Bs[${kk * (TN / 4) + h * 16}u + tx];\n`;
+    for (let g = 0; g < GM; g++)
+      for (let i = 0; i < 4; i++)
+        for (let h = 0; h < GN; h++) inner += `      c${g * 4 + i}_${h} = fma(vec4<f32>(a${g}.${comps[i]}), b${h}, c${g * 4 + i}_${h});\n`;
+    inner += '    }\n';
+  }
+  let store = '';
+  for (let g = 0; g < GM; g++)
+    for (let i = 0; i < 4; i++) {
+      store += `  { let m = m0 + ${g * 64 + i}u + 4u * ty;\n    if (m < P.M) {\n`;
+      store += `      var bias = 0.0;\n      if ((P.flags & 2u) != 0u) { bias = nbias[z * P.nbiasStride + m]; }\n`;
+      for (let h = 0; h < GN; h++)
+        for (let j = 0; j < 4; j++) {
+          store += `      { let n = n0 + ${h * 64 + j}u + 4u * tx;\n        if (n < N) {\n`;
+          store += `          let o = z * P.cBatch + m * P.cRow + n;\n          var v = c${g * 4 + i}_${h}.${comps[j]} + bias;\n`;
+          store += `          if ((P.flags & 1u) != 0u) { v += f32(C[o]); }\n          C[o] = ${cT}(v);\n        }\n      }\n`;
+        }
+      store += `    }\n  }\n`;
+    }
+  return /* wgsl */ `${enableFor(aT, bT, cT)}
+${DYN}
+struct Params {
+  M: u32, K: u32, nFixed: u32, nPerBatch: u32,
+  aBatch: u32, aRow: u32, bBatch: u32, bRow: u32,
+  cBatch: u32, cRow: u32, flags: u32, nbiasStride: u32,
+}
+@group(0) @binding(0) var<uniform> P: Params;
+@group(0) @binding(1) var<uniform> dyn: Dyn;
+@group(0) @binding(2) var<storage, read> A: array<${aT}>;
+@group(0) @binding(3) var<storage, read> B: array<${bT}>;
+@group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
+@group(0) @binding(5) var<storage, read> nbias: array<f32>;
+
+var<workgroup> As: array<vec4<f32>, ${NA}>; // [TK][TM / 4]
+var<workgroup> Bs: array<vec4<f32>, ${NB}>; // [TK][TN / 4]
+
+@compute @workgroup_size(16, 16)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
+  let tx = l.x;
+  let ty = l.y;
+  let tid = ty * 16u + tx;
+  let z = wg.z;
+  let m0 = wg.y * ${TM}u;
+  let n0 = wg.x * ${TN}u;
+  var N = P.nFixed;
+  if (N == 0u) { N = dyn.n * P.nPerBatch; }
+  let aBase = z * P.aBatch;
+  let bBase = z * P.bBatch;
+${decl}
+${load('0u')}${put}  workgroupBarrier();
+  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
+    let more = k0 + ${TK}u < P.K;
+    if (more) {
+${load(`k0 + ${TK}u`)}    }
+${inner}    workgroupBarrier();
+    if (more) {
+${put}    }
+    workgroupBarrier();
+  }
+${store}}
+`;
+};
+
 // ------------------------------------------------------------------ Winograd transforms v2
 //
 // The same transforms as WINO_IN / WINO_OUT, staged through workgroup memory. A workgroup handles `cpw` channels of
