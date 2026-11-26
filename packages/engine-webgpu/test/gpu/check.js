@@ -835,9 +835,10 @@ document.getElementById('gemm').addEventListener('click', () => {
   download.hidden = true;
   steps.length = 0;
   // ?gemmBatches=16,64 runs only those batches; ?gemmReverse=1 measures the v3 shapes in the opposite order;
-  // ?gemmShapes=small measures narrower v3 tiles, for small batches.
+  // ?gemmShapes=small measures narrower v3 tiles, for small batches; ?gemmLadder=1 measures the default v3 shape by
+  // stage, with the device's ceilings.
   const gemmBatches = params.get('gemmBatches')?.split(',').map(Number);
-  runGemmBench({ step, reverse: params.get('gemmReverse') === '1', smallShapes: params.get('gemmShapes') === 'small', ...(gemmBatches ? { batches: gemmBatches } : {}) }).then((r) => show({ ...r, model: 'gemm' }), (e) => {
+  runGemmBench({ step, reverse: params.get('gemmReverse') === '1', smallShapes: params.get('gemmShapes') === 'small', ladder: params.get('gemmLadder') === '1', ladderParams: params, ...(gemmBatches ? { batches: gemmBatches } : {}) }).then((r) => show({ ...r, model: 'gemm' }), (e) => {
     const error = describeError(e);
     summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
     lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };

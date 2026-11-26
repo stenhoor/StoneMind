@@ -6,6 +6,7 @@
 import { requestEngineDevice, toFloat16Array, fromFloat16Bits } from '../../dist/index.js';
 import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, GEMM_MMA, gemmTile, gemmV3Tile, gemmMmaTile } from '../../dist/gpu/kernels.js';
 import { timePasses } from './timing.js';
+import { measureMatrixPeak, measureCeilings } from './ceilings.js';
 
 const TILES_PER_BOARD = 25; // 19 × 19 in 4 × 4 tiles
 const AREA = 361;
@@ -54,7 +55,7 @@ function reference(shape, A, B) {
   return C;
 }
 
-export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs = 7, warmUpMs = 2000, reverse = false, smallShapes = false, step = () => {} } = {}) {
+export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs = 7, warmUpMs = 2000, reverse = false, smallShapes = false, ladder = false, ladderParams = new URLSearchParams(), step = () => {} } = {}) {
   const engine = await requestEngineDevice();
   const { device } = engine;
   const report = { kind: 'gemm', adapter: engine.adapterInfo, features: [...engine.features], userAgent: navigator.userAgent, date: new Date().toISOString(), batches, repeat, runs };
@@ -72,15 +73,34 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
   // [rm, rn, tk, wy, double]: rows and columns per thread, the chunk, threads along M, and double buffering.
   // [rm, rn, tk, wy, wx, double]: rows and columns per thread, the chunk, threads along M and along N, and double
   // buffering. smallShapes: narrower tiles, for small batches.
-  const shapesToTry = smallShapes
+  // ladder: v3 shapes whole and by stage (GemmV3Config.stage), with this device's ceilings measured first
+  // (docs/spikes/results/2026-11-b18-gemm-ladder.md). ?gemmLadderShapes=<JSON list of [rm, rn, tk, wy, wx]> (default:
+  // the default shape) and ?gemmLadderVariants=<comma list of vload, blocks, prefetch, double>: each shape also with
+  // that option, whole (and for blocks and prefetch, its loop: stage 'inner' at 1× and 8×).
+  const ladderShapes = ladderParams.get('gemmLadderShapes') ? JSON.parse(ladderParams.get('gemmLadderShapes')) : [[4, 8, 16, 16, 16]];
+  const ladderVariants = (ladderParams.get('gemmLadderVariants') ?? '').split(',').filter(Boolean);
+  const shapesToTry = ladder
+    ? ladderShapes
+    : smallShapes
     ? [[4, 8, 16, 16, 16], [4, 4, 16, 16, 16], [4, 4, 16, 16, 8], [4, 4, 16, 8, 8], [4, 4, 8, 8, 8], [4, 4, 16, 8, 16], [4, 4, 16, 16, 4], [4, 4, 32, 8, 8]]
     : [[4, 8, 16, 16, 16], [4, 4, 16, 16, 16], [4, 8, 8, 16, 16], [4, 8, 32, 16, 16], [8, 8, 16, 16, 16], [8, 8, 16, 8, 16], [8, 4, 16, 8, 16], [4, 8, 16, 16, 16, true]];
   report.smallShapes = smallShapes;
+  report.ladder = ladder;
+  if (ladder) report.ladderVariants = ladderVariants;
   for (const [rm, rn, tk, wy, wx, double] of shapesToTry) {
     const config = { rm, rn, tk, wy, ...(wx === 16 ? {} : { wx }), ...(double ? { double } : {}) };
     const tile = gemmV3Tile(config);
     if ((double ? 2 : 1) * tk * (tile.tm + tile.tn) * 4 > wgBytes) continue;
     kernels.push({ name: 'v3', config, code: GEMM_V3(elem, elem, elem, config), tile });
+    if (!ladder) continue;
+    const add = (c) => kernels.push({ name: 'v3', config: c, code: GEMM_V3(elem, elem, elem, c), tile });
+    // The stages: the loop from workgroup memory and from registers, each at 1× and 8× K, and the loads alone.
+    for (const stage of [{ stage: 'inner' }, { stage: 'inner', innerRepeat: 8 }, { stage: 'innerRegs' }, { stage: 'innerRegs', innerRepeat: 8 }, { stage: 'loads' }]) add({ ...config, ...stage });
+    const loops = [{}, { stage: 'inner' }, { stage: 'inner', innerRepeat: 8 }];
+    if (ladderVariants.includes('vload')) for (const extra of [{}, { stage: 'loads' }]) add({ ...config, vload: true, ...extra });
+    if (ladderVariants.includes('blocks') && (config.wx ?? 16) % 8 === 0 && (config.wy ?? 16) % 4 === 0) for (const extra of loops) add({ ...config, layout: 'blocks', ...extra });
+    if (ladderVariants.includes('prefetch')) for (const extra of loops) add({ ...config, prefetch: true, ...extra });
+    if (ladderVariants.includes('double') && !double && 2 * tk * (tile.tm + tile.tn) * 4 <= wgBytes) for (const extra of [{}, { vload: true }]) add({ ...config, double: true, ...extra });
   }
   // The matrix GEMM (experimental), where the device has subgroup matrices with an f16 → f32 16 × 16 × 16 shape.
   const mma = elem === 'f16' && engine.subgroupMatrixConfigs.some((c) => c.componentType === 'f16' && c.resultComponentType === 'f32' && c.M === 16 && c.N === 16 && c.K === 16);
@@ -169,6 +189,18 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
     A.destroy();
     B.destroy();
     C.destroy();
+  }
+  if (ladder) {
+    // The ceilings the stages are compared with, in this session: each the median of 3 timings.
+    step('ceilings');
+    const time = async (record) => {
+      const xs = [];
+      for (let r = 0; r < 3; r++) xs.push((await timePasses(device, record, { runs })).msPerPass);
+      xs.sort((a, b) => a - b);
+      return { msPerPass: xs[1], min: xs[0], max: xs[2] };
+    };
+    const spread = (t) => ({ ms: +t.msPerPass.toFixed(4), minMs: +t.min.toFixed(4), maxMs: +t.max.toFixed(4) });
+    report.ceilings = await measureCeilings(device, { hasF16: elem === 'f16', matrix: false, time, spread, runs });
   }
   report.rows = [];
   for (const b of batches) {
@@ -295,57 +327,10 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
       ms: kernels.map((k, i) => ({ kernel: k.name, config: k.config, ms: +rows.reduce((s, r) => s + r.perNetwork * r.kernels[i].msPerDispatch, 0).toFixed(3) })),
     };
   });
-  report.ok = report.rows.every((r) => r.kernels.every((e) => (e.kernel === 'mma' ? e.worstV2Ratio <= 1 : (e.maxAbsDiffFromV2 ?? 0) === 0) && e.matchesReference !== false));
+  // A stage of a kernel (GemmV3Config.stage) computes nothing correct, so it isn't checked.
+  report.ok = report.rows.every((r) => r.kernels.every((e) => e.config?.stage !== undefined || ((e.kernel === 'mma' ? e.worstV2Ratio <= 1 : (e.maxAbsDiffFromV2 ?? 0) === 0) && e.matchesReference !== false)));
   if (lost) report.deviceLost = lost;
   device.destroy();
   return report;
 }
 
-/**
- * Raw matrix throughput: only subgroupMatrixMultiplyAccumulate on values already in registers (no loads), with 4
- * independent accumulators, so the figure is what the matrix units reach through WebGPU on this device. Needs the
- * device feature chromium-experimental-subgroup-matrix with an f16 → f32 16 × 16 × 16 shape.
- */
-export async function measureMatrixPeak(device, { runs = 7 } = {}) {
-  const ITER = 1024;
-  const WGS = 48 * 64;
-  const code = `enable f16;
-enable chromium_experimental_subgroup_matrix;
-@group(0) @binding(0) var<storage, read_write> out: array<f32>;
-var<workgroup> L: array<f16, 256>;
-@compute @workgroup_size(32)
-fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) tid: u32) {
-  for (var i = tid; i < 256u; i += 32u) { L[i] = f16(f32(i % 7u) * 0.001); }
-  workgroupBarrier();
-  let l = subgroupMatrixLoad<subgroup_matrix_left<f16, 16, 16>>(&L, 0u, false, 16u);
-  let r = subgroupMatrixLoad<subgroup_matrix_right<f16, 16, 16>>(&L, 0u, false, 16u);
-  var a0 = subgroup_matrix_result<f32, 16, 16>();
-  var a1 = subgroup_matrix_result<f32, 16, 16>();
-  var a2 = subgroup_matrix_result<f32, 16, 16>();
-  var a3 = subgroup_matrix_result<f32, 16, 16>();
-  for (var i = 0u; i < ${ITER}u; i++) {
-    a0 = subgroupMatrixMultiplyAccumulate(l, r, a0);
-    a1 = subgroupMatrixMultiplyAccumulate(l, r, a1);
-    a2 = subgroupMatrixMultiplyAccumulate(l, r, a2);
-    a3 = subgroupMatrixMultiplyAccumulate(l, r, a3);
-  }
-  let base = wg.x * 1024u;
-  subgroupMatrixStore(&out, base, a0, false, 16u);
-  subgroupMatrixStore(&out, base + 256u, a1, false, 16u);
-  subgroupMatrixStore(&out, base + 512u, a2, false, 16u);
-  subgroupMatrixStore(&out, base + 768u, a3, false, 16u);
-}
-`;
-  const pipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: device.createShaderModule({ code }), entryPoint: 'main' } });
-  const out = device.createBuffer({ size: WGS * 1024 * 4, usage: GPUBufferUsage.STORAGE });
-  const bind = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: out } }] });
-  const timed = await timePasses(device, (p) => {
-    p.setPipeline(pipeline);
-    p.setBindGroup(0, bind);
-    p.dispatchWorkgroups(WGS);
-  }, { runs });
-  const flops = WGS * ITER * 4 * 2 * 16 * 16 * 16;
-  const result = { workgroups: WGS, iterations: ITER, msPerDispatch: +timed.msPerPass.toFixed(4), tflops: +(flops / (timed.msPerPass / 1000) / 1e12).toFixed(2) };
-  out.destroy();
-  return result;
-}

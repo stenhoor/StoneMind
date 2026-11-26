@@ -678,6 +678,32 @@ export interface GemmV3Config {
   wy?: 8 | 16;
   /** Threads along N (default 16). Fewer make a narrower tile, for small batches. */
   wx?: 4 | 8 | 16;
+  /**
+   * Measurement only (the output is wrong): run one stage of the kernel. 'inner': the main loop's arithmetic from
+   * workgroup memory, with its barriers, and no global loads after the first chunk; 'loads': the main loop's global
+   * loads into workgroup memory, with its barriers, and no arithmetic. Not with \`double\`.
+   */
+  stage?: 'inner' | 'innerRegs' | 'loads';
+  /**
+   * Measurement only, with stage 'inner' or 'innerRegs' ('inner' with its operands read from workgroup memory once,
+   * before the loop, and held in registers): run the main loop over K × this many chunks (default 1).
+   */
+  innerRepeat?: number;
+  /**
+   * Read A and B as vec4s (8 or 16 bytes per load) where four elements are aligned and in bounds, and element by
+   * element otherwise (default false: always element by element). A and B are then bound as arrays of vec4.
+   */
+  vload?: boolean;
+  /**
+   * How threads map to the tile (default 'rows'): 'rows' numbers them along N first, so a 32-thread warp covers
+   * wx × (32 / wx) threads of the tile; 'blocks' gives each warp an 8 × 4 block (wx must be a multiple of 8 and wy of 4).
+   */
+  layout?: 'rows' | 'blocks';
+  /**
+   * Read each step's operands from workgroup memory one step ahead of its arithmetic (default false), so the reads are
+   * in flight while the previous step's FMAs run.
+   */
+  prefetch?: boolean;
 }
 
 /** GEMM v3's tile: rows (M) and columns (N) of C per workgroup. */
@@ -701,8 +727,11 @@ export const GEMM_V3_DEFAULT: GemmV3Config = { rm: 4, rn: 8, tk: 16 };
 export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEMM_V3_DEFAULT) => {
   const { rm, rn, tk: TK } = config;
   const DB = config.double === true;
+  const stage = config.stage;
+  if (stage && DB) throw new Error('GEMM v3: stage is not supported with double buffering');
   const WY = config.wy ?? 16;
   const WX = config.wx ?? 16;
+  if (config.layout === 'blocks' && (WX % 8 !== 0 || WY % 4 !== 0)) throw new Error('GEMM v3: layout blocks needs wx a multiple of 8 and wy of 4');
   const THREADS = WX * WY;
   const TM = WY * rm;
   const TN = WX * rn;
@@ -719,11 +748,16 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
   for (let r = 0; r < LB; r++) decl += `  var rb${r} = vec4<f32>(0.0);\n`;
   for (let i = 0; i < rm; i++) for (let h = 0; h < GN; h++) decl += `  var c${i}_${h} = vec4<f32>(0.0);\n`;
   // Read the chunk starting at k into registers: A is [K][M] (rows of M), B is [K][N].
+  const VL = config.vload === true;
   const loadOne = (reg: string, r: number, count: number, perRow: number, k: string, base: string, row: string, pos: string, limit: string, src: string) => {
     let s = `    ${guard(r, count)}{\n      let idx = tid + ${r * THREADS}u;\n      let k = ${k} + idx / ${perRow}u;\n`;
     s += `      let ${pos} = ${pos}0 + (idx % ${perRow}u) * 4u;\n      var v = vec4<f32>(0.0);\n`;
     s += `      if (k < P.K) {\n        let o = ${base} + k * ${row} + ${pos};\n`;
-    for (let j = 0; j < 4; j++) s += `        if (${pos} + ${j}u < ${limit}) { v.${comps[j]} = f32(${src}[o + ${j}u]); }\n`;
+    if (VL) {
+      s += `        if ((o & 3u) == 0u && ${pos} + 3u < ${limit}) { v = vec4<f32>(${src}[o >> 2u]); } else {\n`;
+      for (let j = 0; j < 4; j++) s += `          if (${pos} + ${j}u < ${limit}) { v.${comps[j]} = f32(${src}[(o + ${j}u) >> 2u][(o + ${j}u) & 3u]); }\n`;
+      s += `        }\n`;
+    } else for (let j = 0; j < 4; j++) s += `        if (${pos} + ${j}u < ${limit}) { v.${comps[j]} = f32(${src}[o + ${j}u]); }\n`;
     s += `      }\n      ${reg}${r} = v;\n    }\n`;
     return s;
   };
@@ -741,16 +775,41 @@ export const GEMM_V3 = (aT: Elem, bT: Elem, cT: Elem, config: GemmV3Config = GEM
     return s;
   };
   const put = putAt('', '');
+  const regs = stage === 'innerRegs';
   let inner = '';
+  let hoisted = '';
+  if (regs) {
+    for (let g = 0; g < GM; g++) hoisted += `  let a${g} = As[${g * WY}u + ty];\n`;
+    for (let h = 0; h < GN; h++) hoisted += `  let b${h} = Bs[${h * WX}u + tx];\n`;
+  }
+  const PF = config.prefetch === true && !regs;
+  const readA = (kk: number, g: number) => `As[${DB ? 'ab + ' : ''}${kk * (TM / 4) + g * WY}u + ty]`;
+  const readB = (kk: number, h: number) => `Bs[${DB ? 'bb + ' : ''}${kk * (TN / 4) + h * WX}u + tx]`;
+  if (PF) {
+    // Step kk's operands are a{g}_{kk} and b{h}_{kk}; step kk + 1's are read before step kk's FMAs.
+    for (let g = 0; g < GM; g++) inner += `    let a${g}_0 = ${readA(0, g)};\n`;
+    for (let h = 0; h < GN; h++) inner += `    let b${h}_0 = ${readB(0, h)};\n`;
+  }
   for (let kk = 0; kk < TK; kk++) {
+    if (PF) {
+      if (kk + 1 < TK) {
+        for (let g = 0; g < GM; g++) inner += `    let a${g}_${kk + 1} = ${readA(kk + 1, g)};\n`;
+        for (let h = 0; h < GN; h++) inner += `    let b${h}_${kk + 1} = ${readB(kk + 1, h)};\n`;
+      }
+      for (let g = 0; g < GM; g++)
+        for (let i = 0; i < 4; i++)
+          for (let h = 0; h < GN; h++) inner += `    c${g * 4 + i}_${h} = fma(vec4<f32>(a${g}_${kk}.${comps[i]}), b${h}_${kk}, c${g * 4 + i}_${h});\n`;
+      continue;
+    }
     inner += '    {\n';
-    for (let g = 0; g < GM; g++) inner += `      let a${g} = As[${DB ? 'ab + ' : ''}${kk * (TM / 4) + g * WY}u + ty];\n`;
-    for (let h = 0; h < GN; h++) inner += `      let b${h} = Bs[${DB ? 'bb + ' : ''}${kk * (TN / 4) + h * WX}u + tx];\n`;
+    if (!regs) for (let g = 0; g < GM; g++) inner += `      let a${g} = ${readA(kk, g)};\n`;
+    if (!regs) for (let h = 0; h < GN; h++) inner += `      let b${h} = ${readB(kk, h)};\n`;
     for (let g = 0; g < GM; g++)
       for (let i = 0; i < 4; i++)
         for (let h = 0; h < GN; h++) inner += `      c${g * 4 + i}_${h} = fma(vec4<f32>(a${g}.${comps[i]}), b${h}, c${g * 4 + i}_${h});\n`;
     inner += '    }\n';
   }
+  if (PF) inner = `    {\n${inner}    }\n`;
   let store = '';
   for (let g = 0; g < GM; g++)
     for (let i = 0; i < 4; i++) {
@@ -773,19 +832,26 @@ struct Params {
 }
 @group(0) @binding(0) var<uniform> P: Params;
 @group(0) @binding(1) var<uniform> dyn: Dyn;
-@group(0) @binding(2) var<storage, read> A: array<${aT}>;
-@group(0) @binding(3) var<storage, read> B: array<${bT}>;
+@group(0) @binding(2) var<storage, read> A: array<${VL ? `vec4<${aT}>` : aT}>;
+@group(0) @binding(3) var<storage, read> B: array<${VL ? `vec4<${bT}>` : bT}>;
 @group(0) @binding(4) var<storage, read_write> C: array<${cT}>;
 @group(0) @binding(5) var<storage, read> nbias: array<f32>;
 
 var<workgroup> As: array<vec4<f32>, ${DB ? 2 * NA : NA}>; // [${DB ? '2][' : ''}TK][TM / 4]
 var<workgroup> Bs: array<vec4<f32>, ${DB ? 2 * NB : NB}>; // [${DB ? '2][' : ''}TK][TN / 4]
 
-@compute @workgroup_size(${WX}, ${WY})
+${config.layout === 'blocks' ? `@compute @workgroup_size(${THREADS})
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  // Each 32-thread warp covers an 8 × 4 block of threads.
+  let w = li / 32u;
+  let lane = li % 32u;
+  let tx = (w % ${WX / 8}u) * 8u + lane % 8u;
+  let ty = (w / ${WX / 8}u) * 4u + lane / 8u;
+  let tid = li;` : `@compute @workgroup_size(${WX}, ${WY})
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: vec3<u32>) {
   let tx = l.x;
   let ty = l.y;
-  let tid = ty * ${WX}u + tx;
+  let tid = ty * ${WX}u + tx;`}
   let z = wg.z;
   let m0 = wg.y * ${TM}u;
   let n0 = wg.x * ${TN}u;
@@ -795,7 +861,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) l: v
   let bBase = z * P.bBatch;
 ${decl}
 ${load('0u')}${put}  workgroupBarrier();
-${DB ? `  var cur = 0u;
+${hoisted}${DB ? `  var cur = 0u;
   for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
     let more = k0 + ${TK}u < P.K;
     if (more) {
@@ -808,14 +874,14 @@ ${inner}    if (more) {
 ${putAt('an + ', 'bn + ')}    }
     workgroupBarrier();
     cur = 1u - cur;
-  }` : `  for (var k0 = 0u; k0 < P.K; k0 += ${TK}u) {
+  }` : `  for (var k0 = 0u; k0 < P.K${(stage === 'inner' || regs) && (config.innerRepeat ?? 1) > 1 ? ` * ${config.innerRepeat}u` : ''}; k0 += ${TK}u) {
     let more = k0 + ${TK}u < P.K;
-    if (more) {
+${stage === 'inner' || regs ? '' : `    if (more) {
 ${load(`k0 + ${TK}u`)}    }
-${inner}    workgroupBarrier();
-    if (more) {
+`}${stage === 'loads' ? '' : inner}    workgroupBarrier();
+${stage === 'inner' || regs ? '' : `    if (more) {
 ${put}    }
-    workgroupBarrier();
+`}    workgroupBarrier();
   }`}
 ${store}}
 `;
