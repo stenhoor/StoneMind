@@ -20,7 +20,7 @@
 import type { ModelDesc } from '../model/types.js';
 import { BLACK, PASS_LOC, WHITE, type Stone } from '../rules/board.js';
 import { UnsupportedPositionError, type GameHistory } from '../rules/history.js';
-import { encodeHistoryV7 } from '../features/v7.js';
+import { encodeHistoryV7, type LadderCache } from '../features/v7.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import { postProcess, type Evaluation } from '../reference/postprocess.js';
 import { copyWithSymmetry } from '../reference/symmetry.js';
@@ -209,6 +209,8 @@ export class Search {
   readonly #model: ModelDesc;
   readonly #evaluator: NetEvaluator;
   readonly #cache: Map<string, Evaluation>;
+  /** Ladder results by board, for this search's inputs (the inputs are the same without it; see `LadderCache`). */
+  readonly #ladders: LadderCache = new Map();
   readonly #random: () => number;
   readonly #sqrtBoardArea: number;
   readonly #area: number;
@@ -287,6 +289,7 @@ export class Search {
 
   #encode(node: SearchNode): ReturnType<typeof encodeHistoryV7> {
     return encodeHistoryV7(node.hist, {
+      ladders: this.#ladders,
       preferPassAliveUnderSuicideRules: this.#model.preferPassAliveUnderSuicideRules,
       maxHistory: this.#maxHistory(node),
       conservativePassAndIsRoot: this.params.conservativePass && node === this.root,

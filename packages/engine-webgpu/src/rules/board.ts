@@ -62,20 +62,33 @@ export class Board {
   #ladderRecords: MoveRecord[] = [];
   #ladderRecordFirst: MoveRecord | undefined;
 
-  constructor(xSize: number, ySize: number) {
+  /** @param from A board to copy (see {@link clone}); its size must be xSize × ySize. */
+  constructor(xSize: number, ySize: number, from?: Board) {
     if (xSize < 1 || ySize < 1 || xSize > 25 || ySize > 25) throw new Error('board size must be 1–25');
     this.xSize = xSize;
     this.ySize = ySize;
     this.stride = xSize + 1;
     this.arraySize = (ySize + 2) * this.stride + 1;
     this.adj = [-this.stride, -1, 1, this.stride];
+    this.#mark = new Int32Array(this.arraySize);
+    if (from) {
+      // A copy: the arrays as they are, without building an empty board first.
+      this.colors = from.colors.slice();
+      this.#head = from.#head.slice();
+      this.#next = from.#next.slice();
+      this.#size = from.#size.slice();
+      this.#libs = from.#libs.slice();
+      this.koLoc = from.koLoc;
+      this.numBlackCaptures = from.numBlackCaptures;
+      this.numWhiteCaptures = from.numWhiteCaptures;
+      return;
+    }
     this.colors = new Uint8Array(this.arraySize).fill(WALL);
     for (let y = 0; y < ySize; y++) for (let x = 0; x < xSize; x++) this.colors[this.loc(x, y)] = EMPTY;
     this.#head = new Int32Array(this.arraySize).fill(-1);
     this.#next = new Int32Array(this.arraySize).fill(-1);
     this.#size = new Int32Array(this.arraySize);
     this.#libs = new Int32Array(this.arraySize);
-    this.#mark = new Int32Array(this.arraySize);
   }
 
   loc(x: number, y: number): number {
@@ -95,16 +108,7 @@ export class Board {
   }
 
   clone(): Board {
-    const b = new Board(this.xSize, this.ySize);
-    b.colors.set(this.colors);
-    b.#head.set(this.#head);
-    b.#next.set(this.#next);
-    b.#size.set(this.#size);
-    b.#libs.set(this.#libs);
-    b.koLoc = this.koLoc;
-    b.numBlackCaptures = this.numBlackCaptures;
-    b.numWhiteCaptures = this.numWhiteCaptures;
-    return b;
+    return new Board(this.xSize, this.ySize, this);
   }
 
   // ---------------------------------------------------------------- chains

@@ -1,0 +1,4 @@
+{"dist":"dist-base","turns":250,"visits":100,"batch":16,"evals":24987,"calls":1748,"cpuMsRuns":[8106.7,8119.2,8151.7,8208.5,8240.7],"cpuMsMedian":8151.7,"msPerCall":4.663,"msPerEval":0.3262}
+{"dist":"dist-new","turns":250,"visits":100,"batch":16,"evals":24987,"calls":1748,"cpuMsRuns":[5308.9,5365.4,5391.9,5396.9,5478.3],"cpuMsMedian":5391.9,"msPerCall":3.085,"msPerEval":0.2158}
+{"dist":"dist-base","turns":250,"visits":100,"batch":16,"evals":24987,"calls":1748,"cpuMsRuns":[8147.5,8168.5,8192.1,8201.3,8226.7],"cpuMsMedian":8192.1,"msPerCall":4.687,"msPerEval":0.3279}
+{"dist":"dist-new","turns":250,"visits":100,"batch":16,"evals":24987,"calls":1748,"cpuMsRuns":[5290.2,5296.6,5328.5,5361.8,5481.2],"cpuMsMedian":5328.5,"msPerCall":3.048,"msPerEval":0.2133}
