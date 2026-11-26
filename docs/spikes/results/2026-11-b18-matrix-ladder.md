@@ -39,7 +39,9 @@ pair was run one after the other, in fresh switched browsers.
 
   The GPU was at its power cap (`0x4`) in nearly every busy sample of every run. I haven't separated the clocks' share
   of the change.
-- **Users:** none of this reaches users until browsers ship the feature without a switch.
+- **Users:** users get this by default only once browsers ship the feature without a switch. Until then they can
+  turn it on themselves with `--enable-unsafe-webgpu`, at their own risk (`packages/engine-webgpu/README.md`, "Browser
+  flags for more speed", added in #88).
 
 ## How it was measured
 
@@ -277,8 +279,9 @@ it isn't a like-for-like comparison.
   - 1×1 convolutions: 3.4–3.5 ms;
   - transforms: 2.7 + 2.5 ms;
   - batch norm: 1.3 ms.
-- **For users today:** without the switch, none of this applies. Phase 2's figures still stand: 1.86–1.88× native
-  for the review.
+- **For users today:** by default (no switch), none of this applies, and Phase 2's figures still stand: 1.86–1.88× native
+  for the review. Users who start their browser with `--enable-unsafe-webgpu`, at their own risk, get the matrix
+  figures above.
 
 ## Kept in the code
 
