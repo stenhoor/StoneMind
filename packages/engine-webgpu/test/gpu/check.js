@@ -750,7 +750,9 @@ document.getElementById('gemm').addEventListener('click', () => {
   out.textContent = '';
   download.hidden = true;
   steps.length = 0;
-  runGemmBench({ step }).then((r) => show({ ...r, model: 'gemm' }), (e) => {
+  // ?gemmBatches=16,64 runs only those batches; ?gemmReverse=1 measures the v3 shapes in the opposite order.
+  const gemmBatches = params.get('gemmBatches')?.split(',').map(Number);
+  runGemmBench({ step, reverse: params.get('gemmReverse') === '1', ...(gemmBatches ? { batches: gemmBatches } : {}) }).then((r) => show({ ...r, model: 'gemm' }), (e) => {
     const error = describeError(e);
     summary.textContent = `Failed at: ${steps.at(-1) ?? 'the start'}\n${error}`;
     lastReport = { failed: true, error, steps: [...steps], userAgent: navigator.userAgent, date: new Date().toISOString(), model: 'failed' };

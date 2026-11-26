@@ -5,6 +5,7 @@
 // warm-up, median of `runs`, per dispatch. Every version's output is compared with v1's.
 import { requestEngineDevice, toFloat16Array, fromFloat16Bits } from '../../dist/index.js';
 import { ACT, WINO_IN, WINO_IN_V2, WINO_OUT, WINO_OUT_V2, winoTransformChannels } from '../../dist/gpu/kernels.js';
+import { timePasses } from './timing.js';
 
 const SIZE = 19;
 const AREA = SIZE * SIZE;
@@ -34,6 +35,7 @@ export async function runTransformBench({ batches = [16, 32, 64], repeat = 30, r
   const act = elem === 'f16' ? ACT.mish_scale8 : ACT.mish;
   report.elem = elem;
   report.act = act;
+  report.timing = 'gpu timestamps, passes submitted back to back after a warm-up (timing.js)';
   if (!engine.features.has('timestamp-query')) throw new Error('the transform benchmark needs timestamp-query');
   const maxBatch = Math.max(...batches);
   const tileStride = maxBatch * TILES;
@@ -143,9 +145,12 @@ export async function runTransformBench({ batches = [16, 32, 64], repeat = 30, r
         await pass(k, bind, groups, 1, false);
         const count = kind === 'in' ? 36 * C * tileStride : maxBatch * C * AREA;
         const got = await readBack(out, count);
-        const ms = [];
-        for (let r = 0; r < runs; r++) ms.push((await pass(k, bind, groups, repeat, true)) / repeat);
-        ms.sort((x, y) => x - y);
+        const timed = await timePasses(device, (p) => {
+          p.setPipeline(k.pipeline);
+          p.setBindGroup(0, bind);
+          for (let i = 0; i < repeat; i++) p.dispatchWorkgroups(...groups);
+        }, { runs });
+        const ms = [timed.msPerPass / repeat]; // the span of all timed passes, per dispatch (see timing.js)
         const median = ms[Math.floor(ms.length / 2)];
         const entry = { kernel: k.name, msPerDispatch: +median.toFixed(4), gbPerSecond: +(bytes / (median / 1000) / 1e9).toFixed(1) };
         // Compare only what a batch of b writes: V[e][c][t < b·25], or the first b boards.
@@ -195,10 +200,11 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(num_workgroups) 
       const n = half / 16;
       const groups = Math.ceil(n / 256);
       const k = { pipeline: copy };
-      const ms = [];
-      await pass(k, bind, [Math.min(groups, 65535), Math.ceil(groups / 65535)], 1, false);
-      for (let r = 0; r < runs; r++) ms.push((await pass(k, bind, [Math.min(groups, 65535), Math.ceil(groups / 65535)], repeat, true)) / repeat);
-      ms.sort((x, y) => x - y);
+      const ms = [(await timePasses(device, (p) => {
+        p.setPipeline(k.pipeline);
+        p.setBindGroup(0, bind);
+        for (let i = 0; i < repeat; i++) p.dispatchWorkgroups(Math.min(groups, 65535), Math.ceil(groups / 65535));
+      }, { runs })).msPerPass / repeat];
       const median = ms[Math.floor(ms.length / 2)];
       report.copy.push({ batch: b, bytes: 2 * half, msPerDispatch: +median.toFixed(4), gbPerSecond: +((2 * half) / (median / 1000) / 1e9).toFixed(1) });
       src.destroy();

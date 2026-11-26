@@ -8,6 +8,7 @@
 // Each timing is the median of `runs` passes, from GPU timestamps, after a warm-up.
 import { requestEngineDevice, loadModel, GpuNetwork, encodePositionV7, gtpMove, toFloat16Array } from '../../dist/index.js';
 import { GEMM_V3, GEMM_V3_DEFAULT, gemmV3Tile } from '../../dist/gpu/kernels.js';
+import { timePasses } from './timing.js';
 
 const NOOP = /* wgsl */ `
 @group(0) @binding(0) var<storage, read_write> v: array<f32>;
@@ -49,13 +50,16 @@ export async function runDispatchBench({ modelBytes, batches = [16, 32, 64], cou
     tsRead.unmap();
     return Number(end - begin) / 1e6;
   };
-  const median = async (dispatches) => {
-    await pass(dispatches, false);
-    const ms = [];
-    for (let r = 0; r < runs; r++) ms.push(await pass(dispatches));
-    ms.sort((a, b) => a - b);
-    return ms[Math.floor(ms.length / 2)];
-  };
+  // GPU ms per pass of these dispatches, with the GPU kept busy (timing.js).
+  const median = async (dispatches) =>
+    (await timePasses(device, (p) => {
+      for (const [pipeline, bind, groups] of dispatches) {
+        p.setPipeline(pipeline);
+        p.setBindGroup(0, bind);
+        p.dispatchWorkgroups(...groups);
+      }
+    }, { runs })).msPerPass;
+  report.timing = 'gpu timestamps, passes submitted back to back after a warm-up (timing.js); the network pass is awaited per call';
 
   // Fixed cost per dispatch.
   step(`fixed cost: ${count} near-empty dispatches`);

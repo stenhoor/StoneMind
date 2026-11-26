@@ -5,6 +5,7 @@
 // compared with GEMM v2's and, for the first batch position, with a float64 product on the CPU.
 import { requestEngineDevice, toFloat16Array, fromFloat16Bits } from '../../dist/index.js';
 import { GEMM_V2, GEMM_V3, GEMM_DEFAULT, gemmTile, gemmV3Tile } from '../../dist/gpu/kernels.js';
+import { timePasses } from './timing.js';
 
 const TILES_PER_BOARD = 25; // 19 × 19 in 4 × 4 tiles
 const AREA = 361;
@@ -53,7 +54,7 @@ function reference(shape, A, B) {
   return C;
 }
 
-export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs = 7, warmUpMs = 2000, step = () => {} } = {}) {
+export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs = 7, warmUpMs = 2000, reverse = false, step = () => {} } = {}) {
   const engine = await requestEngineDevice();
   const { device } = engine;
   const report = { kind: 'gemm', adapter: engine.adapterInfo, features: [...engine.features], userAgent: navigator.userAgent, date: new Date().toISOString(), batches, repeat, runs };
@@ -62,20 +63,26 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
   const elem = engine.features.has('shader-f16') ? 'f16' : 'f32';
   const timestamps = engine.features.has('timestamp-query');
   report.elem = elem;
-  report.timing = timestamps ? 'gpu timestamps' : 'wall time (no timestamp-query)';
+  report.timing = timestamps ? 'gpu timestamps, passes submitted back to back after a warm-up (timing.js)' : 'wall time (no timestamp-query)';
   const kernels = [
     { name: 'v2', config: GEMM_DEFAULT, code: GEMM_V2(elem, elem, elem, GEMM_DEFAULT), tile: gemmTile(GEMM_DEFAULT) },
   ];
   const wgBytes = device.limits.maxComputeWorkgroupStorageSize;
   report.maxComputeWorkgroupStorageSize = wgBytes;
-  // [rm, rn, tk, wy]: rows and columns per thread, the chunk, and threads along M.
-  const shapesToTry = [[4, 8, 16, 16], [8, 8, 16, 8], [8, 8, 8, 8], [8, 4, 16, 8], [8, 8, 32, 8], [4, 8, 16, 8], [8, 8, 16, 16]];
-  for (const [rm, rn, tk, wy] of shapesToTry) {
-    const config = { rm, rn, tk, wy };
+  // [rm, rn, tk, wy, double]: rows and columns per thread, the chunk, threads along M, and double buffering.
+  const shapesToTry = [
+    [4, 8, 16, 16], [4, 4, 16, 16], [4, 8, 8, 16], [4, 8, 32, 16], [8, 8, 16, 16],
+    [8, 8, 16, 8], [8, 4, 16, 8], [4, 8, 16, 16, true],
+  ];
+  for (const [rm, rn, tk, wy, double] of shapesToTry) {
+    const config = double ? { rm, rn, tk, wy, double } : { rm, rn, tk, wy };
     const tile = gemmV3Tile(config);
-    if (tk * (tile.tm + tile.tn) * 4 > wgBytes) continue;
+    if ((double ? 2 : 1) * tk * (tile.tm + tile.tn) * 4 > wgBytes) continue;
     kernels.push({ name: 'v3', config, code: GEMM_V3(elem, elem, elem, config), tile });
   }
+  // reverse: measure the v3 shapes in the opposite order (v2 stays first, as the reference for the output check).
+  if (reverse) kernels.splice(1, kernels.length - 1, ...kernels.slice(1).reverse());
+  report.reverse = reverse;
   step(`compiling ${kernels.length} kernels`);
   for (const k of kernels) {
     const module = device.createShaderModule({ code: k.code });
@@ -191,11 +198,24 @@ export async function runGemmBench({ batches = [16, 32, 64], repeat = 30, runs =
         };
         await pass(1, false); // warm-up, and the output checked below
         const out = await readBack(C, shape.sizes.C);
-        const ms = [];
-        for (let r = 0; r < runs; r++) ms.push((await pass(repeat, true)) / repeat);
-        ms.sort((x, y) => x - y);
+        let ms = [];
+        const passMedians = [];
+        if (timestamps) {
+          const timed = await timePasses(device, (p) => {
+            p.setPipeline(k.pipeline);
+            p.setBindGroup(0, bind);
+            for (let i = 0; i < repeat; i++) p.dispatchWorkgroups(...groups);
+          }, { runs });
+          // The span of all timed passes, per dispatch (see timing.js); the per-pass median is kept for comparison.
+          ms = [timed.msPerPass / repeat];
+          passMedians.push(timed.ms[Math.floor(timed.ms.length / 2)] / repeat);
+        } else {
+          for (let r = 0; r < runs; r++) ms.push((await pass(repeat, true)) / repeat);
+          ms.sort((x, y) => x - y);
+        }
         const median = ms[Math.floor(ms.length / 2)];
         const entry = { kernel: k.name, config: k.config, msPerDispatch: +median.toFixed(4), tflops: +(flops / (median / 1000) / 1e12).toFixed(2) };
+        if (passMedians.length) entry.passMedianMsPerDispatch = +passMedians[0].toFixed(4);
         // The outputs that are written: z < Z, m < M, n < N.
         const cmp = (other) => {
           let d = 0;
