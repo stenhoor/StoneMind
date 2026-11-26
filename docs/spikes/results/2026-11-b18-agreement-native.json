@@ -1,0 +1,1488 @@
+{
+  "kind": "native-agreement",
+  "katagoVersion": "KataGo v1.18.2",
+  "config": "/home/stenhoor/katago/analysis_example.cfg",
+  "model": "/home/stenhoor/katago/models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+  "referenceVisits": 4000,
+  "browserReport": {
+    "date": "2026-11-26T09:42:13.381Z",
+    "model": "kata1-b18c384nbt-s9996604416-d4316597426",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+    "variant": {
+      "winograd": true,
+      "fuse": true,
+      "gemm": "v2",
+      "precision": "f16"
+    }
+  },
+  "results": [
+    {
+      "visits": 100,
+      "browserBatch": 16,
+      "positions": 50,
+      "browserVsNative": {
+        "a": 38,
+        "b": 35
+      },
+      "nativeVsNative": 41,
+      "browserVsReference": 29,
+      "nativeVsReference": {
+        "a": 32,
+        "b": 31
+      },
+      "perTurn": [
+        {
+          "turn": 0,
+          "browser": "Q16",
+          "nativeA": "Q16",
+          "nativeB": "Q16",
+          "reference": "Q16"
+        },
+        {
+          "turn": 5,
+          "browser": "Q3",
+          "nativeA": "Q3",
+          "nativeB": "Q3",
+          "reference": "Q3"
+        },
+        {
+          "turn": 10,
+          "browser": "D17",
+          "nativeA": "D17",
+          "nativeB": "D17",
+          "reference": "D17"
+        },
+        {
+          "turn": 15,
+          "browser": "K16",
+          "nativeA": "K17",
+          "nativeB": "K17",
+          "reference": "K17"
+        },
+        {
+          "turn": 20,
+          "browser": "D5",
+          "nativeA": "D5",
+          "nativeB": "D5",
+          "reference": "D5"
+        },
+        {
+          "turn": 25,
+          "browser": "J3",
+          "nativeA": "J3",
+          "nativeB": "O16",
+          "reference": "J3"
+        },
+        {
+          "turn": 30,
+          "browser": "E6",
+          "nativeA": "E6",
+          "nativeB": "E6",
+          "reference": "E6"
+        },
+        {
+          "turn": 35,
+          "browser": "F7",
+          "nativeA": "D9",
+          "nativeB": "D9",
+          "reference": "D9"
+        },
+        {
+          "turn": 40,
+          "browser": "D11",
+          "nativeA": "D11",
+          "nativeB": "D11",
+          "reference": "D11"
+        },
+        {
+          "turn": 45,
+          "browser": "C1",
+          "nativeA": "C1",
+          "nativeB": "C1",
+          "reference": "C1"
+        },
+        {
+          "turn": 50,
+          "browser": "D12",
+          "nativeA": "D12",
+          "nativeB": "D12",
+          "reference": "D12"
+        },
+        {
+          "turn": 55,
+          "browser": "B16",
+          "nativeA": "B16",
+          "nativeB": "B16",
+          "reference": "B16"
+        },
+        {
+          "turn": 60,
+          "browser": "E3",
+          "nativeA": "E3",
+          "nativeB": "E3",
+          "reference": "O15"
+        },
+        {
+          "turn": 65,
+          "browser": "M4",
+          "nativeA": "M4",
+          "nativeB": "M4",
+          "reference": "R14"
+        },
+        {
+          "turn": 70,
+          "browser": "K15",
+          "nativeA": "K15",
+          "nativeB": "K15",
+          "reference": "P2"
+        },
+        {
+          "turn": 75,
+          "browser": "L4",
+          "nativeA": "L4",
+          "nativeB": "L4",
+          "reference": "L4"
+        },
+        {
+          "turn": 80,
+          "browser": "J16",
+          "nativeA": "L16",
+          "nativeB": "L16",
+          "reference": "J16"
+        },
+        {
+          "turn": 85,
+          "browser": "Q15",
+          "nativeA": "Q15",
+          "nativeB": "Q15",
+          "reference": "Q15"
+        },
+        {
+          "turn": 90,
+          "browser": "R13",
+          "nativeA": "Q9",
+          "nativeB": "R13",
+          "reference": "F9"
+        },
+        {
+          "turn": 95,
+          "browser": "Q17",
+          "nativeA": "Q17",
+          "nativeB": "Q17",
+          "reference": "Q17"
+        },
+        {
+          "turn": 100,
+          "browser": "S19",
+          "nativeA": "S19",
+          "nativeB": "S19",
+          "reference": "S19"
+        },
+        {
+          "turn": 105,
+          "browser": "N3",
+          "nativeA": "N3",
+          "nativeB": "N3",
+          "reference": "N3"
+        },
+        {
+          "turn": 110,
+          "browser": "O12",
+          "nativeA": "O11",
+          "nativeB": "O11",
+          "reference": "O12"
+        },
+        {
+          "turn": 115,
+          "browser": "L13",
+          "nativeA": "M13",
+          "nativeB": "M13",
+          "reference": "M13"
+        },
+        {
+          "turn": 120,
+          "browser": "J18",
+          "nativeA": "J18",
+          "nativeB": "J18",
+          "reference": "J18"
+        },
+        {
+          "turn": 125,
+          "browser": "T18",
+          "nativeA": "T18",
+          "nativeB": "S12",
+          "reference": "K11"
+        },
+        {
+          "turn": 130,
+          "browser": "M15",
+          "nativeA": "M15",
+          "nativeB": "M15",
+          "reference": "K19"
+        },
+        {
+          "turn": 135,
+          "browser": "S12",
+          "nativeA": "S12",
+          "nativeB": "S12",
+          "reference": "S12"
+        },
+        {
+          "turn": 140,
+          "browser": "J2",
+          "nativeA": "L14",
+          "nativeB": "L14",
+          "reference": "Q10"
+        },
+        {
+          "turn": 145,
+          "browser": "R19",
+          "nativeA": "P9",
+          "nativeB": "P9",
+          "reference": "P9"
+        },
+        {
+          "turn": 150,
+          "browser": "Q10",
+          "nativeA": "Q10",
+          "nativeB": "Q10",
+          "reference": "Q10"
+        },
+        {
+          "turn": 155,
+          "browser": "D14",
+          "nativeA": "S11",
+          "nativeB": "S11",
+          "reference": "R9"
+        },
+        {
+          "turn": 160,
+          "browser": "B8",
+          "nativeA": "B8",
+          "nativeB": "B11",
+          "reference": "B11"
+        },
+        {
+          "turn": 165,
+          "browser": "S11",
+          "nativeA": "S11",
+          "nativeB": "S11",
+          "reference": "E4"
+        },
+        {
+          "turn": 170,
+          "browser": "B10",
+          "nativeA": "B10",
+          "nativeB": "B10",
+          "reference": "B10"
+        },
+        {
+          "turn": 175,
+          "browser": "A10",
+          "nativeA": "O7",
+          "nativeB": "A10",
+          "reference": "O7"
+        },
+        {
+          "turn": 180,
+          "browser": "S8",
+          "nativeA": "S8",
+          "nativeB": "S8",
+          "reference": "S8"
+        },
+        {
+          "turn": 185,
+          "browser": "S10",
+          "nativeA": "S10",
+          "nativeB": "S10",
+          "reference": "G9"
+        },
+        {
+          "turn": 190,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "N7"
+        },
+        {
+          "turn": 195,
+          "browser": "S18",
+          "nativeA": "S18",
+          "nativeB": "S18",
+          "reference": "S18"
+        },
+        {
+          "turn": 200,
+          "browser": "G10",
+          "nativeA": "G10",
+          "nativeB": "H10",
+          "reference": "A7"
+        },
+        {
+          "turn": 205,
+          "browser": "B9",
+          "nativeA": "B9",
+          "nativeB": "B9",
+          "reference": "B9"
+        },
+        {
+          "turn": 210,
+          "browser": "A14",
+          "nativeA": "A14",
+          "nativeB": "B10",
+          "reference": "C12"
+        },
+        {
+          "turn": 215,
+          "browser": "C12",
+          "nativeA": "C12",
+          "nativeB": "C12",
+          "reference": "C12"
+        },
+        {
+          "turn": 220,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 225,
+          "browser": "K2",
+          "nativeA": "K2",
+          "nativeB": "E16",
+          "reference": "K2"
+        },
+        {
+          "turn": 230,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 235,
+          "browser": "S16",
+          "nativeA": "F15",
+          "nativeB": "S16",
+          "reference": "S16"
+        },
+        {
+          "turn": 240,
+          "browser": "Q9",
+          "nativeA": "P8",
+          "nativeB": "P8",
+          "reference": "P8"
+        },
+        {
+          "turn": 245,
+          "browser": "P8",
+          "nativeA": "P8",
+          "nativeB": "P8",
+          "reference": "B9"
+        }
+      ]
+    },
+    {
+      "visits": 100,
+      "browserBatch": 64,
+      "positions": 50,
+      "browserVsNative": {
+        "a": 28,
+        "b": 28
+      },
+      "nativeVsNative": 41,
+      "browserVsReference": 26,
+      "nativeVsReference": {
+        "a": 32,
+        "b": 31
+      },
+      "perTurn": [
+        {
+          "turn": 0,
+          "browser": "D4",
+          "nativeA": "Q16",
+          "nativeB": "Q16",
+          "reference": "Q16"
+        },
+        {
+          "turn": 5,
+          "browser": "Q3",
+          "nativeA": "Q3",
+          "nativeB": "Q3",
+          "reference": "Q3"
+        },
+        {
+          "turn": 10,
+          "browser": "D17",
+          "nativeA": "D17",
+          "nativeB": "D17",
+          "reference": "D17"
+        },
+        {
+          "turn": 15,
+          "browser": "M17",
+          "nativeA": "K17",
+          "nativeB": "K17",
+          "reference": "K17"
+        },
+        {
+          "turn": 20,
+          "browser": "D5",
+          "nativeA": "D5",
+          "nativeB": "D5",
+          "reference": "D5"
+        },
+        {
+          "turn": 25,
+          "browser": "R6",
+          "nativeA": "J3",
+          "nativeB": "O16",
+          "reference": "J3"
+        },
+        {
+          "turn": 30,
+          "browser": "E6",
+          "nativeA": "E6",
+          "nativeB": "E6",
+          "reference": "E6"
+        },
+        {
+          "turn": 35,
+          "browser": "F7",
+          "nativeA": "D9",
+          "nativeB": "D9",
+          "reference": "D9"
+        },
+        {
+          "turn": 40,
+          "browser": "D11",
+          "nativeA": "D11",
+          "nativeB": "D11",
+          "reference": "D11"
+        },
+        {
+          "turn": 45,
+          "browser": "C1",
+          "nativeA": "C1",
+          "nativeB": "C1",
+          "reference": "C1"
+        },
+        {
+          "turn": 50,
+          "browser": "D12",
+          "nativeA": "D12",
+          "nativeB": "D12",
+          "reference": "D12"
+        },
+        {
+          "turn": 55,
+          "browser": "B16",
+          "nativeA": "B16",
+          "nativeB": "B16",
+          "reference": "B16"
+        },
+        {
+          "turn": 60,
+          "browser": "F6",
+          "nativeA": "E3",
+          "nativeB": "E3",
+          "reference": "O15"
+        },
+        {
+          "turn": 65,
+          "browser": "Q13",
+          "nativeA": "M4",
+          "nativeB": "M4",
+          "reference": "R14"
+        },
+        {
+          "turn": 70,
+          "browser": "K15",
+          "nativeA": "K15",
+          "nativeB": "K15",
+          "reference": "P2"
+        },
+        {
+          "turn": 75,
+          "browser": "L4",
+          "nativeA": "L4",
+          "nativeB": "L4",
+          "reference": "L4"
+        },
+        {
+          "turn": 80,
+          "browser": "J16",
+          "nativeA": "L16",
+          "nativeB": "L16",
+          "reference": "J16"
+        },
+        {
+          "turn": 85,
+          "browser": "Q15",
+          "nativeA": "Q15",
+          "nativeB": "Q15",
+          "reference": "Q15"
+        },
+        {
+          "turn": 90,
+          "browser": "Q8",
+          "nativeA": "Q9",
+          "nativeB": "R13",
+          "reference": "F9"
+        },
+        {
+          "turn": 95,
+          "browser": "Q17",
+          "nativeA": "Q17",
+          "nativeB": "Q17",
+          "reference": "Q17"
+        },
+        {
+          "turn": 100,
+          "browser": "S19",
+          "nativeA": "S19",
+          "nativeB": "S19",
+          "reference": "S19"
+        },
+        {
+          "turn": 105,
+          "browser": "N3",
+          "nativeA": "N3",
+          "nativeB": "N3",
+          "reference": "N3"
+        },
+        {
+          "turn": 110,
+          "browser": "O12",
+          "nativeA": "O11",
+          "nativeB": "O11",
+          "reference": "O12"
+        },
+        {
+          "turn": 115,
+          "browser": "L13",
+          "nativeA": "M13",
+          "nativeB": "M13",
+          "reference": "M13"
+        },
+        {
+          "turn": 120,
+          "browser": "J18",
+          "nativeA": "J18",
+          "nativeB": "J18",
+          "reference": "J18"
+        },
+        {
+          "turn": 125,
+          "browser": "K11",
+          "nativeA": "T18",
+          "nativeB": "S12",
+          "reference": "K11"
+        },
+        {
+          "turn": 130,
+          "browser": "M15",
+          "nativeA": "M15",
+          "nativeB": "M15",
+          "reference": "K19"
+        },
+        {
+          "turn": 135,
+          "browser": "S12",
+          "nativeA": "S12",
+          "nativeB": "S12",
+          "reference": "S12"
+        },
+        {
+          "turn": 140,
+          "browser": "J2",
+          "nativeA": "L14",
+          "nativeB": "L14",
+          "reference": "Q10"
+        },
+        {
+          "turn": 145,
+          "browser": "R19",
+          "nativeA": "P9",
+          "nativeB": "P9",
+          "reference": "P9"
+        },
+        {
+          "turn": 150,
+          "browser": "Q10",
+          "nativeA": "Q10",
+          "nativeB": "Q10",
+          "reference": "Q10"
+        },
+        {
+          "turn": 155,
+          "browser": "D14",
+          "nativeA": "S11",
+          "nativeB": "S11",
+          "reference": "R9"
+        },
+        {
+          "turn": 160,
+          "browser": "B8",
+          "nativeA": "B8",
+          "nativeB": "B11",
+          "reference": "B11"
+        },
+        {
+          "turn": 165,
+          "browser": "S11",
+          "nativeA": "S11",
+          "nativeB": "S11",
+          "reference": "E4"
+        },
+        {
+          "turn": 170,
+          "browser": "B10",
+          "nativeA": "B10",
+          "nativeB": "B10",
+          "reference": "B10"
+        },
+        {
+          "turn": 175,
+          "browser": "R11",
+          "nativeA": "O7",
+          "nativeB": "A10",
+          "reference": "O7"
+        },
+        {
+          "turn": 180,
+          "browser": "S8",
+          "nativeA": "S8",
+          "nativeB": "S8",
+          "reference": "S8"
+        },
+        {
+          "turn": 185,
+          "browser": "S10",
+          "nativeA": "S10",
+          "nativeB": "S10",
+          "reference": "G9"
+        },
+        {
+          "turn": 190,
+          "browser": "K19",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "N7"
+        },
+        {
+          "turn": 195,
+          "browser": "O7",
+          "nativeA": "S18",
+          "nativeB": "S18",
+          "reference": "S18"
+        },
+        {
+          "turn": 200,
+          "browser": "R5",
+          "nativeA": "G10",
+          "nativeB": "H10",
+          "reference": "A7"
+        },
+        {
+          "turn": 205,
+          "browser": "B9",
+          "nativeA": "B9",
+          "nativeB": "B9",
+          "reference": "B9"
+        },
+        {
+          "turn": 210,
+          "browser": "B10",
+          "nativeA": "A14",
+          "nativeB": "B10",
+          "reference": "C12"
+        },
+        {
+          "turn": 215,
+          "browser": "T13",
+          "nativeA": "C12",
+          "nativeB": "C12",
+          "reference": "C12"
+        },
+        {
+          "turn": 220,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 225,
+          "browser": "K2",
+          "nativeA": "K2",
+          "nativeB": "E16",
+          "reference": "K2"
+        },
+        {
+          "turn": 230,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 235,
+          "browser": "S16",
+          "nativeA": "F15",
+          "nativeB": "S16",
+          "reference": "S16"
+        },
+        {
+          "turn": 240,
+          "browser": "Q9",
+          "nativeA": "P8",
+          "nativeB": "P8",
+          "reference": "P8"
+        },
+        {
+          "turn": 245,
+          "browser": "P8",
+          "nativeA": "P8",
+          "nativeB": "P8",
+          "reference": "B9"
+        }
+      ]
+    },
+    {
+      "visits": 500,
+      "browserBatch": 16,
+      "positions": 50,
+      "browserVsNative": {
+        "a": 33,
+        "b": 30
+      },
+      "nativeVsNative": 43,
+      "browserVsReference": 31,
+      "nativeVsReference": {
+        "a": 32,
+        "b": 35
+      },
+      "perTurn": [
+        {
+          "turn": 0,
+          "browser": "Q16",
+          "nativeA": "Q16",
+          "nativeB": "Q16",
+          "reference": "Q16"
+        },
+        {
+          "turn": 5,
+          "browser": "Q3",
+          "nativeA": "Q3",
+          "nativeB": "Q3",
+          "reference": "Q3"
+        },
+        {
+          "turn": 10,
+          "browser": "D17",
+          "nativeA": "C16",
+          "nativeB": "C16",
+          "reference": "D17"
+        },
+        {
+          "turn": 15,
+          "browser": "F3",
+          "nativeA": "F3",
+          "nativeB": "F3",
+          "reference": "K17"
+        },
+        {
+          "turn": 20,
+          "browser": "D5",
+          "nativeA": "D5",
+          "nativeB": "D5",
+          "reference": "D5"
+        },
+        {
+          "turn": 25,
+          "browser": "J3",
+          "nativeA": "J3",
+          "nativeB": "J3",
+          "reference": "J3"
+        },
+        {
+          "turn": 30,
+          "browser": "E6",
+          "nativeA": "C14",
+          "nativeB": "E6",
+          "reference": "E6"
+        },
+        {
+          "turn": 35,
+          "browser": "F7",
+          "nativeA": "D9",
+          "nativeB": "D9",
+          "reference": "D9"
+        },
+        {
+          "turn": 40,
+          "browser": "D11",
+          "nativeA": "D11",
+          "nativeB": "D11",
+          "reference": "D11"
+        },
+        {
+          "turn": 45,
+          "browser": "C1",
+          "nativeA": "C1",
+          "nativeB": "C1",
+          "reference": "C1"
+        },
+        {
+          "turn": 50,
+          "browser": "D12",
+          "nativeA": "D12",
+          "nativeB": "D12",
+          "reference": "D12"
+        },
+        {
+          "turn": 55,
+          "browser": "B16",
+          "nativeA": "B16",
+          "nativeB": "B16",
+          "reference": "B16"
+        },
+        {
+          "turn": 60,
+          "browser": "E3",
+          "nativeA": "O15",
+          "nativeB": "O15",
+          "reference": "O15"
+        },
+        {
+          "turn": 65,
+          "browser": "Q18",
+          "nativeA": "Q13",
+          "nativeB": "Q13",
+          "reference": "R14"
+        },
+        {
+          "turn": 70,
+          "browser": "K15",
+          "nativeA": "K15",
+          "nativeB": "K15",
+          "reference": "P2"
+        },
+        {
+          "turn": 75,
+          "browser": "L4",
+          "nativeA": "L4",
+          "nativeB": "L4",
+          "reference": "L4"
+        },
+        {
+          "turn": 80,
+          "browser": "J16",
+          "nativeA": "L17",
+          "nativeB": "J16",
+          "reference": "J16"
+        },
+        {
+          "turn": 85,
+          "browser": "Q15",
+          "nativeA": "Q15",
+          "nativeB": "Q15",
+          "reference": "Q15"
+        },
+        {
+          "turn": 90,
+          "browser": "Q8",
+          "nativeA": "Q8",
+          "nativeB": "Q8",
+          "reference": "F9"
+        },
+        {
+          "turn": 95,
+          "browser": "Q17",
+          "nativeA": "Q17",
+          "nativeB": "Q17",
+          "reference": "Q17"
+        },
+        {
+          "turn": 100,
+          "browser": "S19",
+          "nativeA": "S19",
+          "nativeB": "S19",
+          "reference": "S19"
+        },
+        {
+          "turn": 105,
+          "browser": "N3",
+          "nativeA": "N3",
+          "nativeB": "N3",
+          "reference": "N3"
+        },
+        {
+          "turn": 110,
+          "browser": "O12",
+          "nativeA": "O12",
+          "nativeB": "O11",
+          "reference": "O12"
+        },
+        {
+          "turn": 115,
+          "browser": "M13",
+          "nativeA": "M13",
+          "nativeB": "M13",
+          "reference": "M13"
+        },
+        {
+          "turn": 120,
+          "browser": "J18",
+          "nativeA": "J18",
+          "nativeB": "J18",
+          "reference": "J18"
+        },
+        {
+          "turn": 125,
+          "browser": "T18",
+          "nativeA": "T18",
+          "nativeB": "K11",
+          "reference": "K11"
+        },
+        {
+          "turn": 130,
+          "browser": "M15",
+          "nativeA": "M15",
+          "nativeB": "M15",
+          "reference": "K19"
+        },
+        {
+          "turn": 135,
+          "browser": "S12",
+          "nativeA": "J3",
+          "nativeB": "J3",
+          "reference": "S12"
+        },
+        {
+          "turn": 140,
+          "browser": "J2",
+          "nativeA": "L14",
+          "nativeB": "L14",
+          "reference": "Q10"
+        },
+        {
+          "turn": 145,
+          "browser": "R19",
+          "nativeA": "P9",
+          "nativeB": "P9",
+          "reference": "P9"
+        },
+        {
+          "turn": 150,
+          "browser": "Q10",
+          "nativeA": "Q10",
+          "nativeB": "Q10",
+          "reference": "Q10"
+        },
+        {
+          "turn": 155,
+          "browser": "D14",
+          "nativeA": "R9",
+          "nativeB": "R9",
+          "reference": "R9"
+        },
+        {
+          "turn": 160,
+          "browser": "B8",
+          "nativeA": "B8",
+          "nativeB": "B11",
+          "reference": "B11"
+        },
+        {
+          "turn": 165,
+          "browser": "E4",
+          "nativeA": "E9",
+          "nativeB": "E9",
+          "reference": "E4"
+        },
+        {
+          "turn": 170,
+          "browser": "B10",
+          "nativeA": "B10",
+          "nativeB": "B10",
+          "reference": "B10"
+        },
+        {
+          "turn": 175,
+          "browser": "A10",
+          "nativeA": "O7",
+          "nativeB": "O7",
+          "reference": "O7"
+        },
+        {
+          "turn": 180,
+          "browser": "S8",
+          "nativeA": "S8",
+          "nativeB": "S8",
+          "reference": "S8"
+        },
+        {
+          "turn": 185,
+          "browser": "A8",
+          "nativeA": "S10",
+          "nativeB": "S10",
+          "reference": "G9"
+        },
+        {
+          "turn": 190,
+          "browser": "T12",
+          "nativeA": "H6",
+          "nativeB": "H6",
+          "reference": "N7"
+        },
+        {
+          "turn": 195,
+          "browser": "S18",
+          "nativeA": "S18",
+          "nativeB": "S18",
+          "reference": "S18"
+        },
+        {
+          "turn": 200,
+          "browser": "G10",
+          "nativeA": "A7",
+          "nativeB": "A7",
+          "reference": "A7"
+        },
+        {
+          "turn": 205,
+          "browser": "B9",
+          "nativeA": "B9",
+          "nativeB": "B9",
+          "reference": "B9"
+        },
+        {
+          "turn": 210,
+          "browser": "B10",
+          "nativeA": "B10",
+          "nativeB": "B10",
+          "reference": "C12"
+        },
+        {
+          "turn": 215,
+          "browser": "C12",
+          "nativeA": "C12",
+          "nativeB": "K2",
+          "reference": "C12"
+        },
+        {
+          "turn": 220,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 225,
+          "browser": "K2",
+          "nativeA": "F15",
+          "nativeB": "F15",
+          "reference": "K2"
+        },
+        {
+          "turn": 230,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 235,
+          "browser": "S16",
+          "nativeA": "S16",
+          "nativeB": "S16",
+          "reference": "S16"
+        },
+        {
+          "turn": 240,
+          "browser": "Q9",
+          "nativeA": "P8",
+          "nativeB": "P8",
+          "reference": "P8"
+        },
+        {
+          "turn": 245,
+          "browser": "P8",
+          "nativeA": "P8",
+          "nativeB": "B9",
+          "reference": "B9"
+        }
+      ]
+    },
+    {
+      "visits": 500,
+      "browserBatch": 64,
+      "positions": 50,
+      "browserVsNative": {
+        "a": 25,
+        "b": 25
+      },
+      "nativeVsNative": 43,
+      "browserVsReference": 24,
+      "nativeVsReference": {
+        "a": 32,
+        "b": 35
+      },
+      "perTurn": [
+        {
+          "turn": 0,
+          "browser": "D16",
+          "nativeA": "Q16",
+          "nativeB": "Q16",
+          "reference": "Q16"
+        },
+        {
+          "turn": 5,
+          "browser": "Q3",
+          "nativeA": "Q3",
+          "nativeB": "Q3",
+          "reference": "Q3"
+        },
+        {
+          "turn": 10,
+          "browser": "D17",
+          "nativeA": "C16",
+          "nativeB": "C16",
+          "reference": "D17"
+        },
+        {
+          "turn": 15,
+          "browser": "K17",
+          "nativeA": "F3",
+          "nativeB": "F3",
+          "reference": "K17"
+        },
+        {
+          "turn": 20,
+          "browser": "D5",
+          "nativeA": "D5",
+          "nativeB": "D5",
+          "reference": "D5"
+        },
+        {
+          "turn": 25,
+          "browser": "J3",
+          "nativeA": "J3",
+          "nativeB": "J3",
+          "reference": "J3"
+        },
+        {
+          "turn": 30,
+          "browser": "E6",
+          "nativeA": "C14",
+          "nativeB": "E6",
+          "reference": "E6"
+        },
+        {
+          "turn": 35,
+          "browser": "F7",
+          "nativeA": "D9",
+          "nativeB": "D9",
+          "reference": "D9"
+        },
+        {
+          "turn": 40,
+          "browser": "D11",
+          "nativeA": "D11",
+          "nativeB": "D11",
+          "reference": "D11"
+        },
+        {
+          "turn": 45,
+          "browser": "C1",
+          "nativeA": "C1",
+          "nativeB": "C1",
+          "reference": "C1"
+        },
+        {
+          "turn": 50,
+          "browser": "D12",
+          "nativeA": "D12",
+          "nativeB": "D12",
+          "reference": "D12"
+        },
+        {
+          "turn": 55,
+          "browser": "B16",
+          "nativeA": "B16",
+          "nativeB": "B16",
+          "reference": "B16"
+        },
+        {
+          "turn": 60,
+          "browser": "E3",
+          "nativeA": "O15",
+          "nativeB": "O15",
+          "reference": "O15"
+        },
+        {
+          "turn": 65,
+          "browser": "Q18",
+          "nativeA": "Q13",
+          "nativeB": "Q13",
+          "reference": "R14"
+        },
+        {
+          "turn": 70,
+          "browser": "K15",
+          "nativeA": "K15",
+          "nativeB": "K15",
+          "reference": "P2"
+        },
+        {
+          "turn": 75,
+          "browser": "L4",
+          "nativeA": "L4",
+          "nativeB": "L4",
+          "reference": "L4"
+        },
+        {
+          "turn": 80,
+          "browser": "J16",
+          "nativeA": "L17",
+          "nativeB": "J16",
+          "reference": "J16"
+        },
+        {
+          "turn": 85,
+          "browser": "Q15",
+          "nativeA": "Q15",
+          "nativeB": "Q15",
+          "reference": "Q15"
+        },
+        {
+          "turn": 90,
+          "browser": "R13",
+          "nativeA": "Q8",
+          "nativeB": "Q8",
+          "reference": "F9"
+        },
+        {
+          "turn": 95,
+          "browser": "Q17",
+          "nativeA": "Q17",
+          "nativeB": "Q17",
+          "reference": "Q17"
+        },
+        {
+          "turn": 100,
+          "browser": "S19",
+          "nativeA": "S19",
+          "nativeB": "S19",
+          "reference": "S19"
+        },
+        {
+          "turn": 105,
+          "browser": "N3",
+          "nativeA": "N3",
+          "nativeB": "N3",
+          "reference": "N3"
+        },
+        {
+          "turn": 110,
+          "browser": "O11",
+          "nativeA": "O12",
+          "nativeB": "O11",
+          "reference": "O12"
+        },
+        {
+          "turn": 115,
+          "browser": "L13",
+          "nativeA": "M13",
+          "nativeB": "M13",
+          "reference": "M13"
+        },
+        {
+          "turn": 120,
+          "browser": "J18",
+          "nativeA": "J18",
+          "nativeB": "J18",
+          "reference": "J18"
+        },
+        {
+          "turn": 125,
+          "browser": "T18",
+          "nativeA": "T18",
+          "nativeB": "K11",
+          "reference": "K11"
+        },
+        {
+          "turn": 130,
+          "browser": "L10",
+          "nativeA": "M15",
+          "nativeB": "M15",
+          "reference": "K19"
+        },
+        {
+          "turn": 135,
+          "browser": "R19",
+          "nativeA": "J3",
+          "nativeB": "J3",
+          "reference": "S12"
+        },
+        {
+          "turn": 140,
+          "browser": "J2",
+          "nativeA": "L14",
+          "nativeB": "L14",
+          "reference": "Q10"
+        },
+        {
+          "turn": 145,
+          "browser": "R19",
+          "nativeA": "P9",
+          "nativeB": "P9",
+          "reference": "P9"
+        },
+        {
+          "turn": 150,
+          "browser": "Q10",
+          "nativeA": "Q10",
+          "nativeB": "Q10",
+          "reference": "Q10"
+        },
+        {
+          "turn": 155,
+          "browser": "D14",
+          "nativeA": "R9",
+          "nativeB": "R9",
+          "reference": "R9"
+        },
+        {
+          "turn": 160,
+          "browser": "B8",
+          "nativeA": "B8",
+          "nativeB": "B11",
+          "reference": "B11"
+        },
+        {
+          "turn": 165,
+          "browser": "S11",
+          "nativeA": "E9",
+          "nativeB": "E9",
+          "reference": "E4"
+        },
+        {
+          "turn": 170,
+          "browser": "B10",
+          "nativeA": "B10",
+          "nativeB": "B10",
+          "reference": "B10"
+        },
+        {
+          "turn": 175,
+          "browser": "D10",
+          "nativeA": "O7",
+          "nativeB": "O7",
+          "reference": "O7"
+        },
+        {
+          "turn": 180,
+          "browser": "S8",
+          "nativeA": "S8",
+          "nativeB": "S8",
+          "reference": "S8"
+        },
+        {
+          "turn": 185,
+          "browser": "D10",
+          "nativeA": "S10",
+          "nativeB": "S10",
+          "reference": "G9"
+        },
+        {
+          "turn": 190,
+          "browser": "T12",
+          "nativeA": "H6",
+          "nativeB": "H6",
+          "reference": "N7"
+        },
+        {
+          "turn": 195,
+          "browser": "D10",
+          "nativeA": "S18",
+          "nativeB": "S18",
+          "reference": "S18"
+        },
+        {
+          "turn": 200,
+          "browser": "G10",
+          "nativeA": "A7",
+          "nativeB": "A7",
+          "reference": "A7"
+        },
+        {
+          "turn": 205,
+          "browser": "B9",
+          "nativeA": "B9",
+          "nativeB": "B9",
+          "reference": "B9"
+        },
+        {
+          "turn": 210,
+          "browser": "A14",
+          "nativeA": "B10",
+          "nativeB": "B10",
+          "reference": "C12"
+        },
+        {
+          "turn": 215,
+          "browser": "T13",
+          "nativeA": "C12",
+          "nativeB": "K2",
+          "reference": "C12"
+        },
+        {
+          "turn": 220,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 225,
+          "browser": "F15",
+          "nativeA": "F15",
+          "nativeB": "F15",
+          "reference": "K2"
+        },
+        {
+          "turn": 230,
+          "browser": "T12",
+          "nativeA": "T12",
+          "nativeB": "T12",
+          "reference": "T12"
+        },
+        {
+          "turn": 235,
+          "browser": "S16",
+          "nativeA": "S16",
+          "nativeB": "S16",
+          "reference": "S16"
+        },
+        {
+          "turn": 240,
+          "browser": "Q9",
+          "nativeA": "P8",
+          "nativeB": "P8",
+          "reference": "P8"
+        },
+        {
+          "turn": 245,
+          "browser": "P8",
+          "nativeA": "P8",
+          "nativeB": "B9",
+          "reference": "B9"
+        }
+      ]
+    }
+  ]
+}
