@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107).
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108.
 
 ## The goal
 
@@ -102,6 +102,25 @@ speed comparison, since until now native has run features the browser doesn't ha
     - streaming results (`reportDuringSearchEvery`), `priority`, `terminate` and `clear_cache`;
     - every query field listed above;
     - every output field listed above.
+
+    Split into four PRs on 2026-11-27, when Part B started, following how KataGo divides the code. Each is ported
+    from KataGo's `v1.18.2` tag, the version the checks run against:
+    - 11a. **The search's output fields** (KataGo's `getAnalysisJson`, less the hashes): `weight`, `edgeWeight`,
+      `noResultValue`, `pvVisits` and `pvEdgeVisits` per move, `rootInfo`'s values, the policy, and ownership with its
+      standard deviation, for the position and per move. Checked with the exact search check, which now compares every
+      field native reports.
+    - 11b. **The position hashes** in `rootInfo` (`thisHash`, `symHash`): KataGo's random number generator and hash
+      tables. Checked exactly.
+    - 11c. **The query fields that change the search:** `initialStones`, `initialPlayer`, `whiteHandicapBonus`,
+      `allowMoves` and `avoidMoves`, `rootFpuReductionMax`, `rootPolicyTemperature`, and `overrideSettings` for the
+      ported parameters. Checked with the exact search check.
+    - 11d. **The engine:** KataGo's `analysis.cpp` behind `AnalysisEngine`, through `@stonemind/engine`'s
+      `JsonLineSession`. That covers parsing with KataGo's errors and warnings, `analyzeTurns`, `priority`, reports
+      during the search, which side the values are for, and the actions (`query_version`, `query_models`,
+      `clear_cache`, `terminate`, `terminate_all`).
+
+    **Not in scope:** focus moves (`focusMoves` and `set_focus`). They were added to KataGo after v1.18.2 and are in no
+    release yet.
 12. **The protocol check** against native through the bridge.
 
 ### Part C: rules
