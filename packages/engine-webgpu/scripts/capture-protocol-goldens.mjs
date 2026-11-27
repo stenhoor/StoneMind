@@ -55,6 +55,8 @@ const p = (id, fields = {}, drop = []) => {
 };
 const ALL = { includeOwnership: true, includeOwnershipStdev: true, includeMovesOwnership: true, includeMovesOwnershipStdev: true, includePolicy: true, includePVVisits: true, includeNoResultValue: true };
 const MOVES_4 = [['B', 'E5'], ['W', 'C3'], ['B', 'G7'], ['W', 'G3']];
+// The 9x9 game of the search goldens (capture-search-goldens.mjs), which ends in two passes.
+const LATE_9 = JSON.parse(readFileSync(join(here, '..', 'test', 'goldens', 'search-late-9.json'), 'utf8')).moves;
 
 /**
  * Each scenario runs in a fresh engine. `partial` lists ids whose final results come from a search stopped early, so
@@ -188,6 +190,18 @@ const SCENARIOS = [
       lines: [
         q({ id: 'r-every', ...base, moves: MOVES_4, maxVisits: 100, reportDuringSearchEvery: 0.25 }),
         q({ id: 's-once', ...base, boardXSize: 7, boardYSize: 7, moves: [['B', 'D4']], maxVisits: 100, firstReportDuringSearchAfter: 0.02 }),
+      ],
+    }],
+  },
+  {
+    name: 'territory',
+    note: 'Territory scoring and the group taxes (part C, step 13c), late in a 9x9 game: the query\'s moves are played with the encore prevented (preventCleanupPhase), and lines with a pass are cut where the root\'s phase would end. Several turns of one query, before and after a pass and past the prevented phase end, share the evaluation cache.',
+    steps: [{
+      lines: [
+        q({ id: 'j-turns', ...base, rules: 'japanese', moves: LATE_9, analyzeTurns: [48, 51, 52], maxVisits: 40, includePVVisits: true }),
+        q({ id: 'j-ancient', ...base, rules: 'ancient-territory', moves: LATE_9.slice(0, 51), maxVisits: 40, includePVVisits: true }),
+        q({ id: 'j-stone', ...base, rules: 'stone-scoring', moves: LATE_9.slice(0, 51), maxVisits: 40, includePVVisits: true }),
+        q({ id: 'j-korean-19', ...base, rules: 'korean', boardXSize: 19, boardYSize: 19, moves: [['B', 'Q16'], ['W', 'D4']], maxVisits: 20 }),
       ],
     }],
   },

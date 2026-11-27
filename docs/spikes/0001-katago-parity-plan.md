@@ -151,16 +151,23 @@ speed comparison, since until now native has run features the browser doesn't ha
 
       Changed while doing 13b, 2026-11-27: native's GTP and analysis engine play their moves with the encore prevented
       unless the config sets `preventCleanupPhase` to false (`cpp/command/gtp.cpp`, `analysis.cpp`), so network goldens
-      from our config can't reach the encore, and changing it is a KataGo config change. Instead, KataGo's own `fillRowV7` is built into the program 13a's check uses,
-      and the inputs are compared exactly at every state of the same games, with varied input options. Inputs equal to
+      from our config can't reach the encore, and changing it is a KataGo config change. Instead, KataGo's own
+      `fillRowV7` is built into the program 13a's check uses, and the inputs are compared exactly at every state of the
+      same games, with varied input options. Inputs equal to
       KataGo's give the outputs the network goldens already check. The area planes with a group tax under area scoring
       are in the same KataGo code, so 13b ports them too (they were in step 14).
     - 13c. **The search** under territory scoring and through the encore, and the analysis engine accepting these
       rules. Checked with the exact search check and the protocol check on Japanese-rules positions.
 
-14. **The rest of what's refused today:** a group tax in the search (stone-scoring and ancient-territory rules), and
-    button rule sets. (No-result long cycles and the rules engine's group-tax scoring moved to 13a, and the group tax in
-    the network's inputs to 13b.)
+      Changed while doing 13c, 2026-11-27, agreed in the session: Japanese and Korean rules have the seki tax, and
+      KataGo's search and analysis engine have no code of their own for a tax, so 13c also lifts the search's refusal
+      of the group taxes, checked against native under stone-scoring and ancient-territory rules too. The search's
+      position keys are also checked exactly against KataGo's hashes, in the rules goldens. With native's config the
+      root is never in the encore, so search goldens with the root in the encore are captured with native's
+      `preventCleanupPhase` set to false, as a command-line override for those queries only (agreed in the session).
+
+14. **The button:** rule sets with a button, the last thing refused today. (No-result long cycles and the rules
+    engine's group-tax scoring moved to 13a, the group tax in the network's inputs to 13b, and in the search to 13c.)
 
 Checked with rules goldens from native on positions that exercise each rule, plus the exact search check under those
 rules.

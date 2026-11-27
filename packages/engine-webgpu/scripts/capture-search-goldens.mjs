@@ -78,6 +78,31 @@ const FULL = [
     ...['A7', 'B7', 'C7', 'D7', 'E7', 'F7', 'G7', 'A6', 'C6', 'E6', 'G6', 'D5', 'F5', 'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3'].map((v) => ['W', v]),
     ...['B6', 'A5', 'C5', 'E5', 'G5', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'G4'].map((v) => ['B', v]),
   ] } },
+  // Territory scoring and the group taxes (part C, step 13c). Native plays the query's moves with the encore prevented
+  // (preventCleanupPhase, true by default), so after two passes play goes on past the phase end; inside the search,
+  // two passes start the encore, and lines are cut where the root's phase would end.
+  { id: 'late-9-japanese', moves: LATE_9.slice(0, 48), rules: 'japanese', size: 9, maxVisits: 100 },
+  { id: 'late-9-japanese-after-pass', moves: LATE_9.slice(0, 51), rules: 'japanese', size: 9, maxVisits: 100 },
+  { id: 'late-9-japanese-past-phase-end', moves: LATE_9, rules: 'japanese', size: 9, maxVisits: 60 },
+  { id: 'late-9-territory-no-tax-after-pass', moves: LATE_9.slice(0, 51), rules: 'koSIMPLEscoreTERRITORYtaxNONEsui0', size: 9, maxVisits: 100 },
+  { id: 'late-9-stone-scoring-after-pass', moves: LATE_9.slice(0, 51), rules: 'stone-scoring', size: 9, maxVisits: 100 },
+  { id: 'late-9-ancient-territory-after-pass', moves: LATE_9.slice(0, 51), rules: 'ancient-territory', size: 9, maxVisits: 100 },
+  { id: 'opening-19-japanese', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'japanese', size: 19, maxVisits: 30 },
+  // The root in the encore: native run with preventCleanupPhase=false (`preventCleanupPhase: false` here; ours the
+  // same), so two passes start the encore and two more its second phase. The empty board in the encore is symmetric;
+  // Black moving twice in a row in the encore starts the history again in that phase.
+  { id: 'encore-1-japanese', moves: LATE_9, rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false },
+  { id: 'encore-2-japanese', moves: [...LATE_9, ['B', 'pass'], ['W', 'pass']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false },
+  { id: 'encore-1-sym-9', moves: [['B', 'pass'], ['W', 'pass']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false },
+  { id: 'encore-2-sym-9', moves: [['B', 'pass'], ['W', 'pass'], ['B', 'pass'], ['W', 'pass']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false },
+  { id: 'encore-1-restart', moves: [...LATE_9, ['B', 'H4'], ['B', 'J4']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false },
+  // A symmetric board whose second encore started from stones that aren't (C3 only): no symmetry at the root.
+  { id: 'encore-2-asym-start', moves: [['B', 'C3'], ['W', 'pass'], ['B', 'pass'], ['W', 'pass'], ['B', 'pass'], ['W', 'pass'], ['B', 'G7']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false },
+  // Two kos, mirror images through the centre. In the encore Black takes both, and White's pass for ko at B9 lifts the
+  // block on A9 only: the stones are symmetric, the recapture blocks aren't.
+  { id: 'encore-1-asym-recapture', moves: [['B', 'pass'], ['W', 'pass'], ['B', 'A9'], ['W', 'pass'], ['B', 'J1'], ['W', 'B9']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false, extra: { initialStones: [
+    ['W', 'B9'], ['W', 'A8'], ['B', 'C9'], ['B', 'B8'], ['W', 'H1'], ['W', 'J2'], ['B', 'G1'], ['B', 'H2'],
+  ] } },
   // Black avoids moves at the root, White its usual replies until depth 4.
   { id: 'avoid-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { avoidMoves: [{ player: 'B', moves: ['D3', 'C4', 'D4'], untilDepth: 1 }, { player: 'W', moves: ['C6', 'F3', 'D3', 'pass'], untilDepth: 4 }] } },
   // An avoid list turns off enableMorePassingHacks for that player at every depth: here both players avoid an empty
@@ -95,6 +120,7 @@ const SHORT = [
   { id: 'opening-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 25 },
   { id: 'turn-33-9', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 25 },
   { id: 'late-9-after-pass', moves: LATE_9.slice(0, 51), rules: 'tromp-taylor', size: 9, maxVisits: 25 },
+  { id: 'late-9-japanese-after-pass', moves: LATE_9.slice(0, 51), rules: 'japanese', size: 9, maxVisits: 25 },
 ];
 const queries = { full: FULL, short: SHORT }[values.set];
 if (!queries) throw new Error(`--set must be full or short, not ${values.set}`);
@@ -108,12 +134,16 @@ const logDir = mkdtempSync(join(tmpdir(), 'katago-logs-'));
 const byId = new Map();
 for (const q of queries) {
   const query = { id: q.id, moves: q.moves, rules: q.rules, komi: 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6, ...INCLUDE, ...q.extra };
-  const run = spawnSync(values.katago, ['analysis', '-config', values.config, '-model', values.model, '-override-config', [`logDir=${logDir}`, ...OVERRIDES].join(',')], { input: JSON.stringify(query) + '\n', encoding: 'utf8', maxBuffer: 1 << 28 });
+  const overrides = [`logDir=${logDir}`, ...OVERRIDES, ...(q.preventCleanupPhase === false ? ['preventCleanupPhase=false'] : [])];
+  const run = spawnSync(values.katago, ['analysis', '-config', values.config, '-model', values.model, '-override-config', overrides.join(',')], { input: JSON.stringify(query) + '\n', encoding: 'utf8', maxBuffer: 1 << 28 });
   if (run.status !== 0) {
     console.error(run.stderr);
     process.exit(1);
   }
-  const r = JSON.parse(run.stdout.trim().split('\n')[0]);
+  // The response, after any warnings (a warning line has a "warning" field).
+  const lines = run.stdout.trim().split('\n').map((l) => JSON.parse(l));
+  for (const w of lines.filter((l) => 'warning' in l)) console.error(`${q.id}: warning: ${JSON.stringify(w)}`);
+  const r = lines.find((l) => !('warning' in l));
   byId.set(r.id, r);
   console.error(`captured ${q.id}`);
 }

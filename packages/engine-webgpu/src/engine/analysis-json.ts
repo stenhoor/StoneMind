@@ -4,6 +4,7 @@
  */
 import { BLACK, PASS_LOC, type Stone } from '../rules/board.js';
 import { gtpLocation } from '../rules/analysis-position.js';
+import type { GameHistory } from '../rules/history.js';
 import type { Search } from '../search/search.js';
 import { JsonFloat, type JsonObject } from './json.js';
 
@@ -48,6 +49,22 @@ export interface ReportOptions {
   includeMovesOwnershipStdev: boolean;
   includePVVisits: boolean;
   includeNoResultValue: boolean;
+  /** The engine's `preventCleanupPhase` setting: a line with a pass is cut where the phase would end. */
+  preventEncore: boolean;
+}
+
+/**
+ * KataGo `AnalysisData::getPVLenUpToPhaseEnd`: the moves of a line before the one that ends the root's phase (all of
+ * them if none does).
+ */
+export function pvLenUpToPhaseEnd(root: GameHistory, pv: readonly number[]): number {
+  const hist = root.clone();
+  let j = 0;
+  for (; j < pv.length; j++) {
+    hist.play(pv[j]!, hist.nextPla);
+    if (hist.encorePhase !== root.encorePhase) break;
+  }
+  return j;
 }
 
 /**
@@ -69,6 +86,7 @@ export function addAnalysisJson(search: Search, o: ReportOptions, ret: JsonObjec
   const withOwnership = o.includeMovesOwnership || o.includeMovesOwnershipStdev;
   const a = search.analysis(withOwnership ? { movesOwnership: true, movesOwnershipStdev: o.includeMovesOwnershipStdev } : {});
   ret['moveInfos'] = a.moveInfos.map((m) => {
+    const pvLen = o.preventEncore && m.pv.includes(PASS_LOC) ? pvLenUpToPhaseEnd(root.hist, m.pv) : m.pv.length;
     const info: JsonObject = {
       move: loc(m.loc),
       visits: m.visits,
@@ -87,14 +105,13 @@ export function addAnalysisJson(search: Search, o: ReportOptions, ret: JsonObjec
       edgeVisits: m.edgeVisits,
       edgeWeight: r8(m.edgeWeight),
       playSelectionValue: r8(m.playSelectionValue),
-      // With area scoring the phase never ends, so KataGo's preventCleanupPhase never shortens a line.
-      pv: m.pv.map(loc),
+      pv: m.pv.slice(0, pvLen).map(loc),
     };
     if (o.includeNoResultValue) info['noResultValue'] = r8(m.noResultValue);
     if (m.isSymmetryOf !== undefined) info['isSymmetryOf'] = loc(m.isSymmetryOf);
     if (o.includePVVisits) {
-      info['pvVisits'] = m.pvVisits;
-      info['pvEdgeVisits'] = m.pvEdgeVisits;
+      info['pvVisits'] = m.pvVisits.slice(0, pvLen);
+      info['pvEdgeVisits'] = m.pvEdgeVisits.slice(0, pvLen);
     }
     if (o.includeMovesOwnership) info['ownership'] = m.ownership!.map((x) => r6(side(x)));
     if (o.includeMovesOwnershipStdev) info['ownershipStdev'] = m.ownershipStdev!.map(r6);

@@ -486,9 +486,59 @@ function getSymLoc(loc: number, board: Board, symmetry: number): number {
 }
 
 /**
- * KataGo `SymmetryHelpers::markDuplicateMoveLocs` (no encore): the symmetries under which the position is unchanged,
- * and the moves that mirror an earlier one, skipping moves the player to move avoids at the root. A position with a ko
- * or superko ban has none.
+ * KataGo `BoardHistory::getSituationRulesAndKoHash` as a key: the position, the player to move, the encore phase, ko
+ * bans (in the main phase the points banned by simple ko or superko; in the encore the once-only bans and recapture blocks,
+ * and in the second encore its starting stones), the komi for the player to move (to 1/256), the rules, and the
+ * history modes where they change anything. Two keys are equal exactly when KataGo's hashes are (barring a collision of
+ * its hashes; `test/history.test.mjs`). The board size is left out, as it's the same throughout a search.
+ */
+export function situationKey(h: GameHistory, pla: Stone, drawEquivalentWinsForWhite: number): string {
+  const b = h.board;
+  let key = '';
+  for (let y = 0; y < b.ySize; y++) for (let x = 0; x < b.xSize; x++) key += b.colors[b.loc(x, y)];
+  key += `|${pla}|e${h.encorePhase}|`;
+  if (h.encorePhase === 0) {
+    // The simple ko point and the superko bans go into KataGo's hash alike, so only the set of banned points counts.
+    for (let y = 0; y < b.ySize; y++) {
+      for (let x = 0; x < b.xSize; x++) {
+        const loc = b.loc(x, y);
+        if (loc === b.koLoc || h.superKoBanned[loc]) key += loc.toString(36) + ',';
+      }
+    }
+  } else {
+    for (let y = 0; y < b.ySize; y++) {
+      for (let x = 0; x < b.xSize; x++) {
+        const loc = b.loc(x, y);
+        if (h.superKoBanned[loc]) key += loc.toString(36) + ',';
+        if (h.koRecapBlocked[loc]) key += 'r' + loc.toString(36) + ',';
+      }
+    }
+    if (h.encorePhase === 2) {
+      key += '|';
+      for (let y = 0; y < b.ySize; y++) for (let x = 0; x < b.xSize; x++) key += h.secondEncoreStartColors[b.loc(x, y)];
+    }
+  }
+  // The self komi discretized as KataGo does, (int64_t)(selfKomi * 256.0f), and the rules.
+  const selfKomi = h.currentSelfKomi(pla, drawEquivalentWinsForWhite);
+  const r = h.rules;
+  key += `|k${Math.trunc(Math.fround(selfKomi * 256))}|${r.koRule}${r.scoringRule}${r.taxRule}${+r.multiStoneSuicideLegal}${+r.hasButton}${+r.friendlyPassOk}`;
+  if (h.modes.alwaysComputePassAliveUnderSuicideRules && !r.multiStoneSuicideLegal) key += 's';
+  if (h.modes.excludeTerritoryAdjacentToAtari && r.scoringRule === 'TERRITORY' && r.taxRule === 'NONE') key += 'x';
+  return key;
+}
+
+/**
+ * KataGo `GraphHash::getStateHash` as a key: the situation (`situationKey`), whether a pass would end the phase,
+ * whether the game is over, and the consecutive passes.
+ */
+export function graphStateKey(h: GameHistory, pla: Stone, drawEquivalentWinsForWhite: number): string {
+  return `${situationKey(h, pla, drawEquivalentWinsForWhite)}|${h.passWouldEndPhase(pla) ? 1 : 0}${h.isGameFinished ? 1 : 0}|${h.consecutiveEndingPasses}`;
+}
+
+/**
+ * KataGo `SymmetryHelpers::markDuplicateMoveLocs`: the symmetries under which the position is unchanged (in the encore,
+ * its recapture blocks too, and in the second encore its starting stones), and the moves that mirror an earlier one,
+ * skipping moves the player to move avoids at the root. A position with a ko or superko ban has none.
  */
 function markDuplicateMoveLocs(hist: GameHistory, avoidMoves: Int32Array | null): { isSymDupLoc: Uint8Array; validSymmetries: number[] } {
   const board = hist.board;
@@ -505,7 +555,12 @@ function markDuplicateMoveLocs(hist: GameHistory, avoidMoves: Int32Array | null)
     for (let y = 0; y < board.ySize && isBoardSym; y++) {
       for (let x = 0; x < board.xSize; x++) {
         const loc = board.loc(x, y);
-        if (board.colors[loc] !== board.colors[getSymLoc(loc, board, symmetry)]) {
+        const symLoc = getSymLoc(loc, board, symmetry);
+        if (
+          board.colors[loc] !== board.colors[symLoc] ||
+          (hist.encorePhase > 0 && hist.koRecapBlocked[loc] !== hist.koRecapBlocked[symLoc]) ||
+          (hist.encorePhase === 2 && hist.secondEncoreStartColors[loc] !== hist.secondEncoreStartColors[symLoc])
+        ) {
           isBoardSym = false;
           break;
         }
@@ -586,11 +641,6 @@ export class Search {
    */
   constructor(model: ModelDesc, evaluator: NetEvaluator, rootHistory: GameHistory, params: Partial<SearchParams> = {}, cache: Map<string, Evaluation> = new Map()) {
     this.#cache = cache;
-    if (rootHistory.rules.scoringRule !== 'AREA' || rootHistory.rules.taxRule !== 'NONE') {
-      // The search under territory scoring and with a group tax isn't ported yet (the parity plan's steps 13c and 14;
-      // docs/OPEN-QUESTIONS.md).
-      throw new UnsupportedPositionError('the search supports area scoring with no group tax only, for now');
-    }
     this.params = { ...DEFAULT_SEARCH_PARAMS, ...params };
     this.params.batchSize = Math.max(1, Math.min(this.params.batchSize, evaluator.maxBatch));
     this.#model = model;
@@ -698,8 +748,7 @@ export class Search {
     const bonus = this.params.rootEndingBonusPoints;
     const extreme = 0.95;
     const tail = 0.05;
-    // The territory-scoring encore isn't supported, so only area scoring is "area-ish".
-    const isAreaIsh = h.rules.scoringRule === 'AREA';
+    const isAreaIsh = h.rules.scoringRule === 'AREA' || (h.rules.scoringRule === 'TERRITORY' && h.encorePhase >= 2);
     let extraRootPoints = 0;
     const ownershipPenalty = (): void => {
       const own = e.whiteOwnership[b.y(moveLoc) * b.xSize + b.x(moveLoc)]!;
@@ -736,23 +785,8 @@ export class Search {
     return true;
   }
 
-  /**
-   * KataGo `GraphHash::getStateHash` as a key: the position, the player to move, ko and superko bans, whether a pass
-   * would end the phase, whether the game is over, and the consecutive passes. (Rules and komi are the same throughout a
-   * search, so they're left out.)
-   */
   #stateKey(h: GameHistory, pla: Stone): string {
-    const b = h.board;
-    let key = '';
-    for (let y = 0; y < b.ySize; y++) for (let x = 0; x < b.xSize; x++) key += b.colors[b.loc(x, y)];
-    key += `|${pla}|${b.koLoc}|`;
-    for (let y = 0; y < b.ySize; y++) {
-      for (let x = 0; x < b.xSize; x++) {
-        const loc = b.loc(x, y);
-        if (h.superKoBanned[loc] && loc !== b.koLoc) key += loc.toString(36) + ',';
-      }
-    }
-    return `${key}|${h.passWouldEndPhase(pla) ? 1 : 0}${h.isGameFinished ? 1 : 0}|${h.consecutiveEndingPasses}`;
+    return graphStateKey(h, pla, this.params.drawEquivalentWinsForWhite);
   }
 
   /**
@@ -866,30 +900,24 @@ export class Search {
   }
 
   /**
-   * KataGo's evaluation-cache key (`NNInputs::getHash`): the board size and position, the player to move and ko bans,
-   * the komi for the player to move (to 1/256) and the rules, whether a pass would end the phase (and friendly-pass
-   * suppression), whether the game is over, and whether history is hidden. Like KataGo, it leaves out the move history,
-   * so transpositions share an evaluation.
+   * KataGo's evaluation-cache key (`NNInputs::getHash`): the board size and the situation (`situationKey`), whether a
+   * pass would end the phase (and friendly-pass suppression), whether the game is over or past a prevented phase end, and
+   * whether history is hidden. Like KataGo, it leaves out the move history, so transpositions share an evaluation.
    */
   #cacheKey(node: SearchNode): string {
     const h = node.hist;
     const b = h.board;
-    let key = `${b.xSize}x${b.ySize}|`;
-    for (let y = 0; y < b.ySize; y++) for (let x = 0; x < b.xSize; x++) key += b.colors[b.loc(x, y)];
-    key += `|${h.nextPla}|${b.koLoc}|`;
-    for (let i = 0; i < h.superKoBanned.length; i++) if (h.superKoBanned[i]) key += i.toString(36) + ',';
-    // KataGo getSituationRulesAndKoHash: the self komi discretized, (int64_t)(selfKomi * 256.0f), and the rules.
-    const selfKomi = h.currentSelfKomi(h.nextPla, this.params.drawEquivalentWinsForWhite);
-    const r = h.rules;
-    key += `|k${Math.trunc(Math.fround(selfKomi * 256))}|${r.koRule}${r.scoringRule}${r.taxRule}${+r.multiStoneSuicideLegal}${+r.hasButton}${+r.friendlyPassOk}`;
     const pla = h.nextPla;
+    // The cache can be shared between searches (KataGo's analysis engine shares one across a query's turns), so the
+    // board size is in the key.
+    let key = `${b.xSize}x${b.ySize}|${situationKey(h, pla, this.params.drawEquivalentWinsForWhite)}`;
     if (h.passWouldEndPhase(pla)) {
       key += '|p';
       if (this.params.conservativePass && node === this.root) key += 'c';
       if (h.shouldSuppressEndGameFromFriendlyPass(pla)) key += 'f';
       if (this.params.enablePassingHacks) key += 'h';
     }
-    if (h.isGameFinished) key += '|over';
+    if (h.isGameFinished || h.isPastNormalPhaseEnd) key += '|over';
     if (this.#maxHistory(node) <= 0) key += '|nohist';
     // KataGo folds the policy optimism in, discretized to 1/1024.
     const optimism = this.#policyOptimism(node);

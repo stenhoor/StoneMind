@@ -21,8 +21,7 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   area or territory with every tax rule, and long cycles under simple ko or in the encore end with no result. Moves are
   played, recorded and undone with KataGo's own chain bookkeeping (`Board::playMoveRecorded` and `Board::undo`), and
   pass-alive area uses KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). Rule sets
-  with a button are refused with `UnsupportedPositionError` rather than approximated, and so, for now, are territory
-  scoring and a group tax in the search.
+  with a button are refused with `UnsupportedPositionError` rather than approximated.
   `rules/hash.ts` ports KataGo's position hashes (`thisHash` and `symHash` in its analysis output): its random number
   generator (MD5 and SHA-256 seeding, xorshift1024* and PCG32) and the hash tables `Board::initHash` builds from it.
   SHA-256 comes from the platform's Web Crypto, so `loadPositionHashes()` builds the tables once, asynchronously, and
@@ -67,7 +66,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   parts here too: `analysisHistory` builds a query's position as the engine does (`initialStones`, `initialPlayer`, and
   the moves replayed as KataGo replays them, tolerating moves ko forbids and starting the history again where a player
   moves twice), `avoidMoveUntilByLoc` builds the lists for `avoidMoves` and `allowMoves`, and `searchParamsFromConfig`
-  ports KataGo's config loader for its search parameters, for `overrideSettings`. Values are for the player to move. Area scoring only for now. Not ported: tree reuse, as
+  ports KataGo's config loader for its search parameters, for `overrideSettings`. Values are for the player to move.
+  Every scoring and tax rule is searched, the encore included; the search's position keys (`situationKey`,
+  `graphStateKey`) tell positions apart exactly as KataGo's hashes do. Not ported: tree reuse, as
   native's analysis engine starts each search afresh. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
   the reference forward pass.
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
@@ -82,15 +83,16 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   output do, and `createAnalysisEngine` (entry point `@stonemind/engine-webgpu/session`) puts it behind
   `@stonemind/engine`'s `JsonLineSession`, the same `AnalysisEngine` a native KataGo is used through. It is configured
   with the keys of KataGo's analysis config (`numAnalysisThreads`, `numSearchThreadsPerAnalysisThread`,
-  `reportAnalysisWinratesAs` and the search parameters), and ports: the request checks in KataGo's order with its error
-  and warning messages (`json.ts` reads and writes JSON as KataGo's nlohmann library does, integers and floats apart);
+  `reportAnalysisWinratesAs`, `preventCleanupPhase` and the search parameters), and ports: `preventCleanupPhase` (the
+  query's moves played with the encore prevented, and lines cut where the root's phase would end); the request checks
+  in KataGo's order with its error and warning messages (`json.ts` reads and writes JSON as KataGo's nlohmann library does, integers and floats apart);
   KataGo's rules parser (`parseKataGoRules`: names, the JSON object and the compact form); `analyzeTurns`; the queue
   by `priority`; reports during the search (`reportDuringSearchEvery`, `firstReportDuringSearchAfter`); the side the
   values are for; KataGo's rounding of results; one evaluation cache shared by all queries; and the actions
   `query_version`, `query_models`, `clear_cache`, `terminate` and `terminate_all`. Different from native: the analysis
   threads are concurrent searches on one JavaScript thread, sharing network calls through `SharedEvaluator`;
-  `numSearchThreads` is the search's batch; reports during the search are written between batches; rules other than
-  area scoring with no tax and no button, and settings for search features not ported, are refused with an error
+  `numSearchThreads` is the search's batch; reports during the search are written between batches; rules with a
+  button, and settings for search features not ported (among them `fillDameBeforePass`), are refused with an error
   (`docs/OPEN-QUESTIONS.md`, sections 15 and 16). Not ported: focus moves (`focusMoves`, `set_focus`), added to KataGo
   after v1.18.2.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
@@ -231,13 +233,21 @@ that prefer ko captures and passes for ko. The test also checks that the games r
 recapture blocks, passes for ko, once-only and superko bans, the encore prevented, scored ends and no-result ends. A
 second test checks the network's inputs at every state of the same games, exactly: `encodeHistoryV7` against KataGo's
 own `NNInputs::fillRowV7`, built into the same program, with each game's input options (the draw value,
-`conservativePassAndIsRoot`, `enablePassingHacks`, `maxHistory`).
+`conservativePassAndIsRoot`, `enablePassingHacks`, `maxHistory`). A third checks the search's position keys: across all
+states on boards of the same size, two states' keys are equal exactly when KataGo's situation and graph-search hashes
+are. Ten more games, picked from a pool of tiny-board games, reach the same position in the second encore from
+different starting stones, which the keys must tell apart.
 
 `test/search.test.mjs` checks the search against native KataGo's analysis engine (CPU build, captured with
 `scripts/capture-search-goldens.mjs`): both run one search thread, symmetry 0, and the features this search doesn't
 have yet switched off, on 7×7, 9×9 and 19×19 positions under tromp-taylor, Chinese (friendly passes, simple ko) and AGA
 (situational superko) rules, including a root after a pass, a root after the end of the game, and a triple ko that
-the search follows to a no-result end. The same moves get exactly the same visits, with the same principal
+the search follows to a no-result end. Under Japanese (territory, seki tax), ancient-territory (territory,
+tax on all groups), stone-scoring (area, tax on all groups) and territory rules with no tax, it covers positions before
+and after a pass and past the phase end the query's moves reach with the encore prevented, where the search's lines
+go into the encore and native cuts them where the root's phase would end. Seven more queries have the root in the
+encore, with native's `preventCleanupPhase` set to false for them: in each phase, on symmetric boards, on a symmetric
+board whose recapture blocks or second-encore starting stones aren't, and with a history started again in the encore. The same moves get exactly the same visits, with the same principal
 variations, and win rates and leads within the network goldens' tolerances. A one-constant change to the search
 (`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
 
@@ -245,7 +255,8 @@ variations, and win rates and leads within the network goldens' tolerances. A on
 from native with `scripts/capture-protocol-goldens.mjs` (one search thread, no randomness), are replayed on
 `KataGoAnalysisLines` with the reference network. They cover about 60 malformed or unusual queries (every error and
 warning must be the same text), results for each reporting side with every optional field, a rectangular board and
-draw values, the order of queued queries by priority, `terminate` and `terminate_all` on running and queued queries,
+draw values, territory scoring and the group taxes over several turns of a query, the order of queued queries by
+priority, `terminate` and `terminate_all` on running and queued queries,
 and reports during the search. Results must have the same fields, written as integers or not alike, rounded as KataGo
 rounds them, with values within the search check's tolerances. The native build the goldens come from is v1.18.2 plus
 later commits from KataGo's master branch (git revision d91ea855), which add focus moves; the differences that brings

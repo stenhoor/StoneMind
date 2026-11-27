@@ -124,7 +124,8 @@ cycles, and rule sets with a button.
 Since part C, step 13a of the parity plan (2026-11-27), the rules engine has all of these but the button, as KataGo's
 `BoardHistory` has them: territory scoring with its encore, scoring with every tax rule, and no-result long cycles. The
 search ends a no-result game as KataGo does. Since step 13b, the network's inputs have the encore and every tax rule
-too. Territory scoring and a group tax are still refused by the search, until steps 13c and 14.
+too, and since step 13c the search and the analysis engine have territory scoring and every tax rule. Only rule sets
+with a button are still refused, until step 14.
 
 ## 13. Browser engine: network calls in flight (spike 0001)
 

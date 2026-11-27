@@ -8,8 +8,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  loadModel, forward, buildHistory, gtpMove, Search, PASS_LOC, UnsupportedPositionError, loadPositionHashes, avoidMoveUntilByLoc,
-  searchParamsFromConfig,
+  loadModel, forward, buildHistory, gtpMove, Search, PASS_LOC, loadPositionHashes, avoidMoveUntilByLoc,
+  searchParamsFromConfig, pvLenUpToPhaseEnd,
 } from '../dist/index.js';
 import { queryHistory, queryLoc, stoneOf } from './query-position.mjs';
 
@@ -102,9 +102,12 @@ for (const net of NETS) {
         assert.equal(got.edgeVisits, want.edgeVisits, `${m} edge visits`);
         assert.equal(got.isSymmetryOf === undefined ? undefined : name(got.isSymmetryOf), want.isSymmetryOf, `${m} isSymmetryOf`);
         assert.equal(got.order, want.order, `${m} order`);
-        assert.deepEqual(got.pv.map(name), want.pv, `${m} principal variation`);
-        assert.deepEqual(got.pvVisits, want.pvVisits, `${m} pvVisits`);
-        assert.deepEqual(got.pvEdgeVisits, want.pvEdgeVisits, `${m} pvEdgeVisits`);
+        // Native's analysis engine prevents the encore by default (preventCleanupPhase), and then cuts a line with a pass
+        // where the root's phase would end, as our engine does.
+        const pvLen = q.preventCleanupPhase !== false && got.pv.includes(PASS_LOC) ? pvLenUpToPhaseEnd(hist, got.pv) : got.pv.length;
+        assert.deepEqual(got.pv.slice(0, pvLen).map(name), want.pv, `${m} principal variation`);
+        assert.deepEqual(got.pvVisits.slice(0, pvLen), want.pvVisits, `${m} pvVisits`);
+        assert.deepEqual(got.pvEdgeVisits.slice(0, pvLen), want.pvEdgeVisits, `${m} pvEdgeVisits`);
         near(got.winrate, want.winrate, TOL.winrate, `${m} winrate`);
         near(got.lcb, want.lcb, TOL.winrate, `${m} lcb`);
         // KataGo reports the lead as scoreMean too, for older tools, and the expected score as scoreSelfplay.
@@ -177,6 +180,3 @@ test('batched search: every visit is accounted for and no leaf is left waiting',
   assert.ok(search.stats.batches < 79, 'leaves were batched');
 });
 
-test('the search refuses territory scoring for now', () => {
-  assert.throws(() => new Search(model, reference, historyOf({ size: 9, rules: 'japanese', komi: 6.5, moves: [] })), UnsupportedPositionError);
-});
