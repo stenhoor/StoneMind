@@ -10,11 +10,14 @@
  * - values: win/loss and no-result utility plus static and dynamic score utility (`getResultUtility`,
  *   `getScoreUtility`, `computeRootValues`), terminal values from the game's result, and KataGo's stats recomputation
  *   from children plus the node's own evaluation (`recomputeNodeStats`, `addLeafValue`);
- * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation.
+ * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation;
+ * - the analysis's move order and principal variations from KataGo's play selection values
+ *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
+ *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
  * Not yet ported (each is to be added and measured separately): graph search (transpositions), noise pruning, value
- * weighting by child utility (`valueWeightExponent`), uncertainty weighting, subtree value bias, LCB move ordering,
- * policy optimism, wide root noise, passing hacks and the root's ending bonus, root symmetry pruning, and tree reuse.
+ * weighting by child utility (`valueWeightExponent`), uncertainty weighting, subtree value bias, policy optimism, wide
+ * root noise, passing hacks and the root's ending bonus, root symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
 import type { ModelDesc } from '../model/types.js';
@@ -72,6 +75,19 @@ export interface SearchParams {
    * root's inputs behave as if a pass wouldn't.
    */
   conservativePass: boolean;
+  /** KataGo `useLcbForSelection`: the move with the best lower confidence bound on utility is chosen, if visited enough. */
+  useLcbForSelection: boolean;
+  /** KataGo `lcbStdevs`: the LCB's width in standard deviations. */
+  lcbStdevs: number;
+  /** KataGo `minVisitPropForLCB`: a move needs this share of the best move's weight to be chosen by LCB. */
+  minVisitPropForLCB: number;
+  /** KataGo `useNonBuggyLcb` (the analysis default, true): LCB may also choose the first child. */
+  useNonBuggyLcb: boolean;
+  /** KataGo `chosenMoveSubtract` and `chosenMovePrune`: play selection values are reduced by the first and zeroed below the second. */
+  chosenMoveSubtract: number;
+  chosenMovePrune: number;
+  /** KataGo `analysisPVLen`: moves in each principal variation after the move itself. */
+  analysisPVLen: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -100,6 +116,13 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   symmetry: -1,
   ignorePreRootHistory: true,
   conservativePass: true,
+  useLcbForSelection: true,
+  lcbStdevs: 5.0,
+  minVisitPropForLCB: 0.15,
+  useNonBuggyLcb: true,
+  chosenMoveSubtract: 0,
+  chosenMovePrune: 1,
+  analysisPVLen: 15,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -153,9 +176,18 @@ export interface SearchMoveInfo {
   prior: number;
   /** Utility for the player to move at the root. */
   utility: number;
-  /** Rank by visits, best first. */
+  /**
+   * The move's lower confidence bound, as KataGo reports it: the win rate for the player to move at the root, less the
+   * LCB radius scaled to win-rate units (`PlayUtils::getHackedLCBForWinrate`).
+   */
+  lcb: number;
+  /** The lower confidence bound on utility, for the player to move at the root. */
+  utilityLcb: number;
+  /** KataGo's play selection value: the weight the move would be chosen by, after LCB and the root's reductions. */
+  playSelectionValue: number;
+  /** Rank, best first: by play selection value, then visits, then policy (KataGo's `AnalysisData` order). */
   order: number;
-  /** Principal variation: this move, then the most-visited child at each step. */
+  /** Principal variation: this move, then the child with the highest play selection value at each step. */
   pv: number[];
 }
 
@@ -650,37 +682,216 @@ export class Search {
     return pla === WHITE ? whiteWin : 1 - whiteWin;
   }
 
-  /** The analysis at the root: each searched move with its value, ordered by visits. */
+  /** The position index of `loc` in the policy (the pass is last). */
+  #posOf(board: GameHistory['board'], loc: number): number {
+    return loc === PASS_LOC ? this.#area : board.y(loc) * board.xSize + board.x(loc);
+  }
+
+  /** KataGo `getExploreScaling`. */
+  #exploreScaling(totalChildWeight: number, stdevFactor: number): number {
+    const p = this.params;
+    const cpuct = p.cpuctExploration + p.cpuctExplorationLog * Math.log((totalChildWeight + p.cpuctExplorationBase) / p.cpuctExplorationBase);
+    return cpuct * Math.sqrt(totalChildWeight + TOTALCHILDWEIGHT_PUCT_OFFSET) * stdevFactor;
+  }
+
+  /** KataGo `getSelfUtilityLCBAndRadius`, for the player to move at `parent`. The ending bonus isn't ported yet (zero). */
+  #selfUtilityLcbAndRadius(parent: SearchNode, child: SearchNode): { lcb: number; radius: number } {
+    const p = this.params;
+    const utilityRangeRadius = p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor;
+    let radius = 2 * utilityRangeRadius * p.lcbStdevs;
+    let weightSum = child.weightSum;
+    let weightSqSum = child.weightSqSum;
+    if (child.visits <= 0 || weightSum <= 0 || weightSqSum <= 0) return { lcb: -radius, radius };
+    const utilityAvg = child.utilityAvg;
+    let ess = (weightSum * weightSum) / weightSqSum;
+    // A small prior that the variance is as large as it can be, so the bound behaves at low visit counts.
+    const priorWeight = weightSum / (ess * ess * ess);
+    let utilitySqAvg = Math.max(child.utilitySqAvg, utilityAvg * utilityAvg + 1e-8);
+    utilitySqAvg = (utilitySqAvg * weightSum + (utilitySqAvg + utilityRangeRadius * utilityRangeRadius) * priorWeight) / (weightSum + priorWeight);
+    weightSum += priorWeight;
+    weightSqSum += priorWeight * priorWeight;
+    ess = (weightSum * weightSum) / weightSqSum;
+    const selfUtility = parent.nextPla === WHITE ? utilityAvg : -utilityAvg;
+    const estimateStdev = Math.sqrt((utilitySqAvg - utilityAvg * utilityAvg) / ess);
+    radius = estimateStdev * p.lcbStdevs;
+    return { lcb: selfUtility - radius, radius };
+  }
+
+  /**
+   * KataGo `getPlaySelectionValues` for a node's children, in child order, without the parts not ported (direct policy
+   * moves for a root with no children, territory scoring's pass suppression, the human-style policy, the ending bonus).
+   * Returns null where KataGo returns false. `lcb` and `radius` are filled when LCB is used or `alwaysComputeLcb`.
+   */
+  #playSelectionValues(node: SearchNode, alwaysComputeLcb: boolean): { values: number[]; lcb: number[]; radius: number[] } | null {
+    const p = this.params;
+    const children = node.children;
+    const n = children.length;
+    if (n === 0) return null;
+    const policy = node.eval!.policy;
+    const b = node.hist.board;
+    const prior = children.map((c) => policy[this.#posOf(b, c.moveLoc)]!);
+    const values = children.map((c, i) => (prior[i]! < 0 ? 0 : c.weightSum));
+    let totalChildWeight = 0;
+    for (const c of children) totalChildWeight += c.weightSum;
+
+    // The best child before LCB: the most weighted, discounting its latest visit, with a small weight on policy.
+    let nonLcbBestIdx = 0;
+    let nonLcbBestChildWeight = -1e30;
+    let maxGoodness = -1e30;
+    for (let i = 0; i < n; i++) {
+      const edgeVisits = children[i]!.visits;
+      const g = (values[i]! * Math.max(0, edgeVisits - 1)) / Math.max(1, edgeVisits) + 2 * prior[i]!;
+      if (g > maxGoodness) {
+        maxGoodness = g;
+        nonLcbBestChildWeight = values[i]!;
+        nonLcbBestIdx = i;
+      }
+    }
+
+    // At the root, reduce the weight of moves that in retrospect got more visits than PUCT would give them now.
+    if (node === this.root) {
+      const { fpu, stdevFactor } = this.#fpuValue(node, true, 1.0);
+      const exploreScaling = this.#exploreScaling(totalChildWeight, stdevFactor);
+      const pla = node.nextPla;
+      const best = children[nonLcbBestIdx]!;
+      const utilityRadius = p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor;
+      let bestWeight = best.weightSum;
+      let bestUtility = best.visits <= 0 || bestWeight <= 0 ? fpu : best.utilityAvg;
+      if (best.virtualLosses > 0) {
+        const vlWeight = best.virtualLosses * p.numVirtualLossesPerThread;
+        const vlUtility = pla === WHITE ? -utilityRadius : utilityRadius;
+        bestUtility += (vlUtility - bestUtility) * (vlWeight / (vlWeight + Math.max(0.25, bestWeight)));
+        bestWeight += vlWeight;
+      }
+      const bestValue = this.#selectionValue(exploreScaling, prior[nonLcbBestIdx]!, bestWeight, bestUtility, pla);
+      for (let i = 0; i < n; i++) {
+        if (i === nonLcbBestIdx) continue;
+        const c = children[i]!;
+        let reduced = 0;
+        if (c.visits > 0 && c.weightSum > 0) {
+          // KataGo getExploreSelectionValueInverse: the weight that would give the best child's selection value.
+          let wanted = 0;
+          if (prior[i]! >= 0) {
+            const explore = bestValue - (pla === WHITE ? c.utilityAvg : -c.utilityAvg);
+            wanted = explore <= 0 ? 1e100 : Math.max(0, (exploreScaling * prior[i]!) / explore - 1);
+          }
+          reduced = Math.min(c.weightSum, wanted);
+        }
+        values[i] = Math.ceil(reduced);
+      }
+    }
+
+    const lcb: number[] = new Array<number>(n).fill(0);
+    const radius: number[] = new Array<number>(n).fill(0);
+    if (alwaysComputeLcb || p.useLcbForSelection) {
+      let bestLcb = -1e10;
+      let bestLcbIndex = -1;
+      for (let i = 0; i < n; i++) {
+        const r = this.#selfUtilityLcbAndRadius(node, children[i]!);
+        lcb[i] = r.lcb;
+        radius[i] = r.radius;
+        const weight = values[i]!;
+        if (weight > 0 && weight >= p.minVisitPropForLCB * nonLcbBestChildWeight && r.lcb > bestLcb) {
+          bestLcb = r.lcb;
+          bestLcbIndex = i;
+        }
+      }
+      if (p.useLcbForSelection && (p.useNonBuggyLcb ? bestLcbIndex >= 0 : bestLcbIndex > 0)) {
+        // The best-LCB move's weight is raised until it's large enough relative to every other child.
+        let adjustedWeight = values[bestLcbIndex]!;
+        for (let i = 0; i < n; i++) {
+          if (i === bestLcbIndex) continue;
+          const excess = bestLcb - lcb[i]!;
+          if (excess < 0) continue;
+          const radiusFactor = (radius[i]! + excess) / (radius[i]! + 0.2 * excess);
+          const lbound = radiusFactor * radiusFactor * values[i]!;
+          if (lbound > adjustedWeight) adjustedWeight = lbound;
+        }
+        values[bestLcbIndex] = adjustedWeight;
+      }
+    }
+
+    let maxValue = 0;
+    for (const v of values) if (v > maxValue) maxValue = v;
+    if (maxValue <= 1e-50) {
+      // Every child is weightless: weight each by its policy.
+      for (let i = 0; i < n; i++) values[i] = Math.max(0, prior[i]!);
+      for (const v of values) if (v > maxValue) maxValue = v;
+      if (maxValue <= 1e-50) return null;
+    }
+    const amountToSubtract = Math.min(p.chosenMoveSubtract, maxValue / 64);
+    const amountToPrune = Math.min(p.chosenMovePrune, maxValue / 64);
+    for (let i = 0; i < n; i++) {
+      if (values[i]! < amountToPrune) values[i] = 0;
+      else values[i] = Math.max(0, values[i]! - amountToSubtract);
+    }
+    maxValue = 0;
+    for (const v of values) if (v > maxValue) maxValue = v;
+    // KataGo's scaleMaxToAtLeast of 1.0, as its analysis and principal variations use.
+    if (maxValue < 1) for (let i = 0; i < n; i++) values[i] = values[i]! / maxValue;
+    return { values, lcb, radius };
+  }
+
+  /** KataGo `appendPV`: from `node`, the child with the highest play selection value, up to `maxDepth` moves. */
+  #appendPV(pv: number[], node: SearchNode, maxDepth: number): void {
+    for (let depth = 0; depth < maxDepth; depth++) {
+      const sel = this.#playSelectionValues(node, false);
+      if (!sel) return;
+      let bestIdx = -1;
+      let bestValue = POLICY_ILLEGAL_SELECTION_VALUE;
+      sel.values.forEach((v, i) => {
+        if (v > bestValue) {
+          bestValue = v;
+          bestIdx = i;
+        }
+      });
+      if (bestIdx < 0) return;
+      node = node.children[bestIdx]!;
+      pv.push(node.moveLoc);
+    }
+  }
+
+  /**
+   * The analysis at the root (KataGo `getAnalysisData`): each searched move with its value, in KataGo's order. Moves
+   * still waiting for their first evaluation (during a search) are left out.
+   */
   analysis(): SearchAnalysis {
     const root = this.root;
     const pla = root.nextPla;
     const sign = pla === WHITE ? 1 : -1;
     const b = root.hist.board;
-    const posOf = (loc: number) => (loc === PASS_LOC ? this.#area : b.y(loc) * b.xSize + b.x(loc));
-    const children = root.children.filter((c) => c.visits > 0).sort((a, c) => c.visits - a.visits || sign * (c.utilityAvg - a.utilityAvg));
-    const moveInfos = children.map((c, order) => {
+    const p = this.params;
+    const sel = this.#playSelectionValues(root, true);
+    // With no play selection values, KataGo reports every move as if unvisited (getSelfUtilityLCBAndRadiusZeroVisits).
+    const zeroVisitsRadius = 2 * (p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor) * p.lcbStdevs;
+    // KataGo PlayUtils::getHackedLCBForWinrate: the utility radius in win-rate units.
+    const radiusToWinrate = (0.5 * p.winLossUtilityFactor) / (p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor + 1e-20);
+    const infos = root.children.map((c, i) => {
       const pv: number[] = [c.moveLoc];
-      let n = c;
-      while (n.children.length) {
-        let next: SearchNode | null = null;
-        for (const k of n.children) if (k.visits > 0 && (!next || k.visits > next.visits)) next = k;
-        if (!next) break;
-        pv.push(next.moveLoc);
-        n = next;
-      }
+      this.#appendPV(pv, c, p.analysisPVLen);
+      const winrate = this.#winrateFor(c, pla);
+      const radius = sel ? sel.radius[i]! : zeroVisitsRadius;
       return {
         loc: c.moveLoc,
         visits: c.visits,
-        winrate: this.#winrateFor(c, pla),
+        winrate,
         scoreLead: sign * c.leadAvg,
         scoreMean: sign * c.scoreMeanAvg,
         scoreStdev: getScoreStdev(c.scoreMeanAvg, c.scoreMeanSqAvg),
-        prior: root.eval!.policy[posOf(c.moveLoc)]!,
+        prior: root.eval!.policy[this.#posOf(b, c.moveLoc)]!,
         utility: sign * c.utilityAvg,
-        order,
+        lcb: winrate - radius * radiusToWinrate,
+        utilityLcb: sel ? sel.lcb[i]! : -zeroVisitsRadius,
+        playSelectionValue: sel ? sel.values[i]! : 0,
+        order: 0,
         pv,
       };
     });
+    // KataGo's AnalysisData order (a stable sort): visited moves first, then by play selection value, visits, policy.
+    const moveInfos = infos
+      .filter((m) => m.visits > 0)
+      .sort((x, y) => y.playSelectionValue - x.playSelectionValue || y.visits - x.visits || y.prior - x.prior);
+    moveInfos.forEach((m, order) => (m.order = order));
     return {
       rootVisits: root.visits,
       rootWinrate: this.#winrateFor(root, pla),

@@ -8,8 +8,7 @@
 // For each visit count in the report, native KataGo analyses the same positions twice (its evaluation cache cleared
 // before each run), so the agreement of native with itself is the control: KataGo's own search isn't deterministic with
 // several threads. One more native run at --reference-visits is the stronger reference. KataGo runs with the given
-// analysis config as it is. Each engine's recommended move is compared: native's move of order 0, the browser's most
-// visited move.
+// analysis config as it is. Each engine's recommended move is compared: each engine's move of order 0.
 import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';

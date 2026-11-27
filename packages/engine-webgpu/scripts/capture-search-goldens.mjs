@@ -33,7 +33,6 @@ const OVERRIDES = [
   'valueWeightExponent=0',
   'useUncertainty=false',
   'subtreeValueBiasFactor=0',
-  'useLcbForSelection=false',
   'policyOptimism=0',
   'rootPolicyOptimism=0',
   'wideRootNoise=0',
@@ -54,6 +53,9 @@ const queries = [
   { id: 'late-9-after-pass', moves: LATE_9.slice(0, 51), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'late-9-game-over', moves: LATE_9, rules: 'tromp-taylor', size: 9, maxVisits: 60 },
   { id: 'late-9-chinese-after-pass', moves: LATE_9.slice(0, 51), rules: 'chinese', size: 9, maxVisits: 100 },
+  // Positions where LCB chooses a move other than the most visited one (found by scanning the game with native).
+  { id: 'lcb-9-turn-3', moves: LATE_9.slice(0, 3), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
+  { id: 'lcb-9-turn-33', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
 ];
@@ -90,7 +92,7 @@ const out = {
       ...q,
       komi: 7.5,
       rootVisits: r.rootInfo.visits,
-      moveInfos: r.moveInfos.map((m) => ({ move: m.move, visits: m.visits, winrate: m.winrate, scoreLead: m.scoreLead, pv: m.pv })),
+      moveInfos: r.moveInfos.map((m) => ({ move: m.move, order: m.order, visits: m.visits, winrate: m.winrate, scoreLead: m.scoreLead, lcb: m.lcb, utilityLcb: m.utilityLcb, playSelectionValue: m.playSelectionValue, pv: m.pv })),
     };
   }),
 };
