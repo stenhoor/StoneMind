@@ -31,11 +31,13 @@
  * - graph search (`useGraphSearch`, `GraphHash`, `allocateOrFindNode`): positions reached by different move orders
  *   share one node, found by a key built as KataGo builds its graph hash, so the tree is a graph whose edges carry the
  *   move and the edge visits; cycles end the playout (`graphPath`);
+ * - wide root noise (`wideRootNoise`, `maybeApplyWideRootNoise`): at the root, during the search, the policy is
+ *   flattened and half the time a move's value gets a random bonus, so the search looks at more moves;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
- * Not yet ported (each is to be added and measured separately): wide root noise, and tree reuse.
+ * Not ported: tree reuse (native's analysis engine starts each search afresh).
  * Search parameters that only matter for those default to values that switch them off.
  */
 import type { ModelDesc } from '../model/types.js';
@@ -173,6 +175,12 @@ export interface SearchParams {
    */
   useGraphSearch: boolean;
   graphSearchRepBound: number;
+  /**
+   * KataGo `wideRootNoise` (0.04 in its analysis engine): at the root, during the search, each move's policy is raised
+   * to the power 1 / (4 × this + 1), and with probability one half its value gains this × |a standard normal draw| for
+   * the player to move. 0 switches it off, and the search is then deterministic for a fixed symmetry.
+   */
+  wideRootNoise: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -227,6 +235,7 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   rootSymmetryPruning: true,
   useGraphSearch: true,
   graphSearchRepBound: 11,
+  wideRootNoise: 0.04,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -468,6 +477,8 @@ export class Search {
   /** Ladder results by board, for this search's inputs (the inputs are the same without it; see `LadderCache`). */
   readonly #ladders: LadderCache = new Map();
   readonly #random: () => number;
+  /** KataGo `Rand::nextGaussian` keeps the polar method's second value for the next call. */
+  #storedGaussian: number | null = null;
   /** KataGo's `subtreeValueBiasTable`, one per search (native's analysis engine starts each query with it empty). */
   readonly #subtreeValueBiasTable = new Map<string, SubtreeValueBiasEntry>();
   /** KataGo's `nodeTable` (graph search): every node but the root, by graph key (and forceNonTerminal). */
@@ -758,6 +769,40 @@ export class Search {
       conservativePassAndIsRoot: this.params.conservativePass && node === this.root,
       enablePassingHacks: this.params.enablePassingHacks,
     });
+  }
+
+  /** KataGo `Rand::nextGaussian`: Marsaglia's polar method. */
+  #nextGaussian(): number {
+    if (this.#storedGaussian !== null) {
+      const g = this.#storedGaussian;
+      this.#storedGaussian = null;
+      return g;
+    }
+    let v1: number;
+    let v2: number;
+    let s: number;
+    do {
+      v1 = this.#random() * 2 - 1;
+      v2 = this.#random() * 2 - 1;
+      s = v1 * v1 + v2 * v2;
+    } while (s >= 1 || s === 0);
+    const multiplier = Math.sqrt((-2 * Math.log(s)) / s);
+    this.#storedGaussian = v2 * multiplier;
+    return v1 * multiplier;
+  }
+
+  /**
+   * KataGo `maybeApplyWideRootNoise`: the policy flattened (as a 32-bit float, as KataGo keeps it) and, half the time, a
+   * random bonus on the value for the player to move.
+   */
+  #wideRootNoise(policy: number, utility: number, pla: Stone): { policy: number; utility: number } {
+    const w = this.params.wideRootNoise;
+    const flattened = Math.fround(Math.pow(policy, 1 / (4 * w + 1)));
+    if (this.#random() < 0.5) {
+      const bonus = w * Math.abs(this.#nextGaussian());
+      utility += pla === WHITE ? bonus : -bonus;
+    }
+    return { policy: flattened, utility };
   }
 
   #nextSymmetry(): number {
@@ -1166,7 +1211,13 @@ export class Search {
         childUtility += (vlUtility - childUtility) * frac;
         childWeight += vlWeight;
       }
-      const value = this.#selectionValue(exploreScaling, policy[pos]!, childWeight, childUtility, pla);
+      let childPolicy = policy[pos]!;
+      if (isRoot && p.wideRootNoise > 0 && childPolicy >= 0) {
+        const noised = this.#wideRootNoise(childPolicy, childUtility, pla);
+        childPolicy = noised.policy;
+        childUtility = noised.utility;
+      }
+      const value = this.#selectionValue(exploreScaling, childPolicy, childWeight, childUtility, pla);
       if (value > bestValue) {
         bestValue = value;
         best = e;
@@ -1188,7 +1239,17 @@ export class Search {
       }
     }
     let newLoc = NULL_LOC;
-    if (bestNewLoc !== NULL_LOC && this.#selectionValue(exploreScaling, bestNewPolicy, 0, fpu, pla) > bestValue) newLoc = bestNewLoc;
+    if (bestNewLoc !== NULL_LOC) {
+      // KataGo getNewExploreSelectionValue: wide root noise applies to the best new move too.
+      let newPolicy = bestNewPolicy;
+      let newUtility = fpu;
+      if (isRoot && p.wideRootNoise > 0) {
+        const noised = this.#wideRootNoise(newPolicy, newUtility, pla);
+        newPolicy = noised.policy;
+        newUtility = noised.utility;
+      }
+      if (this.#selectionValue(exploreScaling, newPolicy, 0, newUtility, pla) > bestValue) newLoc = bestNewLoc;
+    }
     const bestLoc = newLoc !== NULL_LOC ? newLoc : best ? best.moveLoc : NULL_LOC;
 
     // KataGo enableMorePassingHacks: where a pass would end the phase, make sure both a pass and a move other than a pass
