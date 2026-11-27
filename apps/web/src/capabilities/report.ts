@@ -29,7 +29,10 @@ export interface CapabilityReport {
   deviceMemory?: number;
   devicePixelRatio: number;
   screen: { width: number; height: number };
+  /** The default adapter: what `requestAdapter()` gives with no options. */
   webgpu: GpuProbe;
+  /** What `requestAdapter({ powerPreference: 'high-performance' })` gives. Absent in reports from before it was added. */
+  webgpuHighPerformance?: { adapter: boolean; vendor?: string; architecture?: string; error?: string };
   dedicatedWorker: WorkerProbe;
   sharedWorker: WorkerProbe & { api: boolean };
   opfs: { api: boolean; createWritable: boolean; error?: string };
@@ -76,6 +79,17 @@ export function summarize(r: CapabilityReport): Row[] {
     ok: g.adapter,
     detail: g.error ?? (g.adapter ? [g.vendor, g.architecture, g.description].filter(Boolean).join(' · ') || 'Adapter found' : g.api ? 'navigator.gpu, but no adapter' : 'No navigator.gpu'),
   });
+  const hp = r.webgpuHighPerformance;
+  if (hp && g.api) {
+    const name = [hp.vendor, hp.architecture].filter(Boolean).join(' · ');
+    const same = hp.adapter && g.adapter && name !== '' && hp.vendor === g.vendor && hp.architecture === g.architecture;
+    rows.push({
+      group: 'WebGPU',
+      feature: 'High-performance adapter',
+      ok: hp.adapter,
+      detail: hp.error ?? (!hp.adapter ? 'No adapter' : name === '' ? 'The browser does not name it' : same ? `${name} (the same as the default)` : name),
+    });
+  }
   if (g.adapter) {
     rows.push({ group: 'WebGPU', feature: 'Half precision (shader-f16)', ok: !!g.features?.includes('shader-f16'), detail: '' });
     rows.push({ group: 'WebGPU', feature: 'Software adapter', ok: null, detail: g.fallbackAdapter ? 'Yes: a fallback adapter, not the GPU' : 'No' });

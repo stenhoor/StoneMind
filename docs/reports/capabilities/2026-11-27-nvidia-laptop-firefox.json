@@ -1,0 +1,95 @@
+{
+  "kind": "stonemind-capabilities",
+  "version": 1,
+  "date": "2026-11-27T22:42:39.887Z",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:161.0) Gecko/20100101 Firefox/161.0",
+  "hardwareConcurrency": 16,
+  "devicePixelRatio": 1,
+  "screen": {
+    "width": 5120,
+    "height": 1440
+  },
+  "webgpu": {
+    "api": true,
+    "adapter": true,
+    "vendor": "",
+    "architecture": "",
+    "description": "",
+    "fallbackAdapter": false,
+    "features": [
+      "bgra8unorm-storage",
+      "clip-distances",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "dual-source-blending",
+      "float32-blendable",
+      "float32-filterable",
+      "indirect-first-instance",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "texture-compression-astc",
+      "texture-compression-astc-sliced-3d",
+      "texture-compression-bc",
+      "texture-compression-bc-sliced-3d",
+      "texture-compression-etc2",
+      "timestamp-query"
+    ],
+    "limits": {
+      "maxBufferSize": 2147483644,
+      "maxStorageBufferBindingSize": 2147483644,
+      "maxComputeWorkgroupStorageSize": 49152,
+      "maxComputeInvocationsPerWorkgroup": 1024,
+      "maxComputeWorkgroupSizeX": 1024
+    }
+  },
+  "dedicatedWorker": {
+    "started": true,
+    "webgpu": {
+      "api": true,
+      "adapter": true,
+      "vendor": ""
+    },
+    "opfs": {
+      "api": true,
+      "syncAccessHandle": true
+    }
+  },
+  "sharedWorker": {
+    "api": true,
+    "started": true,
+    "webgpu": {
+      "api": true,
+      "adapter": true,
+      "vendor": ""
+    },
+    "opfs": {
+      "api": true,
+      "syncAccessHandle": false
+    }
+  },
+  "opfs": {
+    "api": true,
+    "createWritable": true
+  },
+  "storage": {
+    "estimate": true,
+    "persistApi": true,
+    "quota": 10737418240,
+    "usage": 16384,
+    "persisted": false
+  },
+  "webLocks": {
+    "api": true,
+    "works": true
+  },
+  "broadcastChannel": {
+    "api": true,
+    "works": true
+  },
+  "css": {
+    "backdropFilter": true,
+    "backdropFilterSvg": true,
+    "containerQueries": true
+  }
+}

@@ -39,6 +39,18 @@ test('WebGPU in each context is reported separately', () => {
   assert.equal(row(rows, 'Largest storage buffer').detail, '2.0 GB');
 });
 
+test('the high-performance adapter is shown, and said to be the same when it is', () => {
+  const nvidia = summarize({ ...base, webgpuHighPerformance: { adapter: true, vendor: 'nvidia', architecture: 'ampere' } });
+  assert.equal(row(nvidia, 'High-performance adapter').detail, 'nvidia · ampere (the same as the default)');
+  const intelDefault = { ...base, webgpu: { ...base.webgpu, vendor: 'intel', architecture: 'gen-12lp' } };
+  const differs = summarize({ ...intelDefault, webgpuHighPerformance: { adapter: true, vendor: 'nvidia', architecture: 'ampere' } });
+  assert.equal(row(differs, 'High-performance adapter').detail, 'nvidia · ampere');
+  const unnamed = summarize({ ...base, webgpuHighPerformance: { adapter: true, vendor: '', architecture: '' } });
+  assert.equal(row(unnamed, 'High-performance adapter').detail, 'The browser does not name it');
+  // Reports from before the row existed have no such field, and no such row.
+  assert.equal(row(summarize(base), 'High-performance adapter'), undefined);
+});
+
 test('missing shared workers and failed workers say why', () => {
   const noShared = summarize({ ...base, sharedWorker: { api: false, started: false } });
   assert.equal(row(noShared, 'In a shared worker').detail, 'No SharedWorker in this browser');

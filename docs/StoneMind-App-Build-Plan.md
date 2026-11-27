@@ -186,7 +186,7 @@ the file name, size and date.
 - connecting and disconnecting the bridge;
 - choosing weights from the Files app.
 
-Where a browser has no WebGPU (for example Firefox on Linux or on an Intel Mac), it says so plainly and offers the
+Where a browser offers no WebGPU, or the browser engine fails to start in it, Engines says so plainly and offers the
 bridge. The remote service is not shown until it exists, so the app makes no claim ahead of the product.
 
 **Tests:**
@@ -225,10 +225,12 @@ These follow the design doc's order of work and get their own plan when Mileston
 
 # Risks
 
-- **Firefox:** MDN's compatibility data says Firefox has no WebGPU on Linux or on Intel Macs. There, only the bridge
-  engine can run (step 6 handles this).
-- **Shared workers:** whether any browser runs WebGPU in a shared worker is not confirmed. The baseline does not need
-  it; step 2 finds out.
+- **Firefox:** Firefox 161 on Linux offers WebGPU, in the page and in both kinds of worker (step 2's report from the
+  owner's laptop, `docs/reports/capabilities/`). MDN's compatibility data said it had none on Linux, so that data was
+  out of date. The browser engine itself had trouble running in Firefox during spike 0001 and is not yet confirmed
+  there; step 5 tests it. Where it can't run, Engines offers the bridge (step 6).
+- **Shared workers:** Edge 158 and Firefox 161 on Linux give a shared worker a WebGPU adapter (step 2's reports).
+  Safari is not checked yet. The Web Locks baseline covers any browser where it does not work.
 - **Phones:** shared workers arrive in Chrome Android only at version 148, by MDN's data; the baseline does not need
   them. Phone GPUs are untested with the browser engine.
 - **Playwright's WebKit is not Safari,** so Safari behaviour is confirmed only on the owner's Mac and iPad.
