@@ -10,7 +10,8 @@
  * - values: win/loss and no-result utility plus static and dynamic score utility (`getResultUtility`,
  *   `getScoreUtility`, `computeRootValues`), terminal values from the game's result, and KataGo's stats recomputation
  *   from children plus the node's own evaluation (`recomputeNodeStats`, `addLeafValue`), with the children weighted by
- *   how their values compare (`downweightBadChildrenAndNormalizeWeight`, `valueWeightExponent`), and each evaluation
+ *   how their values compare (`downweightBadChildrenAndNormalizeWeight`, `valueWeightExponent`) after over-explored
+ *   worse children lose part of their excess weight (`pruneNoiseWeight`, `useNoisePruning`), and each evaluation
  *   weighted by the network's own short-term error estimates (`computeWeightFromNNOutput`, `useUncertainty`);
  * - subtree value bias (`subtreeValueBiasFactor`, `SubtreeValueBiasTable`): a node's evaluation is corrected by how
  *   much searching below has, on average, changed the evaluation of the same move in the same local situation;
@@ -19,8 +20,7 @@
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
- * Not yet ported (each is to be added and measured separately): graph search (transpositions), noise pruning,
- * policy optimism, wide root noise, passing hacks and the root's ending
+ * Not yet ported (each is to be added and measured separately): graph search (transpositions), policy optimism, wide root noise, passing hacks and the root's ending
  * bonus, root symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
@@ -114,6 +114,14 @@ export interface SearchParams {
    */
   subtreeValueBiasFactor: number;
   subtreeValueBiasWeightExponent: number;
+  /**
+   * KataGo `useNoisePruning`: when a node's value is recomputed, a child worse than the children before it (in child
+   * order) loses part of its weight beyond twice its policy share: `1 - exp(-gap / noisePruneUtilityScale)` of the
+   * excess, at most `noisePruningCap`.
+   */
+  useNoisePruning: boolean;
+  noisePruneUtilityScale: number;
+  noisePruningCap: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -156,6 +164,9 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   uncertaintyMaxWeight: 8.0,
   subtreeValueBiasFactor: 0.45,
   subtreeValueBiasWeightExponent: 0.85,
+  useNoisePruning: true,
+  noisePruneUtilityScale: 0.15,
+  noisePruningCap: 1e50,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -595,7 +606,44 @@ export class Search {
   }
 
   /**
-   * KataGo `recomputeNodeStats` with no noise pruning: the children's averages weighted by their weights after value
+   * KataGo `pruneNoiseWeight`: reduces `weights` of children worse than the weighted average of those before them, if
+   * they have more than twice their raw-policy share of the weight so far. Returns the new total weight.
+   */
+  #pruneNoiseWeight(weights: number[], selfUtilities: readonly number[], totalChildWeight: number, policyProbs: readonly number[]): number {
+    const n = weights.length;
+    if (n <= 1 || totalChildWeight <= 0.00001) return totalChildWeight;
+    const p = this.params;
+    let utilitySumSoFar = 0;
+    let weightSumSoFar = 0;
+    let rawPolicySumSoFar = 0;
+    for (let i = 0; i < n; i++) {
+      const utility = selfUtilities[i]!;
+      const oldWeight = weights[i]!;
+      const rawPolicy = policyProbs[i]!;
+      let newWeight = oldWeight;
+      if (weightSumSoFar > 0 && rawPolicySumSoFar > 0) {
+        const utilityGap = utilitySumSoFar / weightSumSoFar - utility;
+        if (utilityGap > 0) {
+          // More than double its proper share of the weight.
+          const weightShareFromRawPolicy = (weightSumSoFar * rawPolicy) / rawPolicySumSoFar;
+          const lenientShare = 2 * weightShareFromRawPolicy;
+          if (oldWeight > lenientShare) {
+            let weightToSubtract = (oldWeight - lenientShare) * (1 - Math.exp(-utilityGap / p.noisePruneUtilityScale));
+            if (weightToSubtract > p.noisePruningCap) weightToSubtract = p.noisePruningCap;
+            newWeight = oldWeight - weightToSubtract;
+            weights[i] = newWeight;
+          }
+        }
+      }
+      utilitySumSoFar += utility * newWeight;
+      weightSumSoFar += newWeight;
+      rawPolicySumSoFar += rawPolicy;
+    }
+    return weightSumSoFar;
+  }
+
+  /**
+   * KataGo `recomputeNodeStats`: the children's averages weighted by their weights after noise pruning and value
    * weighting, plus the node's own evaluation with its uncertainty weight.
    */
   #recomputeNodeStats(node: SearchNode): void {
@@ -611,6 +659,12 @@ export class Search {
       totalChildWeight += c.weightSum;
     }
     const origTotalChildWeight = totalChildWeight;
+    if (this.params.useNoisePruning && good.length > 0) {
+      const policy = node.eval!.policy;
+      const b = node.hist.board;
+      const policyProbs = good.map((c) => Math.max(1e-30, policy[this.#posOf(b, c.moveLoc)]!));
+      totalChildWeight = this.#pruneNoiseWeight(weights, selfUtilities, totalChildWeight, policyProbs);
+    }
     // KataGo prunes and subtracts here only with root noise, which the analysis engine doesn't use.
     this.#downweightBadChildrenAndNormalizeWeight(weights, selfUtilities, totalChildWeight, totalChildWeight, 0, 0);
 

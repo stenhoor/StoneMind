@@ -6,7 +6,6 @@
    "numSearchThreadsPerAnalysisThread=1",
    "nnRandomize=false",
    "useGraphSearch=false",
-   "useNoisePruning=false",
    "policyOptimism=0",
    "rootPolicyOptimism=0",
    "wideRootNoise=0",
@@ -21,7 +20,7 @@
   "modelFile": "kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
   "modelSha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d",
   "set": "short",
-  "date": "2026-11-27T01:14:57.512Z"
+  "date": "2026-11-27T01:28:33.837Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [
@@ -541,11 +540,11 @@
      "move": "pass",
      "order": 0,
      "visits": 8,
-     "winrate": 0.999983578,
-     "scoreLead": 6.42315725,
-     "lcb": 0.9592315,
-     "utilityLcb": 0.952253596,
-     "playSelectionValue": 60.9953114,
+     "winrate": 0.999983581,
+     "scoreLead": 6.42318685,
+     "lcb": 0.959229556,
+     "utilityLcb": 0.952249275,
+     "playSelectionValue": 60.994491,
      "pv": [
       "pass",
       "D5",
