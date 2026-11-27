@@ -465,7 +465,7 @@ export class Board {
    */
   setStone(loc: number, color: Stone): boolean {
     if (this.colors[loc] !== EMPTY) return false;
-    if (this.isSuicide(loc, color) || this.#wouldBeCapture(loc, color)) return false;
+    if (this.isSuicide(loc, color) || this.wouldBeCapture(loc, color)) return false;
     const ko = this.koLoc;
     this.playMoveAssumeLegal(loc, color);
     this.koLoc = ko;
@@ -473,12 +473,34 @@ export class Board {
   }
 
   /** KataGo `wouldBeCapture`. */
-  #wouldBeCapture(loc: number, pla: Stone): boolean {
+  wouldBeCapture(loc: number, pla: Stone): boolean {
     if (this.colors[loc] !== EMPTY) return false;
     const o = opp(pla);
     for (const d of this.adj) {
       const a = loc + d;
       if (this.colors[a] === o && this.getNumLiberties(a) === 1) return true;
+    }
+    return false;
+  }
+
+  /**
+   * KataGo `isNonPassAliveSelfConnection`: would a stone of `pla` at the empty `loc`, outside `pla`'s pass-alive area,
+   * join a chain of `pla`'s that isn't pass-alive to another of `pla`'s chains?
+   */
+  isNonPassAliveSelfConnection(loc: number, pla: Stone, passAliveArea: Uint8Array): boolean {
+    if (this.colors[loc] !== EMPTY || passAliveArea[loc] === pla) return false;
+    let nonPassAliveAdjHead = NULL_LOC;
+    for (const d of this.adj) {
+      const a = loc + d;
+      if (this.colors[a] === pla && passAliveArea[a] === EMPTY) {
+        nonPassAliveAdjHead = this.chainHead(a);
+        break;
+      }
+    }
+    if (nonPassAliveAdjHead === NULL_LOC) return false;
+    for (const d of this.adj) {
+      const a = loc + d;
+      if (this.colors[a] === pla && this.chainHead(a) !== nonPassAliveAdjHead) return true;
     }
     return false;
   }

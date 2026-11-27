@@ -48,6 +48,7 @@ for (const net of NETS) {
       for (const want of q.moveInfos) {
         const got = ours.get(want.move);
         assert.equal(got.visits, want.visits, `${want.move} visits`);
+        assert.equal(got.edgeVisits, want.edgeVisits, `${want.move} edge visits`);
         assert.equal(got.order, want.order, `${want.move} order`);
         assert.ok(Math.abs(got.winrate - want.winrate) <= TOL.winrate, `${want.move} winrate ${got.winrate} vs ${want.winrate}`);
         assert.ok(Math.abs(got.scoreLead - want.scoreLead) <= TOL.scoreLead, `${want.move} scoreLead ${got.scoreLead} vs ${want.scoreLead}`);
