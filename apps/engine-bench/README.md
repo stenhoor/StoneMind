@@ -13,12 +13,25 @@ developer pages. It uses its own copy of the brand files. A Light / Dark switch 
 the colour mode: Light (Washi & Shu) by default, whatever the device's setting, and a visitor's choice is remembered
 (`stonemind.theme`).
 
+**Protocol check** (`protocol.html`, published at https://stenhoor.github.io/StoneMind/engine-bench/protocol.html):
+step 12 of the parity plan (`docs/spikes/0001-katago-parity-plan.md`). A developer page that sends the same queries to
+native KataGo through the bridge and to the browser engine on this computer's GPU, both through `@stonemind/engine`'s
+`AnalysisEngine`, and compares them: every field native returns must be present, with values within the network
+goldens' tolerances (the engine's search check's), and errors, warnings and action replies must be the same. Native must
+run deterministically (one analysis thread, one search thread, no random symmetries or root noise, fp32):
+`scripts/protocol-config.mjs` writes that config from an analysis config, without changing it, and prints the bridge
+command that opens the page paired and with the same settings for the browser engine. Pick the same model file the
+bridge runs and press **Run the check**. Served by `npm run serve`, the page saves its report to `REPORT_OUT`; anywhere,
+it offers it for download. Reports during the search, and results of a search stopped early, are compared for their
+fields only, since each engine stops at its own point.
+
 ## Depends on
 
 `@stonemind/engine` (loaded in the page through an import map) and `@stonemind/brand` (tokens, components and logos,
 copied unchanged).
 
-`@stonemind/engine-webgpu`: the site build also publishes that package's GPU check page at
+`@stonemind/engine-webgpu`: the protocol check page loads the whole package, its `./session` entry point included,
+through its import map (copied to `vendor/engine-webgpu/`). The site build also publishes that package's GPU check page at
 https://stenhoor.github.io/StoneMind/gpu-check/, copying its compiled modules, `test/gpu/` and its goldens (not the
 CUDA record) with the package's own layout, so a browser on any device can run the check by picking a model file.
 
@@ -48,7 +61,7 @@ npm run serve      # build, then http://localhost:8080/engine-bench/
 ```
 
 ```bash
-npm run check      # typecheck, build, then check that every file the page references is in the site
+npm run check      # typecheck, build, then check that every file the pages reference is in the site
 ```
 
 `scripts/e2e.mjs` is an end-to-end check in Chromium: fake KataGo → bridge → page. It needs a Playwright that Node can
@@ -56,5 +69,5 @@ import; Playwright is not a project dependency.
 
 ## Notes
 
-- HTML and CSS on the brand tokens, plus one TypeScript module, with no framework.
+- HTML and CSS on the brand tokens, plus one TypeScript module per page, with no framework.
 - Visits/s includes the bridge and WebSocket overhead. It is a page-side measure, comparable across engines.
