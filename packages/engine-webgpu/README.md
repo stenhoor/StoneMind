@@ -35,9 +35,11 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   exploration constant, parent-utility-stdev factor), first-play urgency, win/loss and score utility (`scorevalue.ts`,
   KataGo's `ScoreValue` table), stats recomputed from children, terminal values, the evaluation cache (keyed as KataGo
   keys it, without move history), random or fixed symmetries, and the analysis engine's `ignorePreRootHistory` and
-  `conservativePass`. Area scoring only for now. Not yet ported, each to be added and measured: graph search, noise
-  pruning, value weighting, uncertainty weighting, subtree value bias, LCB ordering, policy optimism, wide root noise,
-  passing hacks, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
+  `conservativePass`. The analysis orders moves and builds principal variations as KataGo does, from its play
+  selection values with LCB selection (`useLcbForSelection`, on by default as in native's analysis engine), and reports
+  each move's `lcb`, `utilityLcb` and `playSelectionValue`. Area scoring only for now. Not yet ported, each to be added
+  and measured: graph search, noise pruning, value weighting, uncertainty weighting, subtree value bias, policy
+  optimism, wide root noise, passing hacks, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
   the reference forward pass.
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
   small batch, sharing one evaluation cache across turns as KataGo's analysis engine does. The defaults are native

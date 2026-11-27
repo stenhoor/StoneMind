@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **proposed**, waiting for the owner's approval. Date: 2026-11-26.
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96.
 
 ## The goal
 
