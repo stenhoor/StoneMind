@@ -7,7 +7,10 @@
 //
 //   node packages/engine-webgpu/scripts/capture-search-goldens.mjs \
 //     --katago <katago> --config <analysis_example.cfg> \
-//     --model packages/engine-webgpu/test/fixtures/g170-b6c96-s175395328-d26788732.bin.gz [--out <file>]
+//     --model packages/engine-webgpu/test/fixtures/g170-b6c96-s175395328-d26788732.bin.gz [--set full|short] [--out <file>]
+//
+// --set short captures three 9x9 positions at 25 visits, for networks too slow to test at more with the reference
+// forward pass (b18c384nbt, whose model version, 14, has the short-term error outputs uncertainty weighting uses).
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,7 +20,7 @@ import { parseArgs } from 'node:util';
 import { createHash } from 'node:crypto';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const { values } = parseArgs({ options: { katago: { type: 'string' }, config: { type: 'string' }, model: { type: 'string' }, out: { type: 'string' } } });
+const { values } = parseArgs({ options: { katago: { type: 'string' }, config: { type: 'string' }, model: { type: 'string' }, set: { type: 'string', default: 'full' }, out: { type: 'string' } } });
 if (!values.katago || !values.config || !values.model) {
   console.error('usage: capture-search-goldens.mjs --katago <katago> --config <analysis cfg> --model <model .bin.gz> [--out <file>]');
   process.exit(2);
@@ -30,7 +33,6 @@ const OVERRIDES = [
   'nnRandomize=false',
   'useGraphSearch=false',
   'useNoisePruning=false',
-  'useUncertainty=false',
   'subtreeValueBiasFactor=0',
   'policyOptimism=0',
   'rootPolicyOptimism=0',
@@ -46,7 +48,7 @@ const OVERRIDES = [
 
 // A 9x9 game played by the search itself (b6, 30 visits a move), for positions near the end with passes in reach.
 const LATE_9 = JSON.parse(readFileSync(join(here, '..', 'test', 'goldens', 'search-late-9.json'), 'utf8')).moves;
-const queries = [
+const FULL = [
   { id: 'opening-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 120 },
   { id: 'late-9', moves: LATE_9.slice(0, 48), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'late-9-after-pass', moves: LATE_9.slice(0, 51), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
@@ -58,6 +60,13 @@ const queries = [
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
 ];
+const SHORT = [
+  { id: 'opening-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 25 },
+  { id: 'turn-33-9', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 25 },
+  { id: 'late-9-after-pass', moves: LATE_9.slice(0, 51), rules: 'tromp-taylor', size: 9, maxVisits: 25 },
+];
+const queries = { full: FULL, short: SHORT }[values.set];
+if (!queries) throw new Error(`--set must be full or short, not ${values.set}`);
 
 const logDir = mkdtempSync(join(tmpdir(), 'katago-logs-'));
 // One KataGo process per query: its evaluation cache, like ours, ignores move history, so a cache shared across
@@ -81,6 +90,7 @@ const out = {
     overrides: OVERRIDES,
     modelFile: basename(values.model),
     modelSha256: createHash('sha256').update(readFileSync(values.model)).digest('hex'),
+    set: values.set,
     date: new Date().toISOString(),
   },
   note: 'KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.',
