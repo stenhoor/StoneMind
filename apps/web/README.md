@@ -11,7 +11,8 @@ So far (Milestone 1, step 1) it is the frame:
   1180px the status hides; below 760px the wordmark becomes the stone and the menus fold into one button named after the
   focused app.
 - **The bar under it** for whichever button is active.
-- **The Apps bar** in its three groups: optional panels, goban types and singleton apps. Panels and gobans are not built
+- **The Apps bar:** each app is an icon tile with its name, in three groups (optional panels, goban types and singleton
+  apps) divided by hairlines; on a narrow bar each group takes its own line. Panels and gobans are not built
   yet, so their buttons are disabled.
 - **Singleton apps** open over the workspaces, one instance each. Settings works (theme and backdrop); Files, Engines
   and Layouts say they are not built yet.
