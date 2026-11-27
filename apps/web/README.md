@@ -4,7 +4,9 @@ The StoneMind app, planned for **stonemind.app**. It is built in the steps of
 [docs/StoneMind-App-Build-Plan.md](../../docs/StoneMind-App-Build-Plan.md), from the
 [App Interface Design](../../docs/StoneMind-App-Interface-Design.md). It runs locally for now.
 
-So far (Milestone 1, step 1) it is the frame:
+So far it is the frame (Milestone 1, step 1), the capability page (step 2) and the Files app (step 4).
+
+The frame:
 
 - **The menu bar:** the wordmark (the StoneMind menu), the focused app's menus, the device profile, the Workspaces,
   Layouts and Apps buttons (at most one active) and a clock. It watches its own width and stays on one line: below
@@ -14,9 +16,23 @@ So far (Milestone 1, step 1) it is the frame:
 - **The Apps bar:** each app is an icon tile with its name, in three groups (optional panels, goban types and singleton
   apps) divided by hairlines; on a narrow bar each group takes its own line. Panels and gobans are not built
   yet, so their buttons are disabled.
-- **Singleton apps** open over the workspaces, one instance each. Settings works (theme and backdrop); Files, Engines
-  and Layouts say they are not built yet.
+- **Singleton apps** open over the workspaces, one instance each. Settings works (theme and backdrop) and so does Files
+  (below); Engines and Layouts say they are not built yet.
 - **The backdrop:** plain table (the default), wood grain or washi paper.
+
+**The Files app** (Milestone 1, step 4), from the Apps bar, is a file browser in the style of macOS Finder over the
+file kit (`@stonemind/files`), on this browser's origin private file system:
+
+- A sidebar with the library folders (Games, Problems, Weights, Configs, created on first open) and this browser's
+  storage: space used of the quota, whether the browser keeps the files, and a **Keep my files** button that asks it to.
+- A path, and the folder's contents in columns sorted by name, size or date. In Weights a Network column reads each
+  KataGo network's size from its name.
+- An inspector for the selected file. For KataGo weights: the training run, the network (blocks, channels, kind), the
+  training samples (`s`) and rows of training data (`d`) from the name, the format, and the model version read from
+  the start of the file; a SHA-256 on request.
+- Import from the file picker or by dropping files on the folder, streamed (a large network never sits whole in
+  memory) with progress and Cancel; new folder, rename, download, and delete after a confirmation.
+- When Files is focused, the menu bar shows its File, View and Go menus. A change in another tab shows at once.
 
 **The capability page** (Milestone 1, step 2), at `/capabilities/`, opened from the StoneMind menu (Browser Info), checks what this
 browser offers: WebGPU in the page, a dedicated worker and a shared worker (with the default adapter, the adapter given
@@ -47,14 +63,18 @@ The browser tests need Playwright's browsers (`npx -w @stonemind/web playwright 
 - `src/frame/settings.ts`: theme and backdrop, in `localStorage` until the materials kit exists
   (docs/OPEN-QUESTIONS.md, 17).
 - `src/main.ts`: the page: bars, the Apps bar, singleton apps, menus.
+- `src/files/view.ts`: the Files app. `src/files/weights.ts`: what a KataGo weights file's name and first bytes say,
+  free of the DOM.
 - `src/capabilities/`: the capability page: `index.html`, `main.ts` (the probes), `report.ts` (the report and its
   summary, free of the DOM) and `worker-probe.js` (a classic script, run as a dedicated and as a shared worker).
-- `scripts/assemble.mjs`: builds `dist/site`. `scripts/server.mjs`, `scripts/serve.mjs`: the local server.
+- `scripts/assemble.mjs`: builds `dist/site`, with the file kit's modules in `vendor/files/` for the page's import map. `scripts/server.mjs`, `scripts/serve.mjs`: the local server.
 - `test/*.test.mjs`: logic tests. `test/e2e/*.test.mjs`: browser tests.
 
 ## Depends on
 
 - `@stonemind/brand`: `tokens.css`, `components.css` and the logos, copied unchanged into `dist/site/brand/`.
+- `@stonemind/files`: the file kit (`OpfsFileStore`, import, download, storage), its compiled modules copied into
+  `dist/site/vendor/files/` and loaded through an import map.
 - Dev only: `playwright` 1.65.0 (Apache-2.0), for the browser tests; never shipped.
 
 ## Used by

@@ -40,4 +40,4 @@ once (the result is one write or the other, never a mix); change events between 
 
 ## Used by
 
-Nothing yet. Planned: `apps/web` (the Files app, build plan step 4, and the Engines app's weights).
+- `apps/web`: the Files app (build plan step 4). Planned: the Engines app's weights (step 6).

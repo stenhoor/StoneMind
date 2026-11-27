@@ -260,6 +260,68 @@ sm-menu-bar { display: block; }
 .sheet p { margin: 0; }
 .sheet-field { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
 
+/* ------------------------------------------------------------ Files app */
+/* Finder-like: a library sidebar, the folder's contents, and an inspector for the selection. */
+.sheet[data-app="files"] { width: min(1180px, 100%); max-height: 100%; overflow: auto; }
+.files { container-type: inline-size; display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.files-note { color: var(--text-2); }
+.files-error { color: var(--danger); font-weight: 600; }
+.files-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.files-spacer { flex: 1 1 auto; }
+.files-btn { min-height: 44px; }
+.files-path { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.files-crumb-root { color: var(--text-2); }
+.files-crumb-sep { color: var(--text-3); }
+.files-crumb { background: none; border: 0; padding: 0 var(--space-1); min-height: 44px; color: var(--text); font: inherit; cursor: pointer; border-radius: var(--radius-sm); }
+.files-crumb[aria-current] { font-weight: 700; }
+.files-body { display: grid; grid-template-columns: 180px minmax(0, 1fr) 260px; gap: var(--space-3); align-items: start; }
+.files-side, .files-inspector { display: flex; flex-direction: column; gap: var(--space-1); }
+.files-side-label { margin-top: var(--space-2); }
+.files-place { text-align: left; background: none; border: 0; border-radius: var(--radius-md); padding: 0 var(--space-3); min-height: 44px; color: var(--text); font: inherit; cursor: pointer; }
+.files-place:hover { background: var(--glass-well); }
+.files-place[aria-current] { background: var(--glass-active); font-weight: 700; }
+.files-storage { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
+.files-storage-text { color: var(--text-2); font-size: 14px; }
+.files-meter { width: 100%; height: 8px; border-radius: var(--radius-pill); background: var(--glass-well); overflow: hidden; }
+.files-meter-fill { height: 100%; background: var(--primary); }
+.files-main { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; border-radius: var(--radius-lg); outline: 2px dashed transparent; outline-offset: 4px; }
+.files-main.files-drop { outline-color: var(--focus); }
+.files-task { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--glass-well); }
+.files-task p { flex: 1 1 100%; }
+.files-task .files-meter { flex: 1 1 200px; width: auto; }
+.files-table-wrap { overflow-x: auto; }
+.files-table { width: 100%; border-collapse: collapse; }
+.files-caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.files-table th { text-align: left; font-weight: 600; color: var(--text-2); border-bottom: 1px solid var(--glass-edge); padding: var(--space-1) var(--space-2); white-space: nowrap; }
+.files-table td { padding: 0 var(--space-2); border-bottom: 1px solid var(--glass-edge); white-space: nowrap; }
+.files-table .files-num { text-align: right; font-variant-numeric: tabular-nums; }
+.files-sort { background: none; border: 0; padding: 0; min-height: 44px; color: inherit; font: inherit; cursor: pointer; }
+.files-table td:first-child { white-space: normal; }
+.files-name { background: none; border: 0; padding: var(--space-1) 0; min-height: 44px; width: 100%; text-align: left; color: var(--text); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.files-selected td { background: var(--glass-active); }
+.files-inspector-title { margin: 0; font: 700 16px/1.3 var(--font-sans); overflow-wrap: anywhere; }
+.files-details { display: flex; flex-direction: column; margin: 0; }
+.files-details dt { color: var(--text-2); font-size: 14px; margin-top: var(--space-2); }
+.files-details dd { margin: 0; overflow-wrap: anywhere; }
+.files-hash { font-size: 12px; overflow-wrap: anywhere; }
+/* Dialogs are opaque: they sit over the glass sheet, and glass never sits on glass. */
+.files-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); color: var(--text); padding: var(--space-5); width: min(420px, calc(100vw - 32px)); box-sizing: border-box; box-shadow: 0 18px 50px var(--glass-shadow); }
+.files-dialog::backdrop { background: rgb(0 0 0 / 0.3); }
+.files-dialog form { display: flex; flex-direction: column; gap: var(--space-3); }
+.files-dialog-title { margin: 0; font: 700 18px/1.3 var(--font-brand); }
+.files-dialog-actions { display: flex; flex-direction: row-reverse; justify-content: flex-start; gap: var(--space-2); }
+.files-input { font: inherit; min-height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+@container (max-width: 900px) {
+  .files-body { grid-template-columns: 180px minmax(0, 1fr); }
+  .files-inspector { grid-column: 1 / -1; }
+}
+@container (max-width: 600px) {
+  .files-body { grid-template-columns: minmax(0, 1fr); }
+  .files-side { flex-direction: row; flex-wrap: wrap; }
+  .files-side-label { flex-basis: 100%; }
+  .files-storage { flex-basis: 100%; }
+}
+
 /* ----------------------------------------------------- capability page */
 .cap-page { min-height: 100vh; box-sizing: border-box; padding: var(--space-4) var(--space-2); display: flex; justify-content: center; }
 .cap-panel { width: min(900px, 100%); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); align-self: flex-start; }

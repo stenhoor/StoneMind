@@ -2,7 +2,7 @@
   "name": "@stonemind/web",
   "version": "0.0.1",
   "private": true,
-  "description": "The StoneMind app (stonemind.app): the frame, and later the Files and Engines apps, the gobans and their panels. Runs locally for now.",
+  "description": "The StoneMind app (stonemind.app): the frame, the Files app, and later the Engines app, the gobans and their panels. Runs locally for now.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -18,7 +18,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@stonemind/brand": "0.0.1"
+    "@stonemind/brand": "0.0.1",
+    "@stonemind/files": "0.0.1"
   },
   "devDependencies": {
     "playwright": "1.65.0",

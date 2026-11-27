@@ -6,6 +6,7 @@ import { type Backdrop, type BarId, BACKDROPS, BACKDROP_NAMES, BAR_IDS, PROFILE_
 import { type FocusedApp, SmMenuBar } from './frame/menu-bar.js';
 import type { Menu } from './frame/menu.js';
 import { applyBackdrop, applyTheme, loadBackdrop, loadTheme } from './frame/settings.js';
+import { FilesView } from './files/view.js';
 
 type SingletonId = 'files' | 'engines' | 'layouts' | 'settings' | 'about';
 
@@ -80,7 +81,8 @@ function frameMenus(): Menu[] {
 function focusedApp(): FocusedApp {
   if (state.focused) {
     const id = state.focused;
-    return { name: SINGLETONS[id], menus: [{ label: 'Window', items: [{ label: `Close ${SINGLETONS[id]}`, run: () => closeSheet() }] }] };
+    const own = id === 'files' && files ? files.menus() : [];
+    return { name: SINGLETONS[id], menus: [...own, { label: 'Window', items: [{ label: `Close ${SINGLETONS[id]}`, run: () => closeSheet() }] }] };
   }
   return { name: '', menus: frameMenus() };
 }
@@ -97,6 +99,9 @@ menuBar.stoneMindMenu = [
 
 // ------------------------------------------------------- singleton apps
 
+// The Files app keeps its view (folder, selection, an import in progress) while it is open; closing it lets it go.
+let files: FilesView | null = null;
+
 let opener: HTMLElement | null = null;
 
 function openSheet(id: SingletonId): void {
@@ -108,6 +113,7 @@ function openSheet(id: SingletonId): void {
 
 function closeSheet(): void {
   state.sheet = null;
+  files = null;
   state.focused = null;
   renderSheet();
   renderMenuBar();
@@ -143,6 +149,11 @@ function sheetBody(id: SingletonId): Node[] {
   switch (id) {
     case 'settings':
       return settingsBody();
+    case 'files':
+      files ??= new FilesView(() => {
+        if (state.focused === 'files') renderMenuBar();
+      });
+      return [files.element];
     case 'about':
       return [
         el('p', {}, 'StoneMind is a Go coaching companion in early development. This is the app’s first frame: Files, Engines and the gobans are still to come.'),
@@ -177,7 +188,7 @@ function renderSheet(): void {
   sheet.dataset['app'] = id;
   sheetHost.replaceChildren(sheet);
   sheetHost.hidden = false;
-  if (activeKey) {
+  if (activeKey && id !== 'files') {
     for (const c of sheet.querySelectorAll<HTMLElement>('input, button')) {
       if ((c.getAttribute('value') ?? c.textContent) === activeKey) {
         c.focus();
@@ -194,7 +205,8 @@ sheetHost.addEventListener('focusin', () => {
   }
 });
 sheetHost.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && state.sheet) {
+  // Escape in an app's own dialog closes that dialog, not the app.
+  if (e.key === 'Escape' && state.sheet && !(e.target instanceof Element && e.target.closest('dialog'))) {
     e.preventDefault();
     closeSheet();
   }
