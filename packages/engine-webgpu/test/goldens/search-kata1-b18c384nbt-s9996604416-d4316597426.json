@@ -6,8 +6,6 @@
    "numSearchThreadsPerAnalysisThread=1",
    "nnRandomize=false",
    "useGraphSearch=false",
-   "policyOptimism=0",
-   "rootPolicyOptimism=0",
    "wideRootNoise=0",
    "enablePassingHacks=false",
    "enableMorePassingHacks=false",
@@ -20,7 +18,7 @@
   "modelFile": "kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
   "modelSha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d",
   "set": "short",
-  "date": "2026-11-27T01:28:33.837Z"
+  "date": "2026-11-27T01:57:20.469Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [
@@ -45,18 +43,18 @@
     {
      "move": "C5",
      "order": 0,
-     "visits": 14,
-     "winrate": 0.142002466,
-     "scoreLead": -0.627897681,
-     "lcb": 0.103437146,
-     "utilityLcb": -0.823378518,
-     "playSelectionValue": 19.453167,
+     "visits": 15,
+     "winrate": 0.139864621,
+     "scoreLead": -0.628785498,
+     "lcb": 0.101383125,
+     "utilityLcb": -0.82367012,
+     "playSelectionValue": 20.3465705,
      "pv": [
       "C5",
       "F3",
       "G6",
-      "G4",
-      "G5"
+      "E7",
+      "F4"
      ]
     },
     {
@@ -76,22 +74,8 @@
      ]
     },
     {
-     "move": "F3",
-     "order": 2,
-     "visits": 2,
-     "winrate": 0.120075811,
-     "scoreLead": -0.551604247,
-     "lcb": -0.41418309,
-     "utilityLcb": -2.26244514,
-     "playSelectionValue": 2,
-     "pv": [
-      "F3",
-      "F7"
-     ]
-    },
-    {
      "move": "C6",
-     "order": 3,
+     "order": 2,
      "visits": 1,
      "winrate": 0.106267326,
      "scoreLead": -0.305432737,
@@ -100,6 +84,19 @@
      "playSelectionValue": 2,
      "pv": [
       "C6"
+     ]
+    },
+    {
+     "move": "F3",
+     "order": 3,
+     "visits": 1,
+     "winrate": 0.114808727,
+     "scoreLead": -0.309173048,
+     "lcb": -1.13519128,
+     "utilityLcb": -4.28140984,
+     "playSelectionValue": 2,
+     "pv": [
+      "F3"
      ]
     },
     {
@@ -286,38 +283,38 @@
    "rootVisits": 25,
    "moveInfos": [
     {
-     "move": "E6",
-     "order": 0,
-     "visits": 12,
-     "winrate": 0.999742531,
-     "scoreLead": 6.88577132,
-     "lcb": 0.97859145,
-     "utilityLcb": 0.994469587,
-     "playSelectionValue": 50.37527,
-     "pv": [
-      "E6",
-      "A6",
-      "F1",
-      "E1",
-      "G1",
-      "E2"
-     ]
-    },
-    {
      "move": "F1",
-     "order": 1,
-     "visits": 12,
-     "winrate": 0.999556184,
-     "scoreLead": 7.0135083,
-     "lcb": 0.976611267,
-     "utilityLcb": 0.990693253,
-     "playSelectionValue": 46,
+     "order": 0,
+     "visits": 13,
+     "winrate": 0.999553433,
+     "scoreLead": 7.13075748,
+     "lcb": 0.979562622,
+     "utilityLcb": 1.00785993,
+     "playSelectionValue": 58.6021908,
      "pv": [
       "F1",
       "E1",
       "G1",
       "E2",
-      "C9"
+      "E6",
+      "A6"
+     ]
+    },
+    {
+     "move": "E6",
+     "order": 1,
+     "visits": 11,
+     "winrate": 0.999726867,
+     "scoreLead": 6.92325575,
+     "lcb": 0.975329074,
+     "utilityLcb": 0.988896416,
+     "playSelectionValue": 40,
+     "pv": [
+      "E6",
+      "D5",
+      "F1",
+      "E1",
+      "G1"
      ]
     }
    ]
@@ -540,11 +537,11 @@
      "move": "pass",
      "order": 0,
      "visits": 8,
-     "winrate": 0.999983581,
-     "scoreLead": 6.42318685,
-     "lcb": 0.959229556,
-     "utilityLcb": 0.952249275,
-     "playSelectionValue": 60.994491,
+     "winrate": 0.999986433,
+     "scoreLead": 6.3915589,
+     "lcb": 0.95862312,
+     "utilityLcb": 0.948657722,
+     "playSelectionValue": 66.0510048,
      "pv": [
       "pass",
       "D5",
@@ -554,12 +551,12 @@
     {
      "move": "J1",
      "order": 1,
-     "visits": 5,
-     "winrate": 0.999972626,
-     "scoreLead": 6.28098421,
-     "lcb": 0.900283836,
-     "utilityLcb": 0.775220944,
-     "playSelectionValue": 29,
+     "visits": 6,
+     "winrate": 0.99997862,
+     "scoreLead": 6.32921315,
+     "lcb": 0.927525916,
+     "utilityLcb": 0.855609722,
+     "playSelectionValue": 37,
      "pv": [
       "J1",
       "D5",
@@ -574,7 +571,7 @@
      "scoreLead": 6.45892257,
      "lcb": 0.735436288,
      "utilityLcb": 0.319601899,
-     "playSelectionValue": 16,
+     "playSelectionValue": 18,
      "pv": [
       "H2",
       "pass"
@@ -583,12 +580,12 @@
     {
      "move": "J3",
      "order": 3,
-     "visits": 3,
-     "winrate": 0.999973687,
-     "scoreLead": 6.37537521,
-     "lcb": 0.735872043,
-     "utilityLcb": 0.319683927,
-     "playSelectionValue": 14,
+     "visits": 2,
+     "winrate": 0.999975177,
+     "scoreLead": 6.27741104,
+     "lcb": 0.467973499,
+     "utilityLcb": -0.439804889,
+     "playSelectionValue": 11,
      "pv": [
       "J3",
       "pass"
@@ -602,7 +599,7 @@
      "scoreLead": 6.34664558,
      "lcb": 0.466354789,
      "utilityLcb": -0.429236131,
-     "playSelectionValue": 9,
+     "playSelectionValue": 11,
      "pv": [
       "H4",
       "D5"
@@ -629,7 +626,7 @@
      "scoreLead": 5.99324942,
      "lcb": -0.250023185,
      "utilityLcb": -2.44866065,
-     "playSelectionValue": 4,
+     "playSelectionValue": 5,
      "pv": [
       "H6"
      ]
