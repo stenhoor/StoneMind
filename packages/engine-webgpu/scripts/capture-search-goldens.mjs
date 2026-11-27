@@ -30,7 +30,6 @@ const OVERRIDES = [
   'nnRandomize=false',
   'useGraphSearch=false',
   'useNoisePruning=false',
-  'valueWeightExponent=0',
   'useUncertainty=false',
   'subtreeValueBiasFactor=0',
   'policyOptimism=0',
