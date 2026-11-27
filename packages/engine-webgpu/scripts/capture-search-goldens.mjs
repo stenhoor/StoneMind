@@ -31,7 +31,6 @@ const OVERRIDES = [
   'numAnalysisThreads=1',
   'numSearchThreadsPerAnalysisThread=1',
   'nnRandomize=false',
-  'useGraphSearch=false',
   'wideRootNoise=0',
   'rootNumSymmetriesToSample=1',
   'useFP16=false',

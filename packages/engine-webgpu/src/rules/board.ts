@@ -19,6 +19,12 @@ export type Stone = 1 | 2;
 export const NULL_LOC = 0;
 export const PASS_LOC = 1;
 
+/**
+ * Scratch for `Board.simpleRepetitionBoundGt`, which KataGo keeps on the stack: shared by all boards, as the check never
+ * runs inside itself. Points counted in the current call carry its mark.
+ */
+const repScratch = { counted: new Uint32Array(0), toExpand: new Int32Array(0), mark: 0 };
+
 export const opp = (p: Stone): Stone => (p === BLACK ? WHITE : BLACK);
 
 /**
@@ -480,6 +486,61 @@ export class Board {
       const a = loc + d;
       if (this.colors[a] === o && this.getNumLiberties(a) === 1) return true;
     }
+    return false;
+  }
+
+  /** KataGo `countEmptyHelper`: adds the empty region around `initialLoc` to `count`; true once it passes `bound`. */
+  #countEmptyHelper(initialLoc: number, count: { n: number }, bound: number): boolean {
+    const counted = repScratch.counted;
+    const mark = repScratch.mark;
+    if (counted[initialLoc] === mark) return false;
+    count.n += 1;
+    counted[initialLoc] = mark;
+    if (count.n > bound) return true;
+    const toExpand = repScratch.toExpand;
+    let numLeft = 0;
+    toExpand[numLeft++] = initialLoc;
+    for (let k = 0; k < numLeft; k++) {
+      const loc = toExpand[k]!;
+      for (const d of this.adj) {
+        const a = loc + d;
+        if (this.colors[a] === EMPTY && counted[a] !== mark) {
+          count.n += 1;
+          counted[a] = mark;
+          if (count.n > bound) return true;
+          toExpand[numLeft++] = a;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * KataGo `simpleRepetitionBoundGt`: true if the move at `loc` certainly can't be part of a repetition within `bound`
+   * moves (its chain plus the empty regions around it are larger than `bound`). Always false for a pass.
+   */
+  simpleRepetitionBoundGt(loc: number, bound: number): boolean {
+    if (loc === NULL_LOC || loc === PASS_LOC) return false;
+    const count = { n: 0 };
+    if (this.colors[loc] !== EMPTY) {
+      count.n += this.getChainSize(loc);
+      if (count.n + this.getNumLiberties(loc) > bound) return true;
+    }
+    if (repScratch.counted.length < this.arraySize) {
+      repScratch.counted = new Uint32Array(this.arraySize);
+      repScratch.toExpand = new Int32Array(this.arraySize);
+    }
+    repScratch.mark += 1;
+    // A suicide leaves the point empty: just the empty region there.
+    if (this.colors[loc] === EMPTY) return this.#countEmptyHelper(loc, count, bound);
+    let cur = loc;
+    do {
+      for (const d of this.adj) {
+        const lib = cur + d;
+        if (this.colors[lib] === EMPTY && this.#countEmptyHelper(lib, count, bound)) return true;
+      }
+      cur = this.nextInChain(cur);
+    } while (cur !== loc);
     return false;
   }
 
