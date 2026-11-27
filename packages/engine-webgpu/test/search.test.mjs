@@ -70,10 +70,14 @@ test('batched search: every visit is accounted for and no leaf is left waiting',
   assert.equal(a.rootVisits, 80);
   // Mirror-image copies (root symmetry pruning) repeat a searched move's visits, so they're left out of the sum.
   assert.equal(a.moveInfos.filter((m) => m.isSymmetryOf === undefined).reduce((s, m) => s + m.visits, 0), 79);
+  // With graph search a node can be reached more than one way, so each is checked once.
+  const seen = new Set();
   const walk = (n) => {
+    if (seen.has(n)) return;
+    seen.add(n);
     assert.equal(n.virtualLosses, 0);
     assert.notEqual(n.state, 1, 'no node left waiting for the network');
-    for (const c of n.children) walk(c);
+    for (const e of n.children) walk(e.node);
   };
   walk(search.root);
   assert.ok(search.stats.batches < 79, 'leaves were batched');

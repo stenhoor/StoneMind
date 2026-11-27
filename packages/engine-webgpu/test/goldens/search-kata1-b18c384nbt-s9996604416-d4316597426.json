@@ -5,7 +5,6 @@
    "numAnalysisThreads=1",
    "numSearchThreadsPerAnalysisThread=1",
    "nnRandomize=false",
-   "useGraphSearch=false",
    "wideRootNoise=0",
    "rootNumSymmetriesToSample=1",
    "useFP16=false",
@@ -14,7 +13,7 @@
   "modelFile": "kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
   "modelSha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d",
   "set": "short",
-  "date": "2026-11-27T09:09:59.002Z"
+  "date": "2026-11-27T09:45:11.526Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [
@@ -315,18 +314,17 @@
      "order": 0,
      "visits": 13,
      "edgeVisits": 13,
-     "winrate": 0.999553433,
-     "scoreLead": 7.13075748,
-     "lcb": 0.979562622,
-     "utilityLcb": 1.00785993,
-     "playSelectionValue": 58.6021908,
+     "winrate": 0.999555602,
+     "scoreLead": 7.04370025,
+     "lcb": 0.981925955,
+     "utilityLcb": 1.01265433,
+     "playSelectionValue": 65.1919799,
      "pv": [
       "F1",
       "E1",
-      "G1",
-      "E2",
       "E6",
-      "A6"
+      "G1",
+      "D5"
      ]
     },
     {
@@ -334,11 +332,11 @@
      "order": 1,
      "visits": 11,
      "edgeVisits": 11,
-     "winrate": 0.999726867,
-     "scoreLead": 6.92325575,
-     "lcb": 0.975329074,
-     "utilityLcb": 0.988896416,
-     "playSelectionValue": 40,
+     "winrate": 0.99972687,
+     "scoreLead": 6.92324832,
+     "lcb": 0.975329366,
+     "utilityLcb": 0.988814278,
+     "playSelectionValue": 41,
      "pv": [
       "E6",
       "D5",
