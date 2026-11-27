@@ -10,13 +10,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm run build
-      # The WebGPU network on the golden positions, in headless Chromium (software adapter: correctness only).
-      - run: npx -w @stonemind/engine-webgpu playwright install --with-deps chromium
-      - run: npm run gpu-check -w @stonemind/engine-webgpu
+      # Which sub-projects this change affects (scripts/ci-affected.mjs): only their checks run. A change to shared
+      # files (root package files, the TypeScript base config, .nvmrc, CI) runs everything; one only under docs/ or to
+      # root Markdown runs nothing.
+      - id: affected
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/ci-affected.mjs "$BASE" HEAD
+      - if: steps.affected.outputs.any == 'true'
+        run: npm ci
+      # Build everything first (seconds), so each affected package's checks find their dependencies built.
+      - if: steps.affected.outputs.any == 'true'
+        run: npm run build
+      - if: steps.affected.outputs.any == 'true'
+        env:
+          PACKAGES: ${{ steps.affected.outputs.packages }}
+        run: for p in $PACKAGES; do npm run check --if-present -w "$p" || exit 1; done
+      # The WebGPU network on the golden positions, in headless Chromium (software adapter: correctness only). Only when
+      # the engine's code, or something it depends on, changed.
+      - if: steps.affected.outputs.gpu == 'true'
+        run: npx -w @stonemind/engine-webgpu playwright install --with-deps chromium
+      - if: steps.affected.outputs.gpu == 'true'
+        run: npm run gpu-check -w @stonemind/engine-webgpu
