@@ -1,5 +1,5 @@
-// Assemble the app in dist/site: the page, its stylesheet, its compiled modules, and verbatim copies of the brand
-// files. The page loads plain ES modules; there is no bundler.
+// Assemble the app in dist/site: the app page, the capability page, the stylesheet, the compiled modules, and verbatim
+// copies of the brand files. The page loads plain ES modules; there is no bundler.
 import { cpSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,10 @@ mkdirSync(site, { recursive: true });
 cpSync(join(app, 'src', 'index.html'), join(site, 'index.html'));
 cpSync(join(app, 'src', 'app.css'), join(site, 'app.css'));
 cpSync(join(app, 'dist', 'js'), join(site, 'js'), { recursive: true });
+// The capability page (build plan, step 2) and its worker probe, a classic script copied as is.
+mkdirSync(join(site, 'capabilities'), { recursive: true });
+cpSync(join(app, 'src', 'capabilities', 'index.html'), join(site, 'capabilities', 'index.html'));
+cpSync(join(app, 'src', 'capabilities', 'worker-probe.js'), join(site, 'js', 'capabilities', 'worker-probe.js'));
 
 const brand = join(repo, 'packages', 'brand');
 cpSync(join(brand, 'tokens', 'tokens.css'), join(site, 'brand', 'tokens.css'));

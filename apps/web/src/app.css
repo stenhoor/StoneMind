@@ -259,3 +259,37 @@ sm-menu-bar { display: block; }
 .sheet-close { flex: none; }
 .sheet p { margin: 0; }
 .sheet-field { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
+
+/* ----------------------------------------------------- capability page */
+.cap-page { min-height: 100vh; box-sizing: border-box; padding: var(--space-4) var(--space-2); display: flex; justify-content: center; }
+.cap-panel { width: min(900px, 100%); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); align-self: flex-start; }
+.cap-panel p { margin: 0; }
+.cap-back { font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; align-self: flex-start; }
+.cap-title { margin: 0; font: 800 26px/1.2 var(--font-brand); }
+.cap-status { font-weight: 600; }
+.cap-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.cap-table-wrap { overflow-x: auto; }
+.cap-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.cap-caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.cap-table th, .cap-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-edge); vertical-align: top; }
+.cap-table thead th { color: var(--text-2); font-weight: 600; font-size: 13px; }
+.cap-table tbody th { font-weight: 600; }
+.cap-group { padding-top: var(--space-4) !important; font: 700 13px/1.3 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); }
+.cap-result { white-space: nowrap; font-weight: 700; }
+.cap-yes { color: var(--success); }
+.cap-no { color: var(--danger); }
+.cap-info { color: var(--text-2); }
+.cap-detail { color: var(--text-2); word-break: break-word; }
+.cap-json pre { margin: var(--space-2) 0 0; padding: var(--space-3); max-height: 360px; overflow: auto; border-radius: var(--radius-sm); background: var(--glass-well); font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
+.cap-json summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+
+/* On a narrow page each row's details move under its feature, full width. */
+.cap-table-wrap { container-type: inline-size; }
+@container (max-width: 560px) {
+  .cap-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .cap-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-bottom: 1px solid var(--glass-edge); }
+  .cap-table th, .cap-table td { border-bottom: 0; }
+  .cap-table .cap-group { grid-column: 1 / -1; }
+  .cap-table .cap-detail { grid-column: 1 / -1; padding-top: 0; }
+  .cap-table .cap-detail:empty { display: none; }
+}

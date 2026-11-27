@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoneMind: what this browser supports</title>
+  <link rel="icon" href="../brand/logos/favicon-32.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@700;800&display=swap">
+  <link rel="stylesheet" href="../brand/tokens.css">
+  <link rel="stylesheet" href="../brand/components.css">
+  <link rel="stylesheet" href="../app.css">
+  <script>
+    try { const t = localStorage.getItem('stonemind.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <script type="module" src="../js/capabilities/main.js"></script>
+</head>
+<body class="sm-root">
+  <main class="cap-page">
+    <section class="sm-glass cap-panel" aria-labelledby="cap-title">
+      <a class="cap-back" href="../">← Back to StoneMind</a>
+      <h1 id="cap-title" class="cap-title">What this browser supports</h1>
+      <p>This page checks the browser features StoneMind is built on. It stores nothing and sends nothing anywhere. To
+        share the result, copy or download the report.</p>
+      <p id="status" class="cap-status" role="status" aria-live="polite">Checking this browser…</p>
+      <div class="cap-actions">
+        <button type="button" id="copy" class="sm-btn sm-btn--primary">Copy report</button>
+        <a id="download" class="sm-btn" href="#">Download report</a>
+        <button type="button" id="rerun" class="sm-btn">Check again</button>
+        <button type="button" id="persist" class="sm-btn">Ask to keep files</button>
+      </div>
+      <div class="cap-table-wrap">
+        <table class="cap-table">
+          <caption class="cap-caption">Results</caption>
+          <thead><tr><th scope="col">Feature</th><th scope="col">Supported</th><th scope="col">Details</th></tr></thead>
+          <tbody id="results"></tbody>
+        </table>
+      </div>
+      <details class="cap-json">
+        <summary>The report (JSON)</summary>
+        <pre id="json"></pre>
+      </details>
+    </section>
+  </main>
+</body>
+</html>
