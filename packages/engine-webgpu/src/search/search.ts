@@ -9,15 +9,16 @@
  *   (`getFpuValueForChildrenAssumeVisited`), and the best-policy unexpanded move (`selectBestChildToDescend`);
  * - values: win/loss and no-result utility plus static and dynamic score utility (`getResultUtility`,
  *   `getScoreUtility`, `computeRootValues`), terminal values from the game's result, and KataGo's stats recomputation
- *   from children plus the node's own evaluation (`recomputeNodeStats`, `addLeafValue`);
+ *   from children plus the node's own evaluation (`recomputeNodeStats`, `addLeafValue`), with the children weighted by
+ *   how their values compare (`downweightBadChildrenAndNormalizeWeight`, `valueWeightExponent`);
  * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
- * Not yet ported (each is to be added and measured separately): graph search (transpositions), noise pruning, value
- * weighting by child utility (`valueWeightExponent`), uncertainty weighting, subtree value bias, policy optimism, wide
- * root noise, passing hacks and the root's ending bonus, root symmetry pruning, and tree reuse.
+ * Not yet ported (each is to be added and measured separately): graph search (transpositions), noise pruning,
+ * uncertainty weighting, subtree value bias, policy optimism, wide root noise, passing hacks and the root's ending
+ * bonus, root symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
 import type { ModelDesc } from '../model/types.js';
@@ -28,6 +29,7 @@ import type { NetInput, RawOutputs } from '../reference/forward.js';
 import { postProcess, type Evaluation } from '../reference/postprocess.js';
 import { copyWithSymmetry } from '../reference/symmetry.js';
 import { expectedWhiteScoreValue, getScoreStdev, whiteScoreMeanSqOfScoreGridded } from './scorevalue.js';
+import { VALUE_WEIGHT_DISTRIBUTION } from './distribution.js';
 
 /** Something that evaluates a batch of network inputs: the WebGPU network, or the reference forward pass in tests. */
 export interface NetEvaluator {
@@ -88,6 +90,11 @@ export interface SearchParams {
   chosenMovePrune: number;
   /** KataGo `analysisPVLen`: moves in each principal variation after the move itself. */
   analysisPVLen: number;
+  /**
+   * KataGo `valueWeightExponent`: when a node's value is recomputed, each child's weight is scaled by the t
+   * distribution's probability that it's better than the children's average, to this power (0 switches it off).
+   */
+  valueWeightExponent: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -123,6 +130,7 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   chosenMoveSubtract: 0,
   chosenMovePrune: 1,
   analysisPVLen: 15,
+  valueWeightExponent: 0.25,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -419,11 +427,87 @@ export class Search {
   }
 
   /**
-   * KataGo `recomputeNodeStats` with no noise pruning and no value weighting: the children's averages weighted by
-   * their weight, plus the node's own evaluation with weight 1.
+   * KataGo `downweightBadChildrenAndNormalizeWeight`: scales `weights` (each child's, for children with visits) by
+   * value weighting, after pruning those below `amountToPrune` and subtracting `amountToSubtract`, so they sum to
+   * `desiredTotalWeight`. `selfUtilities` are from the point of view of the player to move.
+   */
+  #downweightBadChildrenAndNormalizeWeight(
+    weights: number[],
+    selfUtilities: readonly number[],
+    currentTotalWeight: number,
+    desiredTotalWeight: number,
+    amountToSubtract: number,
+    amountToPrune: number,
+  ): void {
+    const n = weights.length;
+    if (n <= 0 || currentTotalWeight <= 0) return;
+    /** Prunes or reduces child i's weight; true if it was pruned. */
+    const pruneAndSubtract = (i: number): boolean => {
+      if (weights[i]! < amountToPrune) {
+        currentTotalWeight -= weights[i]!;
+        weights[i] = 0;
+        return true;
+      }
+      const newWeight = weights[i]! - amountToSubtract;
+      if (newWeight <= 0) {
+        currentTotalWeight -= weights[i]!;
+        weights[i] = 0;
+      } else {
+        currentTotalWeight -= amountToSubtract;
+        weights[i] = newWeight;
+      }
+      return false;
+    };
+    if (this.params.valueWeightExponent === 0) {
+      for (let i = 0; i < n; i++) pruneAndSubtract(i);
+      if (currentTotalWeight !== desiredTotalWeight) {
+        const factor = desiredTotalWeight / currentTotalWeight;
+        for (let i = 0; i < n; i++) weights[i]! *= factor;
+      }
+      return;
+    }
+    const stdevs = new Array<number>(n);
+    let simpleValueSum = 0;
+    for (let i = 0; i < n; i++) {
+      const weight = weights[i]!;
+      const precision = 1.5 * Math.sqrt(weight);
+      // Some minimum variance for stability.
+      stdevs[i] = Math.sqrt(0.00000001 + 1 / precision);
+      simpleValueSum += selfUtilities[i]! * weight;
+    }
+    const simpleValue = simpleValueSum / currentTotalWeight;
+    let totalNewUnnormWeight = 0;
+    for (let i = 0; i < n; i++) {
+      if (pruneAndSubtract(i)) continue;
+      const z = (selfUtilities[i]! - simpleValue) / stdevs[i]!;
+      // A tiny minimum, for numeric sanity.
+      const p = VALUE_WEIGHT_DISTRIBUTION.getCdf(z) + 0.0001;
+      weights[i]! *= Math.pow(p, this.params.valueWeightExponent);
+      totalNewUnnormWeight += weights[i]!;
+    }
+    const factor = desiredTotalWeight / totalNewUnnormWeight;
+    for (let i = 0; i < n; i++) weights[i]! *= factor;
+  }
+
+  /**
+   * KataGo `recomputeNodeStats` with no noise pruning: the children's averages weighted by their weights after value
+   * weighting, plus the node's own evaluation with weight 1.
    */
   #recomputeNodeStats(node: SearchNode): void {
-    let weightSum = 0;
+    const good: SearchNode[] = [];
+    const weights: number[] = [];
+    const selfUtilities: number[] = [];
+    let totalChildWeight = 0;
+    for (const c of node.children) {
+      if (c.visits <= 0 || c.weightSum <= 0) continue;
+      good.push(c);
+      weights.push(c.weightSum);
+      selfUtilities.push(node.nextPla === WHITE ? c.utilityAvg : -c.utilityAvg);
+      totalChildWeight += c.weightSum;
+    }
+    // KataGo prunes and subtracts here only with root noise, which the analysis engine doesn't use.
+    this.#downweightBadChildrenAndNormalizeWeight(weights, selfUtilities, totalChildWeight, totalChildWeight, 0, 0);
+
     let winLoss = 0;
     let noResult = 0;
     let scoreMean = 0;
@@ -432,10 +516,11 @@ export class Search {
     let utility = 0;
     let utilitySq = 0;
     let weightSqSum = 0;
-    for (const c of node.children) {
-      if (c.visits <= 0 || c.weightSum <= 0) continue;
-      const w = c.weightSum;
-      weightSum += w;
+    let weightSum = totalChildWeight;
+    for (let i = 0; i < good.length; i++) {
+      const c = good[i]!;
+      const w = weights[i]!;
+      const scaling = w / c.weightSum;
       winLoss += w * c.winLossValueAvg;
       noResult += w * c.noResultValueAvg;
       scoreMean += w * c.scoreMeanAvg;
@@ -443,7 +528,7 @@ export class Search {
       lead += w * c.leadAvg;
       utility += w * c.utilityAvg;
       utilitySq += w * c.utilitySqAvg;
-      weightSqSum += c.weightSqSum;
+      weightSqSum += scaling * scaling * c.weightSqSum;
     }
     const e = node.eval!;
     const u = this.#utilityFromNN(e);
