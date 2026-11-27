@@ -31,3 +31,11 @@ export { avoidMoveUntilByLoc, searchParamsFromConfig, ConfigValueError, Unsuppor
 export { analysisHistory, type AnalysisPosition, type QueryMove } from './rules/analysis-position.js';
 export { expectedWhiteScoreValue, getScoreStdev } from './search/scorevalue.js';
 export { reviewGame, SharedEvaluator, type ReviewOptions, type RequestTrace } from './search/review.js';
+export { parseKataGoRules, rulesToString, supportedRules, RulesParseError, type KataGoRules } from './rules/rules.js';
+export { analysisHistories, gtpLocation } from './rules/analysis-position.js';
+export { parseJson, dumpJson, formatDouble, JsonFloat, type JsonValue, type JsonObject } from './engine/json.js';
+export { roundDynamic, roundStatic } from './engine/analysis-json.js';
+export {
+  KataGoAnalysisLines, AnalysisConfigError, BROWSER_ENGINE_DESCRIPTOR, KATAGO_VERSION, KATAGO_GIT_HASH,
+  type AnalysisEngineOptions,
+} from './engine/analysis-engine.js';

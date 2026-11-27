@@ -12,6 +12,11 @@
       "stonemind-source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./session": {
+      "stonemind-source": "./src/session.ts",
+      "types": "./dist/session.d.ts",
+      "default": "./dist/session.js"
     }
   },
   "files": [
@@ -25,6 +30,9 @@
     "check": "npm run typecheck && npm run test",
     "gpu-check": "node scripts/gpu-check.mjs",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stonemind/engine": "0.0.1"
   },
   "devDependencies": {
     "playwright": "1.65.0",

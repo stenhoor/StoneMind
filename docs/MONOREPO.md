@@ -60,8 +60,8 @@ from the root builds dependencies before dependents.
 | `@stonemind/storage` | Library (ports) | npm package | none | none yet (future Smaltworks adapter, engines) |
 | `@stonemind/ontology` | Library (data + logic) | npm package; `seed.json` is also a standalone data artifact | domain | none yet (future ontology engine, web app) |
 | `@stonemind/provider-sdk` | Library (contracts + registry) | npm package for third-party plugin authors | domain | none yet (future providers, engines, web app) |
-| `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-bench |
-| `@stonemind/engine-webgpu` | Library (experimental engine) | npm package; loaded in pages without a bundler | none yet (engine, for the contract, in phase 5) | engine-bench (its site build publishes the GPU check page) |
+| `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-webgpu, engine-bench |
+| `@stonemind/engine-webgpu` | Library (experimental engine) | npm package; loaded in pages without a bundler | engine (the `AnalysisEngine` contract; only the `./session` entry point loads it when run) | engine-bench (its site build publishes the GPU check page) |
 | `@stonemind/katago-bridge` | Local tool (Node CLI) | Run from a checkout on the player's computer | engine | players running native KataGo |
 | `@stonemind/engine-bench` | App (static page) | GitHub Pages at https://stonemind.org/ (a placeholder home page), /engine-bench/, /gpu-check/ and /ort-bench/ | engine, brand, engine-webgpu; outside: onnxruntime-web 1.31.1 (MIT, benchmark-only, approved 2026-11-25), copied into /ort-bench/ only | none |
 
@@ -80,6 +80,7 @@ from the root builds dependencies before dependents.
 | apps → brand (planned) | `tokens.css` custom properties, `components.css` classes (`sm-*`), logo file names | Renaming a token or class breaks every app; change brand first, then each app, in the same release |
 | katago-bridge → engine | `BRIDGE_PROTOCOL` (the WebSocket subprotocol) and the pairing link format read by `parsePairingFragment` | Changing either breaks pairing between a bridge and a page of a different version |
 | engine-bench → engine | `connectBridge`, `parsePairingFragment`, the `AnalysisEngine` API and protocol types | Typecheck catches breaks; the site test checks the import map |
+| engine-webgpu → engine | `LineTransport`, `EngineDescriptor` and `JsonLineSession`, which `createAnalysisEngine` (`@stonemind/engine-webgpu/session`) puts the browser engine behind | Typecheck catches breaks; `test/engine.test.mjs` runs the engine through `JsonLineSession`. The main entry point imports engine for types only, so pages loading it need no import map |
 | engine-bench → engine-webgpu | The layout of the package's `dist/`, `test/gpu/` and `test/goldens/`, which the site build copies to `gpu-check/` | Moving those files breaks the site build; the site test checks the page's imports and data |
 | provider-sdk → domain | `Game`, `GameAnalysis`, `Observation`, `EvidenceRecord`, `Resource`, `ResourceRelationship` | Third-party providers must be updated; bump provider-sdk major version |
 
