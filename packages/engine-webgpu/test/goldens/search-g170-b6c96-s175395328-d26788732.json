@@ -7,7 +7,6 @@
    "nnRandomize=false",
    "useGraphSearch=false",
    "useNoisePruning=false",
-   "useUncertainty=false",
    "subtreeValueBiasFactor=0",
    "policyOptimism=0",
    "rootPolicyOptimism=0",
@@ -22,7 +21,8 @@
   ],
   "modelFile": "g170-b6c96-s175395328-d26788732.bin.gz",
   "modelSha256": "f5d32604e3675c480c7c8f6aa579a1ea857135628a0afccc8fa56330fbacd38d",
-  "date": "2026-11-27T00:40:09.182Z"
+  "set": "full",
+  "date": "2026-11-27T00:52:18.950Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [

@@ -10,14 +10,15 @@
  * - values: win/loss and no-result utility plus static and dynamic score utility (`getResultUtility`,
  *   `getScoreUtility`, `computeRootValues`), terminal values from the game's result, and KataGo's stats recomputation
  *   from children plus the node's own evaluation (`recomputeNodeStats`, `addLeafValue`), with the children weighted by
- *   how their values compare (`downweightBadChildrenAndNormalizeWeight`, `valueWeightExponent`);
+ *   how their values compare (`downweightBadChildrenAndNormalizeWeight`, `valueWeightExponent`), and each evaluation
+ *   weighted by the network's own short-term error estimates (`computeWeightFromNNOutput`, `useUncertainty`);
  * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
  * Not yet ported (each is to be added and measured separately): graph search (transpositions), noise pruning,
- * uncertainty weighting, subtree value bias, policy optimism, wide root noise, passing hacks and the root's ending
+ * subtree value bias, policy optimism, wide root noise, passing hacks and the root's ending
  * bonus, root symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
@@ -28,7 +29,7 @@ import { encodeHistoryV7, type LadderCache } from '../features/v7.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import { postProcess, type Evaluation } from '../reference/postprocess.js';
 import { copyWithSymmetry } from '../reference/symmetry.js';
-import { expectedWhiteScoreValue, getScoreStdev, whiteScoreMeanSqOfScoreGridded } from './scorevalue.js';
+import { expectedWhiteScoreValue, getScoreStdev, whiteDScoreValueDScoreSmooth, whiteScoreMeanSqOfScoreGridded } from './scorevalue.js';
 import { VALUE_WEIGHT_DISTRIBUTION } from './distribution.js';
 
 /** Something that evaluates a batch of network inputs: the WebGPU network, or the reference forward pass in tests. */
@@ -95,6 +96,15 @@ export interface SearchParams {
    * distribution's probability that it's better than the children's average, to this power (0 switches it off).
    */
   valueWeightExponent: number;
+  /**
+   * KataGo `useUncertainty`: each evaluation is weighted by the inverse of the network's short-term error estimate,
+   * from `uncertaintyCoeff / uncertaintyMaxWeight` (weight `uncertaintyMaxWeight`) upward; terminal positions get
+   * `uncertaintyMaxWeight`. Only for networks of model version 9 or later, as in KataGo.
+   */
+  useUncertainty: boolean;
+  uncertaintyCoeff: number;
+  uncertaintyExponent: number;
+  uncertaintyMaxWeight: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -131,6 +141,10 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   chosenMovePrune: 1,
   analysisPVLen: 15,
   valueWeightExponent: 0.25,
+  useUncertainty: true,
+  uncertaintyCoeff: 0.25,
+  uncertaintyExponent: 1.0,
+  uncertaintyMaxWeight: 8.0,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -293,6 +307,34 @@ export class Search {
     return staticValue * p.staticScoreUtilityFactor + dynamicValue * p.dynamicScoreUtilityFactor;
   }
 
+  /** KataGo `getApproxScoreUtilityDerivative`: ignores scoreMeanSq's effect on the utility. */
+  #approxScoreUtilityDerivative(scoreMean: number): number {
+    const p = this.params;
+    const staticDerivative = whiteDScoreValueDScoreSmooth(scoreMean, 0, 2, this.#sqrtBoardArea);
+    const dynamicDerivative = whiteDScoreValueDScoreSmooth(scoreMean, this.#recentScoreCenter, p.dynamicScoreCenterScale, this.#sqrtBoardArea);
+    return staticDerivative * p.staticScoreUtilityFactor + dynamicDerivative * p.dynamicScoreUtilityFactor;
+  }
+
+  /** Whether evaluations are weighted by uncertainty: KataGo needs short-term error outputs (`supportsShorttermError`). */
+  get #usesUncertainty(): boolean {
+    return this.params.useUncertainty && this.#model.modelVersion >= 9;
+  }
+
+  /** KataGo `computeWeightFromNNOutput`. */
+  #weightFromNN(e: Evaluation): number {
+    if (!this.#usesUncertainty) return 1;
+    const p = this.params;
+    const utilityUncertaintyWL = p.winLossUtilityFactor * e.shorttermWinlossError;
+    const utilityUncertaintyScore = this.#approxScoreUtilityDerivative(e.whiteScoreMean) * e.shorttermScoreError;
+    const utilityUncertainty = utilityUncertaintyWL + utilityUncertaintyScore;
+    let powered: number;
+    if (p.uncertaintyExponent === 1) powered = utilityUncertainty;
+    else if (p.uncertaintyExponent === 0.5) powered = Math.sqrt(utilityUncertainty);
+    else powered = Math.pow(utilityUncertainty, p.uncertaintyExponent);
+    const baselineUncertainty = p.uncertaintyCoeff / p.uncertaintyMaxWeight;
+    return p.uncertaintyCoeff / (powered + baselineUncertainty);
+  }
+
   #utilityFromNN(e: Evaluation): number {
     return this.#resultUtility(e.whiteWinProb - e.whiteLossProb, e.whiteNoResultProb) + this.#scoreUtility(e.whiteScoreMean, e.whiteScoreMeanSq);
   }
@@ -412,7 +454,7 @@ export class Search {
 
   #addNNOutputAsLeafValue(node: SearchNode): void {
     const e = node.eval!;
-    this.#addLeafValue(node, e.whiteWinProb - e.whiteLossProb, e.whiteNoResultProb, e.whiteScoreMean, e.whiteScoreMeanSq, e.whiteLead, 1);
+    this.#addLeafValue(node, e.whiteWinProb - e.whiteLossProb, e.whiteNoResultProb, e.whiteScoreMean, e.whiteScoreMeanSq, e.whiteLead, this.#weightFromNN(e));
   }
 
   #addTerminalValue(node: SearchNode): void {
@@ -423,7 +465,8 @@ export class Search {
     const drawAdjust = Number.isInteger(h.komi) ? p.drawEquivalentWinsForWhite - 0.5 : 0;
     const scoreMean = h.finalWhiteMinusBlackScore + drawAdjust;
     const scoreMeanSq = whiteScoreMeanSqOfScoreGridded(h.finalWhiteMinusBlackScore, p.drawEquivalentWinsForWhite);
-    this.#addLeafValue(node, 2 * whiteWins - 1, 0, scoreMean, scoreMeanSq, scoreMean, 1);
+    const weight = this.#usesUncertainty ? p.uncertaintyMaxWeight : 1;
+    this.#addLeafValue(node, 2 * whiteWins - 1, 0, scoreMean, scoreMeanSq, scoreMean, weight);
   }
 
   /**
@@ -491,7 +534,7 @@ export class Search {
 
   /**
    * KataGo `recomputeNodeStats` with no noise pruning: the children's averages weighted by their weights after value
-   * weighting, plus the node's own evaluation with weight 1.
+   * weighting, plus the node's own evaluation with its uncertainty weight.
    */
   #recomputeNodeStats(node: SearchNode): void {
     const good: SearchNode[] = [];
@@ -532,15 +575,16 @@ export class Search {
     }
     const e = node.eval!;
     const u = this.#utilityFromNN(e);
-    weightSum += 1;
-    winLoss += e.whiteWinProb - e.whiteLossProb;
-    noResult += e.whiteNoResultProb;
-    scoreMean += e.whiteScoreMean;
-    scoreMeanSq += e.whiteScoreMeanSq;
-    lead += e.whiteLead;
-    utility += u;
-    utilitySq += u * u;
-    weightSqSum += 1;
+    const weight = this.#weightFromNN(e);
+    winLoss += (e.whiteWinProb - e.whiteLossProb) * weight;
+    noResult += e.whiteNoResultProb * weight;
+    scoreMean += e.whiteScoreMean * weight;
+    scoreMeanSq += e.whiteScoreMeanSq * weight;
+    lead += e.whiteLead * weight;
+    utility += u * weight;
+    utilitySq += u * u * weight;
+    weightSqSum += weight * weight;
+    weightSum += weight;
     node.winLossValueAvg = winLoss / weightSum;
     node.noResultValueAvg = noResult / weightSum;
     node.scoreMeanAvg = scoreMean / weightSum;
