@@ -8,7 +8,9 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { mkdtempSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as playwright from 'playwright';
@@ -38,13 +40,8 @@ after(() => server?.close());
 
 for (const name of BROWSERS) {
   describe(name, () => {
-    let browser;
     let context;
-    before(async () => {
-      const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
-      browser = await playwright[name].launch(executablePath ? { executablePath } : {});
-    });
-    after(() => browser?.close());
+    after(() => context?.close());
 
     const open = async () => {
       const page = await context.newPage();
@@ -55,10 +52,13 @@ for (const name of BROWSERS) {
       return { page, errors };
     };
 
-    // Each test gets a fresh context, so OPFS starts empty.
+    // Each test gets a fresh profile, so OPFS starts empty. The profile is persistent, as a player's is: Playwright's
+    // default contexts are ephemeral, and WebKit (like Safari in a private window) has no OPFS in an ephemeral one
+    // (microsoft/playwright#18235).
     const fresh = async () => {
       await context?.close();
-      context = await browser.newContext({ acceptDownloads: true });
+      const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
+      context = await playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-opfs-')), { acceptDownloads: true, ...(executablePath ? { executablePath } : {}) });
     };
 
     for (const method of ['writable', 'worker']) {

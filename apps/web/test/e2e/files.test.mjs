@@ -28,12 +28,12 @@ after(() => server?.close());
 
 for (const name of BROWSERS) {
   describe(name, () => {
-    let browser;
-    before(async () => {
+    // Each test gets a fresh, persistent profile, as a player's is. Playwright's default contexts are ephemeral, and
+    // WebKit (like Safari in a private window) has no OPFS in an ephemeral one (microsoft/playwright#18235).
+    const newContext = (options = {}) => {
       const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
-      browser = await playwright[name].launch(executablePath ? { executablePath } : {});
-    });
-    after(() => browser?.close());
+      return playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-web-')), { ...options, ...(executablePath ? { executablePath } : {}) });
+    };
 
     const openFiles = async (context) => {
       const page = await context.newPage();
@@ -54,7 +54,7 @@ for (const name of BROWSERS) {
     const row = (page, label) => sheet(page).getByRole('button', { name: label, exact: true });
 
     test('the library folders are there, and Weights opens first', async () => {
-      const context = await browser.newContext();
+      const context = await newContext();
       const { page, errors } = await openFiles(context);
       const library = sheet(page).getByRole('navigation', { name: 'Library' });
       for (const f of ['Games', 'Problems', 'Weights', 'Configs']) await library.getByRole('button', { name: f }).waitFor();
@@ -66,7 +66,7 @@ for (const name of BROWSERS) {
     });
 
     test('importing weights shows the network, its training and the model version', async () => {
-      const context = await browser.newContext();
+      const context = await newContext();
       const { page, errors } = await openFiles(context);
       await importFile(page, weights);
       await row(page, `File ${NAME}.bin.gz`).click();
@@ -89,7 +89,7 @@ for (const name of BROWSERS) {
     });
 
     test('a new folder, a rename, a download and a confirmed delete', async () => {
-      const context = await browser.newContext({ acceptDownloads: true });
+      const context = await newContext({ acceptDownloads: true });
       const { page, errors } = await openFiles(context);
       await sheet(page).getByRole('navigation', { name: 'Library' }).getByRole('button', { name: 'Games' }).click();
       await importFile(page, game);
@@ -132,7 +132,7 @@ for (const name of BROWSERS) {
     });
 
     test('columns sort, and the keyboard alone makes, opens and leaves a folder', async () => {
-      const context = await browser.newContext();
+      const context = await newContext();
       const { page, errors } = await openFiles(context);
       await sheet(page).getByRole('navigation', { name: 'Library' }).getByRole('button', { name: 'Problems' }).click();
       const big = join(dir, 'big.sgf');
@@ -179,7 +179,7 @@ for (const name of BROWSERS) {
     });
 
     test('a file imported in one tab appears in the other', async () => {
-      const context = await browser.newContext();
+      const context = await newContext();
       const a = await openFiles(context);
       const b = await openFiles(context);
       await importFile(a.page, game);
@@ -189,7 +189,7 @@ for (const name of BROWSERS) {
     });
 
     test('the sidebar shows this browser’s storage, and the menu bar has the File menu', async () => {
-      const context = await browser.newContext();
+      const context = await newContext();
       const { page, errors } = await openFiles(context);
       await sheet(page).getByRole('meter', { name: 'Storage used' }).waitFor();
       assert.match(await sheet(page).locator('.files-storage').textContent(), /used of|not known/);
