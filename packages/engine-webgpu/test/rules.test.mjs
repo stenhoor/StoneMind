@@ -10,8 +10,8 @@ function boardFrom(rows) {
   const b = new Board(rows[0].length, rows.length);
   rows.forEach((row, y) =>
     [...row].forEach((ch, x) => {
-      if (ch === 'X') assert.ok(b.setStone(b.loc(x, y), BLACK));
-      if (ch === 'O') assert.ok(b.setStone(b.loc(x, y), WHITE));
+      if (ch === 'X') assert.ok(b.setStoneFailIfNoLibs(b.loc(x, y), BLACK));
+      if (ch === 'O') assert.ok(b.setStoneFailIfNoLibs(b.loc(x, y), WHITE));
     }),
   );
   return b;
@@ -88,7 +88,7 @@ test('ladders: captured on an open board, escapes when a friendly stone sits on 
   assert.equal(open.clone().searchIsLadderCaptured(w, true, []), true);
 
   const breaker = open.clone();
-  assert.ok(breaker.setStone(breaker.loc(6, 6), WHITE));
+  assert.ok(breaker.setStoneFailIfNoLibs(breaker.loc(6, 6), WHITE));
   assert.equal(breaker.clone().searchIsLadderCaptured(w, true, []), false);
 
   const twoLibs = boardFrom(['.........', '..XX.....', '.XO......', '.........', '.........', '.........', '.........', '.........', '.........']);

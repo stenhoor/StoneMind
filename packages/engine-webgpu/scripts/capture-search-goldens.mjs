@@ -61,6 +61,28 @@ const FULL = [
   { id: 'sym-9-tengen', moves: [['B', 'E5']], rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
+  // The query fields that change the search (part B, step 11c), each sent to native as given in `extra`.
+  // A set-up position with White to move, and three handicap stones with White's bonus N-1.
+  { id: 'setup-9-white', moves: [], rules: 'tromp-taylor', size: 9, maxVisits: 60, extra: { initialStones: [['B', 'C3'], ['B', 'G7'], ['B', 'D6'], ['W', 'G3'], ['W', 'C7'], ['W', 'F5']], initialPlayer: 'W' } },
+  { id: 'handicap-9-n-1', moves: [], rules: 'chinese', size: 9, maxVisits: 60, extra: { initialStones: [['B', 'C3'], ['B', 'G7'], ['B', 'G3']], whiteHandicapBonus: 'N-1' } },
+  // Black moving three times in a row: KataGo starts the history again at each, and counts them as handicap. The turn
+  // number then counts from the last restart, which the early root policy temperature shows.
+  { id: 'handicap-moves-9', moves: [['B', 'C3'], ['B', 'G7'], ['B', 'G3'], ['W', 'C7'], ['B', 'E5']], rules: 'chinese', size: 9, maxVisits: 60, extra: { overrideSettings: { rootPolicyTemperatureEarly: 3.0 } } },
+  // White retakes a ko at once, which the rules forbid: KataGo plays it anyway. Searched with the history before the root
+  // shown (the analysis engine otherwise leaves it out), so the network sees the illegal move.
+  { id: 'tolerant-ko-9', moves: [['B', 'E6'], ['W', 'F6'], ['B', 'D5'], ['W', 'G5'], ['B', 'E4'], ['W', 'F4'], ['B', 'A1'], ['W', 'E5'], ['B', 'F5'], ['W', 'E5']], rules: 'tromp-taylor', size: 9, maxVisits: 60, extra: { overrideSettings: { ignorePreRootHistory: false } } },
+  // Black avoids moves at the root, White its usual replies until depth 4.
+  { id: 'avoid-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { avoidMoves: [{ player: 'B', moves: ['D3', 'C4', 'D4'], untilDepth: 1 }, { player: 'W', moves: ['C6', 'F3', 'D3', 'pass'], untilDepth: 4 }] } },
+  // An avoid list turns off enableMorePassingHacks for that player at every depth: here both players avoid an empty
+  // corner they don't play, in pass-9-turn-36's position, where the hack changes native's visits.
+  { id: 'avoid-passing-hack-9', moves: LATE_9.slice(0, 36), rules: 'tromp-taylor', size: 9, maxVisits: 100, extra: { avoidMoves: [{ player: 'B', moves: ['A1'], untilDepth: 1 }, { player: 'W', moves: ['J9'], untilDepth: 1 }] } },
+  { id: 'allow-9', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { allowMoves: [{ player: LATE_9[33][0], moves: ['B2', 'H8', 'E1', 'J5'], untilDepth: 1 }] } },
+  { id: 'avoid-sym-9', moves: [], rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { avoidMoves: [{ player: 'B', moves: ['E5', 'C3', 'G7'], untilDepth: 1 }] } },
+  { id: 'temperature-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { rootPolicyTemperature: 1.5 } },
+  { id: 'fpu-9', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { rootFpuReductionMax: 0.4 } },
+  { id: 'override-9', moves: LATE_9.slice(0, 16), rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { overrideSettings: { cpuctExploration: 1.3, staticScoreUtilityFactor: 0.2, useLcbForSelection: false, fpuLossProp: 0.4 } } },
+  // The early root policy temperature, which fades with the turn number.
+  { id: 'override-temperature-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30, extra: { overrideSettings: { rootPolicyTemperatureEarly: 2.0, rootPolicyTemperature: 0.7 } } },
 ];
 const SHORT = [
   { id: 'opening-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 25 },
@@ -78,7 +100,7 @@ const logDir = mkdtempSync(join(tmpdir(), 'katago-logs-'));
 // queries would hand one query evaluations made for another query's history.
 const byId = new Map();
 for (const q of queries) {
-  const query = { id: q.id, moves: q.moves, rules: q.rules, komi: 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6, ...INCLUDE };
+  const query = { id: q.id, moves: q.moves, rules: q.rules, komi: 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6, ...INCLUDE, ...q.extra };
   const run = spawnSync(values.katago, ['analysis', '-config', values.config, '-model', values.model, '-override-config', [`logDir=${logDir}`, ...OVERRIDES].join(',')], { input: JSON.stringify(query) + '\n', encoding: 'utf8', maxBuffer: 1 << 28 });
   if (run.status !== 0) {
     console.error(run.stderr);

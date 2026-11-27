@@ -7,7 +7,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { loadModel, forward, buildHistory, gtpMove, Search, PASS_LOC, UnsupportedPositionError, loadPositionHashes } from '../dist/index.js';
+import {
+  loadModel, forward, buildHistory, gtpMove, Search, PASS_LOC, UnsupportedPositionError, loadPositionHashes, avoidMoveUntilByLoc,
+  searchParamsFromConfig,
+} from '../dist/index.js';
+import { queryHistory, queryLoc, stoneOf } from './query-position.mjs';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 const model = await loadModel(new Uint8Array(readFileSync(here('./fixtures/g170-b6c96-s175395328-d26788732.bin.gz'))));
@@ -48,6 +52,26 @@ const RESPONSE_FIELDS = ['moveInfos', 'rootInfo', 'policy', 'ownership', 'owners
 
 const historyOf = (q) => buildHistory({ xSize: q.size, ySize: q.size, rules: q.rules, komi: q.komi, moves: q.moves.map(([c, l]) => gtpMove(c, l, q.size)) });
 
+// A query's position, search parameters and avoided moves, as native's analysis engine reads them (the fields of part
+// B, step 11c, are in q.extra). Native's config switches wide root noise off (the capture script's overrides): that is
+// the config overrideSettings applies to.
+const searchSetup = (q) => {
+  const x = q.extra ?? {};
+  const hist = queryHistory(q);
+  const { params, unusedKeys } = searchParamsFromConfig(
+    { wideRootNoise: '0', ...Object.fromEntries(Object.entries(x.overrideSettings ?? {}).map(([k, v]) => [k, String(v)])) },
+    { symmetry: 0, batchSize: 1, analysisPVLen: 6 },
+  );
+  assert.deepEqual(unusedKeys, [], 'every override is a search parameter');
+  if (x.rootFpuReductionMax !== undefined) params.rootFpuReductionMax = x.rootFpuReductionMax;
+  if (x.rootPolicyTemperature !== undefined) params.rootPolicyTemperature = params.rootPolicyTemperatureEarly = x.rootPolicyTemperature;
+  const entries = x.allowMoves ?? x.avoidMoves;
+  const avoid = entries
+    ? avoidMoveUntilByLoc(hist.board.arraySize, entries.map((e) => ({ player: stoneOf(e.player), moves: e.moves.map((v) => queryLoc(q.size, v)), untilDepth: e.untilDepth })), !!x.allowMoves)
+    : null;
+  return { hist, params, avoid };
+};
+
 for (const net of NETS) {
   const netName = net.golden.replace(/^.*search-|\.json$/g, '');
   if (!net.model || !existsSync(net.model)) {
@@ -59,9 +83,10 @@ for (const net of NETS) {
   const netGolden = JSON.parse(readFileSync(here(net.golden), 'utf8'));
   for (const q of netGolden.queries) {
     test(`search matches native KataGo: ${netName} ${q.id} (${q.maxVisits} visits)`, async () => {
-      const hist = historyOf(q);
+      const { hist, params, avoid } = searchSetup(q);
       const name = (loc) => (loc === PASS_LOC ? 'pass' : COLUMNS[hist.board.x(loc)] + (q.size - hist.board.y(loc)));
-      const search = new Search(netModel, netReference, hist, { symmetry: 0, batchSize: 1, analysisPVLen: 6, wideRootNoise: 0 });
+      const search = new Search(netModel, netReference, hist, params);
+      if (avoid) search.setAvoidMoveUntilByLoc(avoid.black, avoid.white);
       await search.run({ maxVisits: q.maxVisits });
       const r = q.response;
       assert.deepEqual(Object.keys(r).filter((k) => !RESPONSE_FIELDS.includes(k)), [], 'fields of the response the test knows');

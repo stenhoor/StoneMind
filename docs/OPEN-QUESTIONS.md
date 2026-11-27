@@ -153,3 +153,19 @@ experimental `chromium-experimental-subgroup-matrix`, which Edge 158 on the owne
 Open: whether the shapes and batch ranges measured on the owner's laptop suit other GPUs once browsers ship the
 feature without a switch. Measured on the owner's laptop: `docs/spikes/results/2026-11-b18-matrix.md` and
 `docs/spikes/results/2026-11-b18-matrix-ladder.md`.
+
+## 15. Browser engine: query settings the search doesn't support (spike 0001)
+
+KataGo's analysis engine applies a query's `overrideSettings` by loading its search parameters again from its config
+with the overrides set (`Setup::loadSingleParams`). The browser engine ports that loader for the parameters its search
+has (`searchParamsFromConfig`, part B step 11c of the parity plan). Decided in code, with no spec covering it:
+- **Settings for search features not ported are refused** (`UnsupportedSettingError`), whatever their value: the time
+  and playout limits (`maxTime`, `maxPlayouts` and the pondering ones), `numSearchThreads`, root Dirichlet noise,
+  `rootNumSymmetriesToSample`, the chosen-move temperatures, `playoutDoublingAdvantage`, `antiMirror`, the
+  evaluation cache, the human-style network's settings, and the rest that KataGo reads and this search doesn't have.
+  Some of these change nothing in a single search with a visit limit (`maxTime`, `numSearchThreads`,
+  `nodeTableShardsPowerOfTwo`, for example), so the engine (step 11d) may accept those as having no effect. Open.
+- **An initial stone on a point already holding a stone of the other colour is refused**
+  (`UnsupportedPositionError`). KataGo's `Board::setStone` replaces the stone; that isn't ported.
+- **Avoided moves are set before the search starts** (`Search.setAvoidMoveUntilByLoc`). KataGo clears its search
+  when they change; the browser engine starts a new search for each query, so it has nothing to clear.

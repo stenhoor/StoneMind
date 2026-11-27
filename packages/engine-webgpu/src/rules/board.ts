@@ -466,10 +466,27 @@ export class Board {
   }
 
   /**
+   * KataGo `Board::setStone` on an empty point or one with a stone of the same colour, as its analysis engine places
+   * `initialStones`: the stone is played, capturing as a move would, unless it would be a single stone with no
+   * liberties, which is left out. Clears the ko location. Returns false, changing nothing, for a point holding a stone of
+   * the other colour (KataGo replaces that stone; not ported).
+   */
+  setStone(loc: number, color: Stone): boolean {
+    if (this.colors[loc] === color) {
+      this.koLoc = NULL_LOC;
+      return true;
+    }
+    if (this.colors[loc] !== EMPTY) return false;
+    if (!this.isIllegalSuicide(loc, color, true)) this.playMoveAssumeLegal(loc, color);
+    this.koLoc = NULL_LOC;
+    return true;
+  }
+
+  /**
    * A stone placed during setup (KataGo `setStoneFailIfNoLibs` on an empty point): fails, changing nothing, if the stone
    * would capture or have no liberties. The ko location is kept.
    */
-  setStone(loc: number, color: Stone): boolean {
+  setStoneFailIfNoLibs(loc: number, color: Stone): boolean {
     if (this.colors[loc] !== EMPTY) return false;
     if (this.isSuicide(loc, color) || this.wouldBeCapture(loc, color)) return false;
     const ko = this.koLoc;

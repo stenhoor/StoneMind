@@ -27,5 +27,7 @@ export type * from './gpu/webgpu.js';
 export { applyScale8 } from './model/scale8.js';
 export { toFloat16Bits, fromFloat16Bits, toFloat16Array } from './gpu/f16.js';
 export { Search, DEFAULT_SEARCH_PARAMS, type NetEvaluator, type SearchParams, type SearchAnalysis, type SearchMoveInfo, type SearchStats, type SearchRootValues, type SearchRawValues, type AnalysisOptions } from './search/search.js';
+export { avoidMoveUntilByLoc, searchParamsFromConfig, ConfigValueError, UnsupportedSettingError, type AvoidMovesEntry, type ConfigSearchSettings } from './search/query-settings.js';
+export { analysisHistory, type AnalysisPosition, type QueryMove } from './rules/analysis-position.js';
 export { expectedWhiteScoreValue, getScoreStdev } from './search/scorevalue.js';
 export { reviewGame, SharedEvaluator, type ReviewOptions, type RequestTrace } from './search/review.js';
