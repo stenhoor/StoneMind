@@ -39,6 +39,9 @@ function positionKey(board: Board, nextPla: Stone | null): string {
   return nextPla === null ? s : `${s}|${nextPla}`;
 }
 
+/** The history `clone()` is copying, while it constructs the copy. */
+let cloneSource: GameHistory | null = null;
+
 export class GameHistory {
   readonly rules: Rules;
   readonly komi: number;
@@ -51,6 +54,7 @@ export class GameHistory {
   whiteBonusScore = 0;
   whiteHandicapBonusScore = 0;
   private _whiteHasMoved = false;
+  private _assumeMultipleStartingBlackMovesAreHandicap = true;
   private _koKeys: string[] = [];
   /** Locations the next player may not play because of superko. */
   superKoBanned: Uint8Array;
@@ -73,6 +77,25 @@ export class GameHistory {
   private _wasEverOccupiedOrPlayed: Uint8Array;
 
   constructor(board: Board, nextPla: Stone, rules: Rules, komi: number) {
+    const source = cloneSource;
+    if (source) {
+      // A copy (clone()): its fields, set above, give it the same shape as every other history; now their values. The
+      // boards recorded in the history are never changed, so the copy shares them.
+      cloneSource = null;
+      Object.assign(this, source);
+      this.rules = source.rules;
+      this.komi = source.komi;
+      this.initialBoard = source.initialBoard;
+      this.board = source.board.clone();
+      this.nextPla = source.nextPla;
+      this.moves = source.moves.slice();
+      this.boardsBefore = source.boardsBefore.slice();
+      this.superKoBanned = source.superKoBanned.slice();
+      this._koKeys = source._koKeys.slice();
+      this._keysBeforePass = { [BLACK]: new Set(source._keysBeforePass[BLACK]), [WHITE]: new Set(source._keysBeforePass[WHITE]) };
+      this._wasEverOccupiedOrPlayed = source._wasEverOccupiedOrPlayed.slice();
+      return;
+    }
     if (rules.hasButton) throw new UnsupportedPositionError('rule sets with a button are not supported yet');
     this.rules = rules;
     this.komi = komi;
@@ -98,9 +121,19 @@ export class GameHistory {
     return positionKey(board, this.rules.koRule === 'POSITIONAL' ? null : nextPla);
   }
 
+  /**
+   * KataGo `setAssumeMultipleStartingBlackMovesAreHandicap`: whether Black's moves at the start of the game, before
+   * White's first move, count as handicap stones for the white handicap bonus. On by default, as in KataGo's analysis
+   * engine (KataGo's own default is off; its analysis engine turns it on unless its config says otherwise).
+   */
+  setAssumeMultipleStartingBlackMovesAreHandicap(b: boolean): void {
+    this._assumeMultipleStartingBlackMovesAreHandicap = b;
+    this.whiteHandicapBonusScore = this._computeWhiteHandicapBonus();
+  }
+
   private _computeNumHandicapStones(): number {
     let blackTurns = 0;
-    for (let i = 0; i < this.moves.length; i++) {
+    for (let i = 0; this._assumeMultipleStartingBlackMovesAreHandicap && i < this.moves.length; i++) {
       const { loc, pla } = this.moves[i]!;
       if (pla !== BLACK) {
         if (i + 1 < this.moves.length && this.moves[i + 1]!.pla !== BLACK) {
@@ -309,17 +342,10 @@ export class GameHistory {
    * shares them.
    */
   clone(): GameHistory {
-    const h = Object.create(GameHistory.prototype) as GameHistory;
-    Object.assign(h, this);
-    const w = h as unknown as Record<string, unknown>;
-    w['board'] = this.board.clone();
-    w['moves'] = this.moves.slice();
-    w['boardsBefore'] = this.boardsBefore.slice();
-    w['superKoBanned'] = this.superKoBanned.slice();
-    w['_koKeys'] = this._koKeys.slice();
-    w['_keysBeforePass'] = { [BLACK]: new Set(this._keysBeforePass[BLACK]), [WHITE]: new Set(this._keysBeforePass[WHITE]) };
-    w['_wasEverOccupiedOrPlayed'] = this._wasEverOccupiedOrPlayed.slice();
-    return h;
+    // Made by the constructor, not Object.create: V8 keeps an object made by Object.create with this many fields as a
+    // slow dictionary, and the search clones a history for every node.
+    cloneSource = this;
+    return new GameHistory(this.board, this.nextPla, this.rules, this.komi);
   }
 
   /** The board as it was `n` moves ago (KataGo `getRecentBoard`). */
@@ -329,9 +355,15 @@ export class GameHistory {
     return i >= 0 ? this.boardsBefore[i]! : this.boardsBefore[0]!;
   }
 
-  /** KataGo `currentSelfKomi` with draws worth half a win (the network-input default). */
-  currentSelfKomi(pla: Stone): number {
-    const white = this.whiteBonusScore + this.whiteHandicapBonusScore + this.komi;
+  /**
+   * KataGo `currentSelfKomi`: the komi for `pla`, with White's bonus points, and with the value of a draw folded in when
+   * the game can end in one (an integer komi: KataGo `whiteKomiAdjustmentForDraws`). Computed in C++ floats, as KataGo
+   * does.
+   */
+  currentSelfKomi(pla: Stone, drawEquivalentWinsForWhite = 0.5): number {
+    const f = Math.fround;
+    const drawAdjustment = Number.isInteger(this.komi) ? f(drawEquivalentWinsForWhite - 0.5) : 0;
+    const white = f(f(f(this.whiteBonusScore + this.whiteHandicapBonusScore) + f(this.komi)) + drawAdjustment);
     return pla === WHITE ? white : -white;
   }
 }

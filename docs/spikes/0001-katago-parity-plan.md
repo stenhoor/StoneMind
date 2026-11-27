@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110.
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111.
 
 ## The goal
 
@@ -104,7 +104,10 @@ speed comparison, since until now native has run features the browser doesn't ha
     - every output field listed above.
 
     Split into four PRs on 2026-11-27, when Part B started, following how KataGo divides the code. Each is ported
-    from KataGo's `v1.18.2` tag, the version the checks run against:
+    from KataGo's `v1.18.2` tag, the version the checks run against. (Corrected in step 11d: the native KataGo the
+    checks run against reports itself as v1.18.2 but is a later build from KataGo's master branch, git revision
+    d91ea855, which adds focus moves. Searches without focus moves give the same results, which the search check
+    confirms; the protocol check names the one difference in output, `set_focus` in the unknown-action error.)
     - 11a. **The search's output fields** (KataGo's `getAnalysisJson`, less the hashes): `weight`, `edgeWeight`,
       `noResultValue`, `pvVisits` and `pvEdgeVisits` per move, `rootInfo`'s values, the policy, and ownership with its
       standard deviation, for the position and per move. Checked with the exact search check, which now compares every

@@ -160,12 +160,39 @@ KataGo's analysis engine applies a query's `overrideSettings` by loading its sea
 with the overrides set (`Setup::loadSingleParams`). The browser engine ports that loader for the parameters its search
 has (`searchParamsFromConfig`, part B step 11c of the parity plan). Decided in code, with no spec covering it:
 - **Settings for search features not ported are refused** (`UnsupportedSettingError`), whatever their value: the time
-  and playout limits (`maxTime`, `maxPlayouts` and the pondering ones), `numSearchThreads`, root Dirichlet noise,
-  `rootNumSymmetriesToSample`, the chosen-move temperatures, `playoutDoublingAdvantage`, `antiMirror`, the
+  and playout limits (`maxTime`, `maxPlayouts` and the pondering ones), root Dirichlet noise,
+  `rootNumSymmetriesToSample` other than 1, the chosen-move temperatures, `playoutDoublingAdvantage`, `antiMirror`, the
   evaluation cache, the human-style network's settings, and the rest that KataGo reads and this search doesn't have.
-  Some of these change nothing in a single search with a visit limit (`maxTime`, `numSearchThreads`,
-  `nodeTableShardsPowerOfTwo`, for example), so the engine (step 11d) may accept those as having no effect. Open.
+  Some of these change nothing in a single search with a visit limit (`maxTime`, `nodeTableShardsPowerOfTwo`, for
+  example), so the engine may accept those as having no effect. Open. Since step 11d, `numSearchThreads` is accepted
+  as the search's batch, and `rootNumSymmetriesToSample` is accepted when it is 1, KataGo's default (section 16).
 - **An initial stone on a point already holding a stone of the other colour is refused**
   (`UnsupportedPositionError`). KataGo's `Board::setStone` replaces the stone; that isn't ported.
 - **Avoided moves are set before the search starts** (`Search.setAvoidMoveUntilByLoc`). KataGo clears its search
   when they change; the browser engine starts a new search for each query, so it has nothing to clear.
+
+## 16. Browser engine: the analysis engine where it can't be native's (spike 0001)
+
+The browser engine's analysis engine (`packages/engine-webgpu/src/engine/`, part B step 11d of the parity plan) ports
+KataGo's `analysis.cpp` at v1.18.2. Decided in code, with no spec covering it:
+- **`query_version` reports `1.18.2` and that tag's commit** (`fd0723fd...`), the version ported, not a build of its
+  own. A tool that checks the version gets the KataGo version whose protocol it speaks.
+- **`query_models`** reports the model file name the page gave as `name`, the network's own batch limit as
+  `maxBatchSize`, and `usingFP16` as the page says.
+- **Analysis threads are concurrent searches on one JavaScript thread** (`numAnalysisThreads`), whose leaves share
+  network calls (`SharedEvaluator`). **`numSearchThreads`** (or `numSearchThreadsPerAnalysisThread`) is each search's
+  batch: the leaves it keeps in flight with virtual losses, which is what KataGo's search threads amount to.
+- **Reports during the search are written between batches**, at the first batch boundary after each is due. KataGo's
+  reporting thread writes them on time, mid-batch.
+- **Rules the search doesn't support are refused** with an error on the `rules` field: territory scoring, a group tax
+  and the button (`Rules ... are not supported by this engine yet`). KataGo would search them. **An initial stone on a
+  point holding the other colour is refused** on `initialStones` (section 15).
+- **Startup config keys for native's machinery are read and ignored:** logging, the network server's batch, cache and
+  mutex sizes, threads per model, `useFP16`, `useNHWC` and `homeDataDir`. They aren't reported as unused.
+- **The evaluation cache has no size limit** (KataGo's is `nnCacheSizePowerOfTwo` entries). `clear_cache` empties it.
+- **A move given as `(x,y)` must be on the board.** KataGo's `Location::tryOfString` doesn't check, and an
+  off-board point would corrupt the board; the browser engine answers with KataGo's "Could not parse board location".
+- **A priority of exactly ±(2^62 - 1), KataGo's bound, is refused**: a JavaScript number can't hold it, and it reads
+  as ±2^62, which is out of range.
+- **Messages from KataGo's C++ libraries differ:** a JSON syntax error has JavaScript's description, and config errors
+  don't name a config file, since there is none.

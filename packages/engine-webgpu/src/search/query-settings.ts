@@ -66,9 +66,9 @@ export class UnsupportedSettingError extends Error {
  */
 const UNPORTED_KEYS = new Set([
   'maxPlayouts', 'maxTime', 'maxPlayoutsPondering', 'maxVisitsPondering', 'maxTimePondering', 'lagBuffer',
-  'searchFactorAfterOnePass', 'searchFactorAfterTwoPass', 'numSearchThreads', 'minPlayoutsPerThread',
+  'searchFactorAfterOnePass', 'searchFactorAfterTwoPass', 'minPlayoutsPerThread',
   'graphSearchCatchUpLeakProb', 'rootNoiseEnabled', 'rootDirichletNoiseTotalConcentration', 'rootDirichletNoiseWeight',
-  'rootNumSymmetriesToSample', 'rootDesiredPerChildVisitsCoeff', 'chosenMoveTemperature', 'chosenMoveTemperatureEarly',
+  'rootDesiredPerChildVisitsCoeff', 'chosenMoveTemperature', 'chosenMoveTemperatureEarly',
   'chosenMoveTemperatureOnlyBelowProb', 'fillDameBeforePass', 'alwaysComputePassAliveUnderSuicideRules',
   'excludeTerritoryAdjacentToAtari', 'playoutDoublingAdvantage', 'playoutDoublingAdvantagePla',
   'avoidRepeatedPatternUtility', 'nnPolicyTemperature', 'antiMirror', 'ignoreAllHistory', 'subtreeValueBiasFreeProp',
@@ -86,7 +86,8 @@ const UNPORTED_KEYS = new Set([
 const DOUBLE_RE = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
 const INT_RE = /^[+-]?\d+$/;
 
-class Config {
+/** KataGo `ConfigParser`'s value reading, for the keys of a config held as text. */
+export class Config {
   readonly #values: ReadonlyMap<string, string>;
   readonly used = new Set<string>();
   constructor(values: ReadonlyMap<string, string>) {
@@ -97,7 +98,13 @@ class Config {
   }
   #string(key: string): string {
     this.used.add(key);
-    return this.#values.get(key)!;
+    const value = this.#values.get(key);
+    if (value === undefined) throw new ConfigValueError(`Could not find key '${key}'`);
+    return value;
+  }
+  /** The value as text. */
+  getString(key: string): string {
+    return this.#string(key);
   }
   getBool(key: string): boolean {
     const value = this.#string(key);
@@ -137,7 +144,8 @@ export interface ConfigSearchSettings {
  * KataGo `Setup::loadSingleParams` for the analysis engine (and its `conservativePass` default), for the parameters
  * this engine's search has: the search parameters a config (key to value, as strings) gives. With an empty config this
  * is `DEFAULT_SEARCH_PARAMS`, the analysis engine's defaults. `base` supplies the parameters KataGo's config doesn't have
- * (`batchSize`, `seed`, `symmetry`, `analysisPVLen`).
+ * (`seed`, `symmetry`, `analysisPVLen`), and `batchSize` unless the config sets `numSearchThreads`. A
+ * `rootNumSymmetriesToSample` of 1 is accepted, as that is what this search does.
  *
  * The analysis engine handles `overrideSettings` by loading the parameters again from its config with the overrides
  * applied: pass the engine's config with the query's overrides set.
@@ -154,6 +162,13 @@ export function searchParamsFromConfig(config: Readonly<Record<string, string>>,
 
   const out: ConfigSearchSettings = { params: p, unusedKeys: [] };
   if (cfg.contains('maxVisits')) out.maxVisits = cfg.getInt('maxVisits', 1, 2 ** 50, 'int64');
+  // KataGo's search threads each run a playout, with virtual losses, while the others wait for the network; here a
+  // batch of playouts waits for one network call, so the batch stands in for the threads.
+  if (cfg.contains('numSearchThreads')) p.batchSize = cfg.getInt('numSearchThreads', 1, 4096);
+  // Each root evaluation uses one symmetry, KataGo's default; sampling more isn't ported.
+  if (cfg.contains('rootNumSymmetriesToSample') && cfg.getInt('rootNumSymmetriesToSample', 1, 8) !== 1) {
+    throw new UnsupportedSettingError(['rootNumSymmetriesToSample']);
+  }
 
   p.winLossUtilityFactor = dbl('winLossUtilityFactor', 0.0, 1.0, 1.0);
   p.staticScoreUtilityFactor = dbl('staticScoreUtilityFactor', 0.0, 1.0, 0.1);

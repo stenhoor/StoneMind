@@ -74,6 +74,22 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   calls of up to the network's batch size, with up to the network's `maxInFlight` calls at once. When two calls can
   start, searches that asked together are answered by separate calls, so one search picks its next leaves while the
   other's call runs on the GPU. Each search still has at most its batch of leaves in flight.
+- **Analysis engine** (`src/engine/`): a port of KataGo's analysis engine (`cpp/command/analysis.cpp` at v1.18.2).
+  `KataGoAnalysisLines` reads and writes KataGo's protocol as lines of JSON, as native KataGo's standard input and
+  output do, and `createAnalysisEngine` (entry point `@stonemind/engine-webgpu/session`) puts it behind
+  `@stonemind/engine`'s `JsonLineSession`, the same `AnalysisEngine` a native KataGo is used through. It is configured
+  with the keys of KataGo's analysis config (`numAnalysisThreads`, `numSearchThreadsPerAnalysisThread`,
+  `reportAnalysisWinratesAs` and the search parameters), and ports: the request checks in KataGo's order with its error
+  and warning messages (`json.ts` reads and writes JSON as KataGo's nlohmann library does, integers and floats apart);
+  KataGo's rules parser (`parseKataGoRules`: names, the JSON object and the compact form); `analyzeTurns`; the queue
+  by `priority`; reports during the search (`reportDuringSearchEvery`, `firstReportDuringSearchAfter`); the side the
+  values are for; KataGo's rounding of results; one evaluation cache shared by all queries; and the actions
+  `query_version`, `query_models`, `clear_cache`, `terminate` and `terminate_all`. Different from native: the analysis
+  threads are concurrent searches on one JavaScript thread, sharing network calls through `SharedEvaluator`;
+  `numSearchThreads` is the search's batch; reports during the search are written between batches; rules other than
+  area scoring with no tax and no button, and settings for search features not ported, are refused with an error
+  (`docs/OPEN-QUESTIONS.md`, sections 15 and 16). Not ported: focus moves (`focusMoves`, `set_focus`), added to KataGo
+  after v1.18.2.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
   - `requestEngineDevice` asks for `shader-f16`, `subgroups` and `timestamp-query` when the adapter has them.
   - `GpuNetwork.create(engine, model, { maxBatch })` uploads the weights and builds a plan for a 19×19 board (smaller
@@ -208,6 +224,19 @@ have yet switched off, on 9×9 and 19×19 positions under tromp-taylor, Chinese 
 exactly the same visits, with the same principal variations, and win rates and leads within the network goldens'
 tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
 
+`test/protocol.test.mjs` checks the analysis engine against native KataGo's: scripted sessions of query lines, captured
+from native with `scripts/capture-protocol-goldens.mjs` (one search thread, no randomness), are replayed on
+`KataGoAnalysisLines` with the reference network. They cover about 60 malformed or unusual queries (every error and
+warning must be the same text), results for each reporting side with every optional field, a rectangular board and
+draw values, the order of queued queries by priority, `terminate` and `terminate_all` on running and queued queries,
+and reports during the search. Results must have the same fields, written as integers or not alike, rounded as KataGo
+rounds them, with values within the search check's tolerances. The native build the goldens come from is v1.18.2 plus
+later commits from KataGo's master branch (git revision d91ea855), which add focus moves; the differences that brings
+(`set_focus` in the unknown-action error), and those from the C++ libraries (the JSON parser's own messages, the
+config file's name in config errors), are checked as named differences. `test/engine.test.mjs` checks the rest:
+the engine through `JsonLineSession`, `clear_cache`, the cache keeping komi and rules apart, two analysis threads giving
+the same results as one, what is refused, the startup config, the rules parser and the JSON format.
+
 **Search benchmark.** The GPU check page's **Search benchmark** button (or `scripts/gpu-check.mjs --search`) runs the
 search on the WebGPU network:
 - **Live:** visits per second on one 19×19 position (`fight-19`), 2000 visits, at batches 16, 32 and 64.
@@ -333,7 +362,9 @@ checked by SHA-256. It is not committed.
 
 ## Depends on
 
-No StoneMind packages. Dev only: Playwright (Apache-2.0), for the headless GPU check.
+`@stonemind/engine`, for the `AnalysisEngine` contract: `JsonLineSession`, used by the `./session` entry point
+(`createAnalysisEngine`), and its types. The main entry point uses it for types only, so pages that load the package
+without a bundler (the GPU check) need no import map. Dev only: Playwright (Apache-2.0), for the headless GPU check.
 
 ## Used by
 

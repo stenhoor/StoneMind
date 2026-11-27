@@ -53,6 +53,8 @@ export interface InputOptions {
   enablePassingHacks?: boolean;
   /** KataGo `maxHistory`: the most past moves the inputs may show (default 5, all of them). */
   maxHistory?: number;
+  /** KataGo `drawEquivalentWinsForWhite`, folded into the komi input when the game can end in a draw (default 0.5). */
+  drawEquivalentWinsForWhite?: number;
   /**
    * Ladder results already found, by board (see {@link LadderCache}). Not a KataGo option: the inputs are the same with
    * or without it. A search passes one so that a node's board, laddered when the node was encoded, isn't searched again
@@ -193,7 +195,7 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
         }
       }
     }
-    finalPhaseAndGameEndWouldNotBeWin = boardScoreForPla + hist.currentSelfKomi(pla) <= 0;
+    finalPhaseAndGameEndWouldNotBeWin = boardScoreForPla + hist.currentSelfKomi(pla, options.drawEquivalentWinsForWhite ?? 0.5) <= 0;
   } else if (rules.scoringRule === 'AREA') {
     throw new UnsupportedPositionError('area scoring with a group tax is not supported yet');
   }
@@ -237,7 +239,7 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   iterLaddersCached(prevPrev, ladders, (loc) => (spatial[16 * area + prevPrev.y(loc) * xSize + prevPrev.x(loc)] = 1));
 
   // Globals.
-  let selfKomi = hist.currentSelfKomi(pla);
+  let selfKomi = hist.currentSelfKomi(pla, options.drawEquivalentWinsForWhite ?? 0.5);
   const clip = area + 20;
   selfKomi = Math.max(-clip, Math.min(clip, selfKomi));
   global[5] = Math.fround(selfKomi) / 20;

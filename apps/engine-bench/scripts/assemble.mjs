@@ -42,6 +42,8 @@ const copyJs = (from, to) => {
   }
 };
 copyJs(join(webgpu, 'dist'), join(gpuCheck, 'dist'));
+// The `./session` entry point imports @stonemind/engine; the page doesn't use it, and has no import map for it.
+rmSync(join(gpuCheck, 'dist', 'session.js'));
 mkdirSync(join(gpuCheck, 'test', 'gpu'), { recursive: true });
 for (const file of ['index.html', 'check.js', 'gemm-bench.js', 'transform-bench.js', 'dispatch-bench.js', 'budget-bench.js', 'ceilings.js', 'timing.js']) cpSync(join(webgpu, 'test', 'gpu', file), join(gpuCheck, 'test', 'gpu', file));
 mkdirSync(join(gpuCheck, 'test', 'goldens'), { recursive: true });

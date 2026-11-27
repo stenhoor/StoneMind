@@ -860,17 +860,22 @@ export class Search {
   }
 
   /**
-   * KataGo's evaluation-cache key (`NNInputs::getHash`): the position, the player to move and ko bans, whether a pass
-   * would end the phase (and friendly-pass suppression), whether the game is over, and whether history is hidden. Like
-   * KataGo, it leaves out the move history, so transpositions share an evaluation.
+   * KataGo's evaluation-cache key (`NNInputs::getHash`): the board size and position, the player to move and ko bans,
+   * the komi for the player to move (to 1/256) and the rules, whether a pass would end the phase (and friendly-pass
+   * suppression), whether the game is over, and whether history is hidden. Like KataGo, it leaves out the move history,
+   * so transpositions share an evaluation.
    */
   #cacheKey(node: SearchNode): string {
     const h = node.hist;
     const b = h.board;
-    let key = '';
+    let key = `${b.xSize}x${b.ySize}|`;
     for (let y = 0; y < b.ySize; y++) for (let x = 0; x < b.xSize; x++) key += b.colors[b.loc(x, y)];
     key += `|${h.nextPla}|${b.koLoc}|`;
     for (let i = 0; i < h.superKoBanned.length; i++) if (h.superKoBanned[i]) key += i.toString(36) + ',';
+    // KataGo getSituationRulesAndKoHash: the self komi discretized, (int64_t)(selfKomi * 256.0f), and the rules.
+    const selfKomi = h.currentSelfKomi(h.nextPla, this.params.drawEquivalentWinsForWhite);
+    const r = h.rules;
+    key += `|k${Math.trunc(Math.fround(selfKomi * 256))}|${r.koRule}${r.scoringRule}${r.taxRule}${+r.multiStoneSuicideLegal}${+r.hasButton}${+r.friendlyPassOk}`;
     const pla = h.nextPla;
     if (h.passWouldEndPhase(pla)) {
       key += '|p';
@@ -897,6 +902,7 @@ export class Search {
       maxHistory: this.#maxHistory(node),
       conservativePassAndIsRoot: this.params.conservativePass && node === this.root,
       enablePassingHacks: this.params.enablePassingHacks,
+      drawEquivalentWinsForWhite: this.params.drawEquivalentWinsForWhite,
     });
   }
 
