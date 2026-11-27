@@ -137,6 +137,17 @@ Typecheck (`tsconfig.base.json` `customConditions`) and tests (`vitest.config.ts
 rebuilding. `tsconfig.build.json` clears the condition, so builds and published consumers use
 the dependency's compiled `dist/`. That is why build order matters.
 
+## CI
+
+CI runs only the checks a change needs (`scripts/ci-affected.mjs`):
+- **Affected sub-projects:** the ones whose files changed, plus every sub-project that depends on one of them,
+  directly or not. Dependencies are read from each package's `package.json`, so declaring them there (step 3 above)
+  is what keeps CI correct.
+- **The GPU check** runs only when `@stonemind/engine-webgpu`, or something it depends on, changed in a file other than
+  Markdown.
+- **Shared files** (the root package files, `tsconfig.base.json`, `.nvmrc`, `.github/`) run everything.
+- **Files only under `docs/`, or Markdown at the root,** run nothing.
+
 ## Versioning
 
 Each sub-project is versioned independently (semver). A breaking change to a contract
