@@ -49,6 +49,7 @@ for (const net of NETS) {
         const got = ours.get(want.move);
         assert.equal(got.visits, want.visits, `${want.move} visits`);
         assert.equal(got.edgeVisits, want.edgeVisits, `${want.move} edge visits`);
+        assert.equal(got.isSymmetryOf === undefined ? undefined : name(got.isSymmetryOf), want.isSymmetryOf, `${want.move} isSymmetryOf`);
         assert.equal(got.order, want.order, `${want.move} order`);
         assert.ok(Math.abs(got.winrate - want.winrate) <= TOL.winrate, `${want.move} winrate ${got.winrate} vs ${want.winrate}`);
         assert.ok(Math.abs(got.scoreLead - want.scoreLead) <= TOL.scoreLead, `${want.move} scoreLead ${got.scoreLead} vs ${want.scoreLead}`);
@@ -67,7 +68,8 @@ test('batched search: every visit is accounted for and no leaf is left waiting',
   await search.run({ maxVisits: 80 });
   const a = search.analysis();
   assert.equal(a.rootVisits, 80);
-  assert.equal(a.moveInfos.reduce((s, m) => s + m.visits, 0), 79);
+  // Mirror-image copies (root symmetry pruning) repeat a searched move's visits, so they're left out of the sum.
+  assert.equal(a.moveInfos.filter((m) => m.isSymmetryOf === undefined).reduce((s, m) => s + m.visits, 0), 79);
   const walk = (n) => {
     assert.equal(n.virtualLosses, 0);
     assert.notEqual(n.state, 1, 'no node left waiting for the network');
