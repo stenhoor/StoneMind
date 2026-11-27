@@ -9,7 +9,7 @@
  *   (`SharedEvaluator`); each search's `numSearchThreads` is its batch of playouts per network call.
  * - Reports during a search are written at the first batch boundary after they fall due, where KataGo's report thread
  *   writes them at the time.
- * - Rules this engine's search doesn't support yet (territory scoring, a group tax, a button) are refused with an
+ * - Rules with a button, which this engine's search doesn't support yet, are refused with an
  *   error, as is an initial stone on a stone of the other colour, and config settings for search features not ported.
  * - Messages that come from C++ libraries differ: JSON syntax errors, and config value errors (no file name).
  * - The evaluation cache isn't limited in size (KataGo's holds 2^`nnCacheSizePowerOfTwo` entries).
@@ -238,6 +238,7 @@ export class KataGoAnalysisLines implements LineTransport {
   readonly #defaults: LoadedParams;
   readonly #analysisPVLen: number;
   readonly #assumeHandicap: boolean;
+  readonly #preventEncore: boolean;
   readonly #warnUnusedFields: boolean;
   readonly #symmetry: number;
   /** Per analysis thread, the seeds of its searches. */
@@ -287,8 +288,9 @@ export class KataGoAnalysisLines implements LineTransport {
       this.#warnUnusedFields = cfg.contains('warnUnusedFields') ? cfg.getBool('warnUnusedFields') : true;
       this.#analysisPVLen = cfg.contains('analysisPVLen') ? cfg.getInt('analysisPVLen', 1, 100) : 15;
       this.#assumeHandicap = cfg.contains('assumeMultipleStartingBlackMovesAreHandicap') ? cfg.getBool('assumeMultipleStartingBlackMovesAreHandicap') : true;
-      // KataGo's preventCleanupPhase only matters with territory scoring, which this engine refuses for now.
-      if (cfg.contains('preventCleanupPhase')) cfg.getBool('preventCleanupPhase');
+      // KataGo's preventCleanupPhase: the query's moves are played with the encore prevented, and lines are cut where
+      // a phase would end.
+      this.#preventEncore = cfg.contains('preventCleanupPhase') ? cfg.getBool('preventCleanupPhase') : true;
       // KataGo's nnRandomize: a random symmetry for each evaluation, or symmetry 0.
       this.#symmetry = (cfg.contains('nnRandomize') ? cfg.getBool('nnRandomize') : true) ? -1 : 0;
       this.#defaults = this.#loadParams(config, null);
@@ -752,6 +754,7 @@ export class KataGoAnalysisLines implements LineTransport {
       includeMovesOwnershipStdev: false,
       includePVVisits: false,
       includeNoResultValue: false,
+      preventEncore: this.#preventEncore,
     };
     for (const field of ['includeMovesOwnership', 'includeMovesOwnershipStdev', 'includeOwnership', 'includeOwnershipStdev', 'includePolicy', 'includePVVisits', 'includeNoResultValue'] as const) {
       if (!has(input, field)) continue;
@@ -819,9 +822,9 @@ export class KataGoAnalysisLines implements LineTransport {
       this.#reportWarningForId(id, 'rules', `Rules ${rulesToString(rules)} not supported by neural net, using ${rulesToString(supported.rules)} instead`);
       rules = supported.rules;
     }
-    if (rules.scoringRule !== 'AREA' || rules.taxRule !== 'NONE' || rules.hasButton) {
-      // Not yet ported (part C of the parity plan).
-      return void err('rules', `Rules ${rulesToString(rules)} are not supported by this engine yet: it supports area scoring with no group tax and no button`);
+    if (rules.hasButton) {
+      // Not yet ported (the parity plan's step 14).
+      return void err('rules', `Rules ${rulesToString(rules)} are not supported by this engine yet: it supports no button`);
     }
 
     if (this.#warnUnusedFields) {
@@ -844,6 +847,7 @@ export class KataGoAnalysisLines implements LineTransport {
           moves,
           ...(initialPlayer !== undefined ? { initialPlayer } : {}),
           assumeMultipleStartingBlackMovesAreHandicap: this.#assumeHandicap,
+          preventEncore: this.#preventEncore,
         },
         turns,
       );

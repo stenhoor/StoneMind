@@ -5,11 +5,15 @@
 // game were scored now, and the independent life area. Area and territory scoring, every tax rule and ko rule, the
 // encore, the encore prevented, no-result cycles, tolerant moves and moves out of turn, as the games happen to reach
 // them; the test counts what they reached. A second test checks the network's inputs for the player to move at every
-// state (encodeHistoryV7 against KataGo's NNInputs::fillRowV7), exactly, with each game's input options.
+// state (encodeHistoryV7 against KataGo's NNInputs::fillRowV7), exactly, with each game's input options. A third checks
+// the search's position keys (situationKey, graphStateKey): across all states on boards of the same size, two states' keys
+// are equal exactly when KataGo's hashes are (getSituationRulesAndKoHash, GraphHash::getStateHash).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Board, GameHistory, NULL_LOC, PASS_LOC, calculateIndependentLifeArea, encodeHistoryV7 } from '../dist/index.js';
+import {
+  Board, GameHistory, NULL_LOC, PASS_LOC, calculateIndependentLifeArea, encodeHistoryV7, graphStateKey, situationKey,
+} from '../dist/index.js';
 import { digestInputs, digestState } from './history-state.mjs';
 
 const goldens = JSON.parse(readFileSync(new URL('./goldens/history-katago.json', import.meta.url), 'utf8'));
@@ -141,4 +145,47 @@ test("the network's inputs match KataGo 1.18.2 at every state", () => {
     });
   }
   assert.equal(states, goldens.games.reduce((n, g) => n + g.moves.length + 1, 0));
+});
+
+/** [game, state, first game, first state] for each key equal to an earlier one on a board of the same size (as the capture
+ * records KataGo's hashes). */
+function repeats(games, keys) {
+  const first = new Map();
+  const out = [];
+  keys.forEach((gameKeys, gi) => {
+    gameKeys.forEach((k, si) => {
+      const v = `${games[gi].xSize}x${games[gi].ySize}|${k}`;
+      const f = first.get(v);
+      if (f) out.push([gi, si, ...f]);
+      else first.set(v, [gi, si]);
+    });
+  });
+  return out;
+}
+
+test("the search's position keys tell states apart exactly as KataGo's hashes do", () => {
+  const situation = [];
+  const graphState = [];
+  for (const [gi, g] of goldens.games.entries()) {
+    const draw = g.inputParams.drawEquivalentWinsForWhite;
+    const s = [];
+    const t = [];
+    replay(g, gi, (h) => {
+      s.push(situationKey(h, h.nextPla, draw));
+      t.push(graphStateKey(h, h.nextPla, draw));
+    });
+    situation.push(s);
+    graphState.push(t);
+  }
+  const first = (list) => list.slice(0, 5).map((r) => `game ${r[0]} state ${r[1]} = game ${r[2]} state ${r[3]}`).join('; ');
+  const diff = (ours, katago) => {
+    const k = new Set(katago.map((r) => r.join()));
+    const o = new Set(ours.map((r) => r.join()));
+    return `only ours: ${first(ours.filter((r) => !k.has(r.join())))}; only KataGo's: ${first(katago.filter((r) => !o.has(r.join())))}`;
+  };
+  const sit = repeats(goldens.games, situation);
+  assert.ok(JSON.stringify(sit) === JSON.stringify(goldens.situationRepeats), `situation keys: ${diff(sit, goldens.situationRepeats)}`);
+  const graph = repeats(goldens.games, graphState);
+  assert.ok(JSON.stringify(graph) === JSON.stringify(goldens.graphStateRepeats), `graph-search state keys: ${diff(graph, goldens.graphStateRepeats)}`);
+  assert.ok(goldens.situationRepeats.length >= 500, `repeated situations: ${goldens.situationRepeats.length}`);
 });

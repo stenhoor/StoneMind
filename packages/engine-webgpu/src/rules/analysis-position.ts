@@ -24,6 +24,11 @@ export interface AnalysisPosition {
   initialPlayer?: Stone;
   /** The analysis engine's `assumeMultipleStartingBlackMovesAreHandicap` config setting (default true). */
   assumeMultipleStartingBlackMovesAreHandicap?: boolean;
+  /**
+   * The analysis engine's `preventCleanupPhase` config setting (default true): the moves are played with the encore
+   * prevented, so under territory scoring two passes end the game rather than start the encore.
+   */
+  preventEncore?: boolean;
 }
 
 /** KataGo `BoardHistory::numHandicapStonesOnBoard`. */
@@ -73,6 +78,7 @@ export function analysisHistories(position: AnalysisPosition, turns: ReadonlySet
 function replay(position: AnalysisPosition, lastTurn: number, onTurn: (turn: number, hist: GameHistory) => void): void {
   const { rules, komi, moves } = position;
   const assumeHandicap = position.assumeMultipleStartingBlackMovesAreHandicap ?? true;
+  const preventEncore = position.preventEncore ?? true;
   let board = new Board(position.xSize, position.ySize);
   for (const [pla, loc] of position.initialStones ?? []) {
     if (!board.setStone(loc, pla)) throw new UnsupportedPositionError('an initial stone on a stone of the other colour is not supported');
@@ -85,13 +91,13 @@ function replay(position: AnalysisPosition, lastTurn: number, onTurn: (turn: num
     if (i >= lastTurn || i >= moves.length) break;
     const [movePla, moveLoc] = moves[i]!;
     if (movePla !== hist.nextPla) {
-      // KataGo clears the simple ko point and starts the history again from this position.
+      // KataGo clears the simple ko point and starts the history again from this position, in the same encore phase.
       board = hist.board.clone();
       board.koLoc = NULL_LOC;
-      hist = new GameHistory(board, movePla, rules, komi);
+      hist = new GameHistory(board, movePla, rules, komi, hist.encorePhase, hist.modes);
       hist.setAssumeMultipleStartingBlackMovesAreHandicap(assumeHandicap);
     }
-    if (!hist.playTolerant(moveLoc, movePla)) {
+    if (!hist.playTolerant(moveLoc, movePla, preventEncore)) {
       throw new IllegalMoveError(`Illegal move ${i}: ${moveLoc === PASS_LOC ? 'pass' : gtpLocation(hist.board, moveLoc)}`);
     }
   }

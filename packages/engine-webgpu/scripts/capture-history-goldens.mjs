@@ -9,7 +9,8 @@
 // in some, the players prefer ko captures and passes for ko, to make ko fights and long cycles. Rules, the starting
 // encore phase and KataGo's history modes vary between games. Up to 10 more games come from a pool of 1500 random games:
 // those in which the encore repeats a position three times, but not with the same player to move (repeatsWithOtherPlayer).
-// Each game's inputs are made with its own options (the draw value, conservativePassAndIsRoot, enablePassingHacks,
+// Up to 5 pairs of games more come from a pool of 2000 on tiny boards: pairs that reach the same position in the second
+// encore from different starting stones (tinySpecs). Each game's inputs are made with its own options (the draw value, conservativePassAndIsRoot, enablePassingHacks,
 // maxHistory), drawn from a generator of their own so the games don't change with them.
 //
 // The source tree must be KataGo's v1.18.2 tag, the version ported. For example, from a clone of KataGo:
@@ -48,7 +49,7 @@ const work = mkdtempSync(join(tmpdir(), 'history-dump-'));
 const exe = join(work, 'history-dump');
 const sources = [
   join(here, 'native/history-dump.cpp'),
-  ...['neuralnet/nninputs.cpp', 'game/board.cpp', 'game/boardhistory.cpp', 'game/rules.cpp', 'core/global.cpp', 'core/hash.cpp', 'core/rand.cpp',
+  ...['neuralnet/nninputs.cpp', 'game/graphhash.cpp', 'game/board.cpp', 'game/boardhistory.cpp', 'game/rules.cpp', 'core/global.cpp', 'core/hash.cpp', 'core/rand.cpp',
     'core/md5.cpp', 'core/sha2.cpp', 'core/rand_helpers.cpp', 'core/test.cpp', 'core/bsearch.cpp', 'core/timer.cpp'].map((f) => join(cpp, f)),
 ];
 const build = spawnSync(values.cxx, ['-std=c++17', '-O2', `-I${cpp}`, '-o', exe, ...sources], { encoding: 'utf8' });
@@ -61,6 +62,24 @@ for (const m of readFileSync(join(cpp, 'tests/testrules.cpp'), 'utf8').matchAll(
   const rows = m[3].split('\n').map((r) => r.trim()).filter((r) => r !== '');
   if (rows.length !== ySize || rows.some((r) => r.length !== xSize)) continue;
   boards.push({ xSize, ySize, initial: rows.join('').replace(/[xX]/g, '1').replace(/[oO]/g, '2').replace(/\./g, '0') });
+}
+
+/**
+ * [game, state, first game, first state] for each state whose value (by `valueOf`) equals an earlier state's on a board
+ * of the same size, with the first state that has it.
+ */
+function repeats(games, valueOf) {
+  const first = new Map();
+  const out = [];
+  games.forEach((g, gi) => {
+    g.states.forEach((st, si) => {
+      const v = `${g.xSize}x${g.ySize}|${valueOf(st)}`;
+      const f = first.get(v);
+      if (f) out.push([gi, si, ...f]);
+      else first.set(v, [gi, si]);
+    });
+  });
+  return out;
 }
 
 /** A seeded generator (mulberry32), so a capture is reproducible. */
@@ -141,9 +160,52 @@ function repeatsWithOtherPlayer(g) {
 const main = play([...specs(100, 21, false), ...specs(300, 22, true)]);
 const pool = play(specs(1500, 23, false));
 const picked = pool.games.map((g, i) => [g, i]).filter(([g]) => repeatsWithOtherPlayer(g)).slice(0, 10);
-const games = [...main.games, ...picked.map(([g]) => g)];
-if (values.full) writeFileSync(values.full, [...main.lines, ...picked.map(([, i]) => pool.lines[i])].join('\n') + '\n');
 console.log(`${picked.length} games picked from the pool for three repeats with both players to move`);
+
+/**
+ * Games on tiny boards with the same rules and komi and many passes, from which to pick pairs that reach the same
+ * position in the second encore, the same in everything KataGo's situation hash holds (the stones, the player to move,
+ * the bans, the recapture blocks and the komi with its bonuses) except the stones the second encore started with. Random
+ * games rarely give such pairs, and only they show that the search's keys hold those stones.
+ */
+function tinySpecs(count, seed) {
+  const rnd = generator(seed);
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  return Array.from({ length: count }, (_, i) => {
+    const [xSize, ySize] = pick([[2, 2], [2, 3], [3, 3]]);
+    return {
+      xSize, ySize, koRule: 0, scoringRule: 1, taxRule: 0, multiStoneSuicideLegal: false, whiteHandicapBonusRule: 0, komi: 0,
+      initial: '0'.repeat(xSize * ySize), nextPla: 1, encorePhase: pick([0, 1, 2]), alwaysPassAlive: false, excludeAdjAtari: false,
+      assumeHandicap: true, seed: `t${i}-${seed}`, passProb: pick([0.3, 0.5]), preventEncoreProb: 0, tolerantProb: 0, numMoves: 40,
+      movesAfterEnd: 0, koBias: 0,
+      inputParams: { drawEquivalentWinsForWhite: 0.5, conservativePassAndIsRoot: false, enablePassingHacks: false, maxHistory: 1000 },
+    };
+  });
+}
+const tinyPool = play(tinySpecs(2000, 24));
+const startColorsBySituation = new Map();
+const pairs = [];
+const inPairs = new Set();
+tinyPool.games.forEach((g, gi) => {
+  for (const st of g.states) {
+    if (st.encorePhase !== 2 || pairs.length >= 5 || inPairs.has(gi)) continue;
+    const key = JSON.stringify([g.xSize, g.ySize, st.colors, st.nextPla, st.superKoBanned, st.koRecapBlocked, st.whiteBonusScore, st.whiteHandicapBonusScore]);
+    const seen = startColorsBySituation.get(key) ?? new Map();
+    startColorsBySituation.set(key, seen);
+    const other = [...seen].find(([colors, i]) => colors !== st.secondEncoreStartColors && !inPairs.has(i));
+    if (other) {
+      pairs.push([other[1], gi]);
+      inPairs.add(other[1]).add(gi);
+    } else if (!seen.has(st.secondEncoreStartColors)) seen.set(st.secondEncoreStartColors, gi);
+  }
+});
+const tinyPicked = pairs.flat();
+console.log(`${pairs.length} pairs of games picked from the tiny-board pool for the second encore's starting stones`);
+
+const games = [...main.games, ...picked.map(([g]) => g), ...tinyPicked.map((i) => tinyPool.games[i])];
+if (values.full) {
+  writeFileSync(values.full, [...main.lines, ...picked.map(([, i]) => pool.lines[i]), ...tinyPicked.map((i) => tinyPool.lines[i])].join('\n') + '\n');
+}
 
 const RULE_FIELDS = ['xSize', 'ySize', 'koRule', 'scoringRule', 'taxRule', 'multiStoneSuicideLegal', 'whiteHandicapBonusRule',
   'komi', 'initial', 'nextPla', 'encorePhase', 'alwaysPassAlive', 'excludeAdjAtari', 'assumeHandicap', 'inputParams'];
@@ -155,6 +217,8 @@ const out = {
     moves: '[x, y, player (1 black, 2 white), flags]: x and y -1 for a pass; flags bit 0 preventEncore, bit 1 played with makeBoardMoveTolerant',
     digests: 'one 16-character digest per state (test/history-state.mjs), the start and after each move, concatenated',
     inputDigests: "the same for the network's inputs for the player to move (NNInputs::fillRowV7), made with the game's inputParams",
+    situationRepeats: "[game, state, first game, first state] for each state whose KataGo situation hash (getSituationRulesAndKoHash, with the game's draw value) equals that of an earlier state on a board of the same size, in game order, with the first such state",
+    graphStateRepeats: 'the same for the graph-search state hash (GraphHash::getStateHash)',
   },
   games: games.map((g) => ({
     ...Object.fromEntries(RULE_FIELDS.map((k) => [k, g[k]])),
@@ -162,6 +226,8 @@ const out = {
     digests: g.states.map(digestState).join(''),
     inputDigests: g.states.map((st) => digestInputs(st.inputs)).join(''),
   })),
+  situationRepeats: repeats(games, (st) => st.situationHash),
+  graphStateRepeats: repeats(games, (st) => st.graphStateHash),
 };
 writeFileSync(values.out, JSON.stringify(out) + '\n');
 const states = games.reduce((n, g) => n + g.states.length, 0);

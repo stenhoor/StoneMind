@@ -134,8 +134,6 @@ test('what this engine refuses that KataGo searches', async () => {
   const out = await session(
     new KataGoAnalysisLines({ model, modelName: 'b6', net: countingNet(), config: CONFIG }),
     [
-      query({ id: 'japanese', rules: 'japanese' }),
-      query({ id: 'tax', rules: 'stone-scoring' }),
       query({ id: 'button', rules: 'aga-button' }),
       query({ id: 'stone', initialStones: [['B', 'C3'], ['W', 'C3']] }),
       query({ id: 'noise', overrideSettings: { rootNoiseEnabled: true } }),
@@ -146,9 +144,7 @@ test('what this engine refuses that KataGo searches', async () => {
     finals(1),
   );
   const error = (id) => out.find((o) => o.id === id && o.error);
-  assert.match(error('japanese').error, /^Rules koSIMPLEscoreTERRITORYtaxSEKIsui0komi7.5 are not supported by this engine yet/);
-  assert.match(error('tax').error, /taxALL.* are not supported by this engine yet/);
-  assert.match(error('button').error, /button1.* are not supported by this engine yet/);
+  assert.match(error('button').error, /^Rules .*button1.* are not supported by this engine yet: it supports no button$/);
   assert.equal(error('stone').field, 'initialStones');
   assert.equal(error('noise').error, 'Could not set settings: not supported by this engine: rootNoiseEnabled');
   assert.equal(error('symmetries').error, 'Could not set settings: not supported by this engine: rootNumSymmetriesToSample');

@@ -26,7 +26,7 @@ export { ACT, ACTIVATION_PROBE, GEMM_DEFAULT, GEMM_V3_DEFAULT, defaultGemm, defa
 export type * from './gpu/webgpu.js';
 export { applyScale8 } from './model/scale8.js';
 export { toFloat16Bits, fromFloat16Bits, toFloat16Array } from './gpu/f16.js';
-export { Search, DEFAULT_SEARCH_PARAMS, type NetEvaluator, type SearchParams, type SearchAnalysis, type SearchMoveInfo, type SearchStats, type SearchRootValues, type SearchRawValues, type AnalysisOptions } from './search/search.js';
+export { Search, DEFAULT_SEARCH_PARAMS, situationKey, graphStateKey, type NetEvaluator, type SearchParams, type SearchAnalysis, type SearchMoveInfo, type SearchStats, type SearchRootValues, type SearchRawValues, type AnalysisOptions } from './search/search.js';
 export { avoidMoveUntilByLoc, searchParamsFromConfig, ConfigValueError, UnsupportedSettingError, type AvoidMovesEntry, type ConfigSearchSettings } from './search/query-settings.js';
 export { analysisHistory, type AnalysisPosition, type QueryMove } from './rules/analysis-position.js';
 export { expectedWhiteScoreValue, getScoreStdev } from './search/scorevalue.js';
@@ -34,7 +34,7 @@ export { reviewGame, SharedEvaluator, type ReviewOptions, type RequestTrace } fr
 export { parseKataGoRules, rulesToString, supportedRules, RulesParseError, type KataGoRules } from './rules/rules.js';
 export { analysisHistories, gtpLocation } from './rules/analysis-position.js';
 export { parseJson, dumpJson, formatDouble, JsonFloat, type JsonValue, type JsonObject } from './engine/json.js';
-export { roundDynamic, roundStatic } from './engine/analysis-json.js';
+export { pvLenUpToPhaseEnd, roundDynamic, roundStatic } from './engine/analysis-json.js';
 export {
   KataGoAnalysisLines, AnalysisConfigError, BROWSER_ENGINE_DESCRIPTOR, KATAGO_VERSION, KATAGO_GIT_HASH,
   type AnalysisEngineOptions,

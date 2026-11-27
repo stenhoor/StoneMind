@@ -10,9 +10,12 @@
 //
 // If the spec has inputParams ({drawEquivalentWinsForWhite, conservativePassAndIsRoot, enablePassingHacks, maxHistory}),
 // each state also records the network's inputs for the player to move (NNInputs::fillRowV7, the board's own size):
-// the spatial planes as one character per value (all are 0 or 1), and the globals.
+// the spatial planes as one character per value (all are 0 or 1), and the globals. It also records KataGo's situation
+// hash (BoardHistory::getSituationRulesAndKoHash) and graph-search state hash (GraphHash::getStateHash) for the player to
+// move, with that draw value, which the search's keys must tell apart exactly as these do.
 #include "game/boardhistory.h"
 #include "neuralnet/nninputs.h"
+#include "game/graphhash.h"
 #include "core/rand.h"
 #include "external/nlohmann_json/json.hpp"
 #include <iostream>
@@ -116,6 +119,8 @@ static json state(const BoardHistory& hist, const Board& board, const json& spec
       spatial += v != 0.0f ? '1' : '0';
     }
     j["inputs"] = json::object({{"spatial", spatial}, {"global", rowGlobal}});
+    j["situationHash"] = BoardHistory::getSituationRulesAndKoHash(board, hist, pla, params.drawEquivalentWinsForWhite).toString();
+    j["graphStateHash"] = GraphHash::getStateHash(hist, pla, params.drawEquivalentWinsForWhite).toString();
   }
   return j;
 }
