@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoneMind protocol check</title>
+  <meta name="description" content="StoneMind's protocol check: the same queries to KataGo on this computer and to the browser engine, compared.">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" type="image/svg+xml" href="brand/logos/favicon-32.svg">
+  <link rel="stylesheet" href="brand/tokens.css">
+  <link rel="stylesheet" href="brand/components.css">
+  <link rel="stylesheet" href="bench.css">
+  <script>
+    try { const t = localStorage.getItem('stonemind.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <script type="importmap">
+    {
+      "imports": {
+        "@stonemind/engine": "./vendor/engine/index.js",
+        "@stonemind/engine-webgpu": "./vendor/engine-webgpu/index.js",
+        "@stonemind/engine-webgpu/session": "./vendor/engine-webgpu/session.js"
+      }
+    }
+  </script>
+  <script type="module" src="js/protocol.js"></script>
+</head>
+<body class="sm-root">
+<div class="bench sm-table">
+  <header class="sm-glass sm-bar">
+    <a href="./" class="brand" aria-label="StoneMind engine bench">
+      <img class="sm-logo-light" src="brand/logos/wordmark.svg" alt="StoneMind" height="24">
+      <img class="sm-logo-dark" src="brand/logos/wordmark-on-dark.svg" alt="StoneMind" height="24">
+    </a>
+    <span class="sm-secondary">Protocol check · spike 0001</span>
+    <output id="status" class="status" data-state="idle">Not paired</output>
+  </header>
+
+  <main class="panels">
+    <section class="sm-glass panel" aria-labelledby="setup-title">
+      <h2 id="setup-title" class="h3">Set up</h2>
+      <p class="sm-secondary small">
+        A developer check. The same queries go to KataGo on this computer, through the bridge, and to the browser engine on this
+        computer's GPU, and the results are compared field by field. KataGo must run deterministically: write its config with
+        <code>scripts/protocol-config.mjs</code>, which also prints the bridge command that opens this page paired.
+      </p>
+      <pre class="command"><code>node apps/engine-bench/scripts/protocol-config.mjs --config &lt;analysis.cfg&gt; --out protocol.cfg --katago &lt;katago&gt; --model &lt;net.bin.gz&gt;</code></pre>
+      <form id="check" class="analyse">
+        <label>Model file (the one the bridge runs)
+          <input id="model-file" type="file" accept=".gz">
+        </label>
+        <label>Config (the same settings as KataGo's)
+          <textarea id="config" rows="8" spellcheck="false">numAnalysisThreads = 1
+numSearchThreadsPerAnalysisThread = 1
+nnRandomize = false
+wideRootNoise = 0
+rootNumSymmetriesToSample = 1
+reportAnalysisWinratesAs = BLACK</textarea>
+        </label>
+        <div class="row">
+          <button type="submit" class="sm-btn sm-btn--primary" id="run-check">Run the check</button>
+          <a id="download" class="sm-btn" download="protocol-check-report.json" hidden>Download the report</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="sm-glass panel" aria-labelledby="results-title">
+      <h2 id="results-title" class="h3">Results</h2>
+      <ol id="results" class="small" aria-live="polite"></ol>
+    </section>
+  </main>
+</div>
+</body>
+</html>

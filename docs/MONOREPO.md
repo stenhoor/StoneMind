@@ -81,7 +81,7 @@ from the root builds dependencies before dependents.
 | katago-bridge → engine | `BRIDGE_PROTOCOL` (the WebSocket subprotocol) and the pairing link format read by `parsePairingFragment` | Changing either breaks pairing between a bridge and a page of a different version |
 | engine-bench → engine | `connectBridge`, `parsePairingFragment`, the `AnalysisEngine` API and protocol types | Typecheck catches breaks; the site test checks the import map |
 | engine-webgpu → engine | `LineTransport`, `EngineDescriptor` and `JsonLineSession`, which `createAnalysisEngine` (`@stonemind/engine-webgpu/session`) puts the browser engine behind | Typecheck catches breaks; `test/engine.test.mjs` runs the engine through `JsonLineSession`. The main entry point imports engine for types only, so pages loading it need no import map |
-| engine-bench → engine-webgpu | The layout of the package's `dist/`, `test/gpu/` and `test/goldens/`, which the site build copies to `gpu-check/` | Moving those files breaks the site build; the site test checks the page's imports and data |
+| engine-bench → engine-webgpu | The layout of the package's `dist/`, `test/gpu/` and `test/goldens/`, which the site build copies to `gpu-check/`; and, for the protocol check page, `loadModel`, `requestEngineDevice`, `GpuNetwork` and `createAnalysisEngine` (`./session`), loaded from `vendor/engine-webgpu/` through its import map | Moving those files breaks the site build; typecheck catches API breaks; the site test checks each page's imports and data |
 | provider-sdk → domain | `Game`, `GameAnalysis`, `Observation`, `EvidenceRecord`, `Resource`, `ResourceRelationship` | Third-party providers must be updated; bump provider-sdk major version |
 
 ---

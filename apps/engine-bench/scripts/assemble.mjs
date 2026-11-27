@@ -1,5 +1,5 @@
-// Assemble the static site in dist/site: the bench page, its compiled modules, and verbatim copies of the brand files
-// and the engine package; and the WebGPU engine's GPU check page (gpu-check/). The page loads plain ES modules through an import map; there is no bundler.
+// Assemble the static site in dist/site: the bench page and the protocol check page, their compiled modules, and verbatim
+// copies of the brand files, the engine package and the browser engine package; and the WebGPU engine's GPU check page (gpu-check/). The page loads plain ES modules through an import map; there is no bundler.
 import { cpSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,7 @@ rmSync(site, { recursive: true, force: true });
 mkdirSync(bench, { recursive: true });
 
 cpSync(join(app, 'src', 'index.html'), join(bench, 'index.html'));
+cpSync(join(app, 'src', 'protocol.html'), join(bench, 'protocol.html'));
 cpSync(join(app, 'src', 'bench.css'), join(bench, 'bench.css'));
 cpSync(join(app, 'dist', 'js'), join(bench, 'js'), { recursive: true });
 
@@ -41,6 +42,9 @@ const copyJs = (from, to) => {
     }
   }
 };
+// The protocol check page (protocol.html) loads the whole browser engine, the `./session` entry point included,
+// through its import map.
+copyJs(join(webgpu, 'dist'), join(bench, 'vendor', 'engine-webgpu'));
 copyJs(join(webgpu, 'dist'), join(gpuCheck, 'dist'));
 // The `./session` entry point imports @stonemind/engine; the page doesn't use it, and has no import map for it.
 rmSync(join(gpuCheck, 'dist', 'session.js'));

@@ -5,36 +5,43 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const bench = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'site', 'engine-bench');
-const html = readFileSync(join(bench, 'index.html'), 'utf8');
+const PAGES = ['index.html', 'protocol.html'];
+const read = (page) => readFileSync(join(bench, page), 'utf8');
+const importMap = (page) => JSON.parse(/<script type="importmap">([\s\S]*?)<\/script>/.exec(read(page))[1]).imports;
+const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
 
-test('every local file the page links to is in the site', () => {
-  const refs = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|#|\.\/$)/.test(u));
-  assert.ok(refs.length >= 6);
-  for (const ref of refs) assert.ok(existsSync(join(bench, ref)), `missing ${ref}`);
-});
+for (const page of PAGES) {
+  test(`${page}: every local file the page links to is in the site`, () => {
+    const refs = [...read(page).matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|#|\.\/$)/.test(u));
+    assert.ok(refs.length >= 5);
+    for (const ref of refs) assert.ok(existsSync(join(bench, ref)), `missing ${ref}`);
+  });
 
-test('the import map points at modules that exist', () => {
-  const map = JSON.parse(/<script type="importmap">([\s\S]*?)<\/script>/.exec(html)[1]);
-  for (const target of Object.values(map.imports)) assert.ok(existsSync(join(bench, target)), `missing ${target}`);
-});
+  test(`${page}: the import map points at modules that exist`, () => {
+    for (const target of Object.values(importMap(page))) assert.ok(existsSync(join(bench, target)), `missing ${target}`);
+  });
+
+  test(`${page}: its module imports only packages its import map provides`, () => {
+    const script = /<script type="module" src="([^"]+)"/.exec(read(page))[1];
+    const source = readFileSync(join(bench, script), 'utf8');
+    const map = importMap(page);
+    for (const [, spec] of source.matchAll(/from\s+['"]([^.'"][^'"]*)['"]/g)) assert.ok(spec in map, `${script} imports ${spec}, which the import map doesn't provide`);
+  });
+}
 
 test('every relative import in the shipped modules resolves to a file', () => {
-  for (const dir of ['js', join('vendor', 'engine')]) {
-    for (const file of readdirSync(join(bench, dir)).filter((f) => f.endsWith('.js'))) {
-      const source = readFileSync(join(bench, dir, file), 'utf8');
-      for (const [, spec] of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
-        assert.ok(existsSync(resolve(bench, dir, spec)), `${dir}/${file} imports missing ${spec}`);
-      }
-    }
+  const files = ['js', join('vendor', 'engine'), join('vendor', 'engine-webgpu')].flatMap((dir) => walk(join(bench, dir))).filter((f) => f.endsWith('.js'));
+  assert.ok(files.length > 20);
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const [, spec] of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) assert.ok(existsSync(resolve(dirname(file), spec)), `${file} imports missing ${spec}`);
   }
 });
 
-test('no shipped module imports a bare package other than the engine', () => {
-  for (const file of readdirSync(join(bench, 'js')).filter((f) => f.endsWith('.js'))) {
-    const source = readFileSync(join(bench, 'js', file), 'utf8');
-    for (const [, spec] of source.matchAll(/from\s+['"]([^.'"][^'"]*)['"]/g)) {
-      assert.equal(spec, '@stonemind/engine', `js/${file} imports ${spec}, which the import map doesn't provide`);
-    }
+test('the shipped engine modules import no package but the engine', () => {
+  const files = [join('vendor', 'engine'), join('vendor', 'engine-webgpu')].flatMap((dir) => walk(join(bench, dir))).filter((f) => f.endsWith('.js'));
+  for (const file of files) {
+    for (const [, spec] of readFileSync(file, 'utf8').matchAll(/from\s+['"]([^.'"][^'"]*)['"]/g)) assert.equal(spec, '@stonemind/engine', `${file} imports ${spec}`);
   }
 });
 
