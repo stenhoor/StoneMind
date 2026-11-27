@@ -17,7 +17,8 @@
     "packages/engine",
     "packages/engine-webgpu",
     "packages/katago-bridge",
-    "apps/engine-bench"
+    "apps/engine-bench",
+    "apps/web"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

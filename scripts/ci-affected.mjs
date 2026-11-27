@@ -4,12 +4,14 @@
 //
 //   node scripts/ci-affected.mjs <base> [<head>]   (default head: HEAD)
 //
-// Prints JSON: { all, packages, gpu, files }.
+// Prints JSON: { all, packages, gpu, web, files }.
 // - all: true when a shared file changed (root package files, the TypeScript base config, .nvmrc, CI itself) or the base
 //   is unknown. Every workspace is then affected.
 // - packages: the affected workspaces' names, in the root `workspaces` order (dependency order).
 // - gpu: whether @stonemind/engine-webgpu's GPU check is needed, i.e. it, or a workspace it depends on, changed in a
 //   file other than Markdown.
+// - web: whether @stonemind/web's browser tests are needed, i.e. it, or a workspace it depends on, changed in a file
+//   other than Markdown.
 // Files under docs/ and Markdown files at the root affect nothing. Inside a workspace every file counts, Markdown
 // included (some tests read their package's Markdown).
 // With GITHUB_OUTPUT set, also writes `any`, `packages` (space-separated) and `gpu` there.
@@ -20,6 +22,7 @@ import { join } from 'node:path';
 const root = join(import.meta.dirname, '..');
 const [base, head = 'HEAD'] = process.argv.slice(2);
 const GPU_PACKAGE = '@stonemind/engine-webgpu';
+const WEB_PACKAGE = '@stonemind/web';
 const SHARED = [/^package\.json$/, /^package-lock\.json$/, /^tsconfig\.base\.json$/, /^\.nvmrc$/, /^\.github\//, /^scripts\/ci-affected\.mjs$/];
 
 const rootPkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
@@ -63,7 +66,8 @@ for (let grew = true; grew; ) {
 
 const packages = workspaces.map((w) => w.name).filter((n) => affected.has(n));
 const gpu = affected.get(GPU_PACKAGE) === true;
-console.log(JSON.stringify({ all, packages, gpu, files }, null, 2));
+const web = affected.get(WEB_PACKAGE) === true;
+console.log(JSON.stringify({ all, packages, gpu, web, files }, null, 2));
 if (process.env.GITHUB_OUTPUT) {
-  appendFileSync(process.env.GITHUB_OUTPUT, `any=${packages.length > 0}\npackages=${packages.join(' ')}\ngpu=${gpu}\n`);
+  appendFileSync(process.env.GITHUB_OUTPUT, `any=${packages.length > 0}\npackages=${packages.join(' ')}\ngpu=${gpu}\nweb=${web}\n`);
 }

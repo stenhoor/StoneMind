@@ -10,7 +10,7 @@ None. No runtime or build dependencies: the token build and the tests use Node's
 
 ## Used by
 
-Nothing yet. Planned: `apps/web` (stonemind.app) and `apps/site` (stonemind.org). Both load `tokens.css` and `components.css` and use the logos.
+`apps/engine-bench` (stonemind.org's placeholder home page and the developer pages) and `apps/web` (the app, stonemind.app). Both copy `tokens.css`, `components.css` and the logos unchanged. Planned: `apps/site` (stonemind.org).
 
 ## Deployment
 

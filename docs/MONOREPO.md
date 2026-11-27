@@ -41,7 +41,8 @@ StoneMind/
 │   ├── engine-webgpu/       @stonemind/engine-webgpu (experimental)
 │   └── katago-bridge/       @stonemind/katago-bridge
 ├── apps/                    Deployable applications
-│   └── engine-bench/        @stonemind/engine-bench (GitHub Pages); planned: web → stonemind.app, site → stonemind.org
+│   ├── engine-bench/        @stonemind/engine-bench (GitHub Pages)
+│   └── web/                 @stonemind/web: the app (stonemind.app); runs locally for now. Planned: site → stonemind.org
 ├── tsconfig.base.json       Shared compiler settings (each sub-project extends it)
 └── package.json             npm workspaces root; orchestration scripts only
 ```
@@ -55,7 +56,7 @@ from the root builds dependencies before dependents.
 
 | Sub-project | Kind | Deployed as | Depends on | Used by |
 |---|---|---|---|---|
-| `@stonemind/brand` | Brand (CSS, JSON, SVG) | npm package; files copied unchanged by apps | none | none yet (apps/web, apps/site) |
+| `@stonemind/brand` | Brand (CSS, JSON, SVG) | npm package; files copied unchanged by apps | none | engine-bench, web; planned: site |
 | `@stonemind/domain` | Library (types) | npm package | none | ontology, provider-sdk |
 | `@stonemind/storage` | Library (ports) | npm package | none | none yet (future Smaltworks adapter, engines) |
 | `@stonemind/ontology` | Library (data + logic) | npm package; `seed.json` is also a standalone data artifact | domain | none yet (future ontology engine, web app) |
@@ -63,6 +64,7 @@ from the root builds dependencies before dependents.
 | `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-webgpu, engine-bench |
 | `@stonemind/engine-webgpu` | Library (experimental engine) | npm package; loaded in pages without a bundler | engine (the `AnalysisEngine` contract; only the `./session` entry point loads it when run) | engine-bench (its site build publishes the GPU check page) |
 | `@stonemind/katago-bridge` | Local tool (Node CLI) | Run from a checkout on the player's computer | engine | players running native KataGo |
+| `@stonemind/web` | App (static pages) | Not deployed yet: runs locally (`npm run serve -w @stonemind/web`); planned at **stonemind.app** | brand; dev only: playwright 1.65.0 (Apache-2.0, approved 2026-11-27, browser tests) | none |
 | `@stonemind/engine-bench` | App (static page) | GitHub Pages at https://stonemind.org/ (a placeholder home page), /engine-bench/, /gpu-check/ and /ort-bench/ | engine, brand, engine-webgpu; outside: onnxruntime-web 1.31.1 (MIT, benchmark-only, approved 2026-11-25), copied into /ort-bench/ only | none |
 
 ```text
@@ -79,6 +81,7 @@ from the root builds dependencies before dependents.
 | ontology → domain | `Concept`, `ConceptRelationship`, `RelationshipType`, `ConceptCategory`, `StyleDimension` | Renaming a relationship type or category invalidates `seed.json` |
 | apps → brand (planned) | `tokens.css` custom properties, `components.css` classes (`sm-*`), logo file names | Renaming a token or class breaks every app; change brand first, then each app, in the same release |
 | katago-bridge → engine | `BRIDGE_PROTOCOL` (the WebSocket subprotocol) and the pairing link format read by `parsePairingFragment` | Changing either breaks pairing between a bridge and a page of a different version |
+| web → brand | `tokens/tokens.css`, `styles/components.css` and `logos/`, copied unchanged by the app's build; the theme key `stonemind.theme` | Moving those files breaks the build; the browser tests load the page |
 | engine-bench → engine | `connectBridge`, `parsePairingFragment`, the `AnalysisEngine` API and protocol types | Typecheck catches breaks; the site test checks the import map |
 | engine-webgpu → engine | `LineTransport`, `EngineDescriptor` and `JsonLineSession`, which `createAnalysisEngine` (`@stonemind/engine-webgpu/session`) puts the browser engine behind | Typecheck catches breaks; `test/engine.test.mjs` runs the engine through `JsonLineSession`. The main entry point imports engine for types only, so pages loading it need no import map |
 | engine-bench → engine-webgpu | The layout of the package's `dist/`, `test/gpu/` and `test/goldens/`, which the site build copies to `gpu-check/`; and, for the protocol check page, `loadModel`, `requestEngineDevice`, `GpuNetwork` and `createAnalysisEngine` (`./session`), loaded from `vendor/engine-webgpu/` through its import map | Moving those files breaks the site build; typecheck catches API breaks; the site test checks each page's imports and data |
@@ -93,7 +96,6 @@ Expected dependencies are listed so they can be checked when each is created.
 
 | Planned sub-project | Path | Purpose | Expected dependencies | Milestone |
 |---|---|---|---|---|
-| `@stonemind/web` | `apps/web` | Browser-first application, deployed to **stonemind.app** | brand, domain, ontology, provider-sdk, storage, engines | M1 |
 | `@stonemind/site` | `apps/site` | Project website, deployed to **stonemind.org**: research, specifications, docs, community | brand (may render content from `docs/`) | M0–M1 |
 | `@stonemind/sgf` | `packages/sgf` | SGF parsing/serialisation | none | M1 |
 | `@stonemind/storage-smaltworks` | `packages/storage-smaltworks` | Smaltworks + OPFS implementation of storage ports | storage, Smaltworks | M1 |
