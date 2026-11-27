@@ -304,7 +304,9 @@ sources, so they are researched from real files before the SGF kit reads them.
   rule set the rules kit maps it to. For weights, the network details, the checksum and the speed measured on this
   device.
 
-**Open:** what the `s` and `d` parts of KataGo weight file names mean, to be confirmed before the app labels them.
+The `s` and `d` parts of a KataGo weight file name are the network's training samples and the total rows of training
+data. KataGo's `python/train.py` builds the name as `"%s-s%d-d%d" % (exportprefix, global_step_samples,
+total_num_data_rows)`.
 
 ---
 
@@ -344,8 +346,9 @@ sources, so they are researched from real files before the SGF kit reads them.
 
 - **Engines are shared by all workspaces,** not owned by one.
 - **The browser engine: at most one per browser.** A second copy would load the network's weights into GPU memory
-  again and compete for the same GPU, so total speed would not rise. It is shared by every tab: first choice, in a
-  `SharedWorker`; otherwise one tab runs it, chosen with Web Locks, and another takes over if it closes.
+  again and compete for the same GPU, so total speed would not rise. It is shared by every tab. The baseline, which
+  every target browser supports: one tab runs it in a dedicated worker, chosen with Web Locks, and another takes over
+  if it closes. Where a `SharedWorker` can use WebGPU, the engine runs there instead.
 - **Native KataGo through the bridge: any number,** since each runs as its own process on the player's computer (for
   example a second network).
 - **A remote service** goes through `@stonemind/provider-sdk`: before connecting, the player sees what would be sent
@@ -359,10 +362,13 @@ sources, so they are researched from real files before the SGF kit reads them.
 
 **Open:**
 
-- Whether a `SharedWorker` can use WebGPU in each browser.
+- Whether a `SharedWorker` can use WebGPU in each browser. MDN's compatibility data lists WebGPU in workers (Chrome and
+  Edge 113+ on desktop, Chrome Android 121+, Safari 26, Firefox 141+ with gaps) but does not say which browsers allow it
+  in a shared worker, so the app tests it in each browser.
 - Whether zbaduk offers an API that StoneMind can use.
 - Using more than one engine in a workspace at once (for example, to compare two networks) is left for later.
-- How the page finds and trusts the bridge on 127.0.0.1 (for example a pairing code) is not designed.
+- The bridge already pairs with a page through a pairing link that carries a token (`packages/katago-bridge`,
+  README, Security); the Engines app reuses it.
 
 ---
 
@@ -474,9 +480,8 @@ They share one goban component and differ in their source, the controls that com
 3. Syncing profiles and data across devices through the player's file system (Device profiles).
 4. Whether notes are kept in the SGF or beside it as Markdown (Notes).
 5. Where problems come from, and how each source marks right and wrong answers (Problems).
-6. What the `s` and `d` parts of KataGo weight file names mean (Files).
-7. Readability of the Frosted and Clear glass, and the brand change they need; edge distortion in Firefox (Material).
-8. WebGPU in a `SharedWorker`; zbaduk's API; more than one engine per workspace; pairing with the bridge (Engines).
-9. Whether the goban kit's move logic can run without rendering (Goban kit).
-10. The SGF `RU[]` mapping table, researched per source (Rules kit).
-11. Teaching games, AI strength and clocks (The goban's three uses).
+6. Readability of the Frosted and Clear glass, and the brand change they need; edge distortion in Firefox (Material).
+7. WebGPU in a `SharedWorker`; zbaduk's API; more than one engine per workspace (Engines).
+8. Whether the goban kit's move logic can run without rendering (Goban kit).
+9. The SGF `RU[]` mapping table, researched per source (Rules kit).
+10. Teaching games, AI strength and clocks (The goban's three uses).
