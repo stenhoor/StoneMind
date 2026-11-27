@@ -3,7 +3,7 @@
 // rules engine against KataGo's own move by move.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildHistory, encodeHistoryV7, encodePositionV7, BLACK, WHITE, UnsupportedPositionError } from '../dist/index.js';
+import { buildHistory, encodeHistoryV7, encodePositionV7, BLACK, WHITE } from '../dist/index.js';
 
 const base = { xSize: 9, ySize: 9, komi: 7 };
 
@@ -33,14 +33,19 @@ test('area scoring counts stones and the territory they enclose', () => {
   assert.equal(hist.winner, BLACK);
 });
 
-test('under territory scoring, two passes start the encore; the network inputs for it are refused for now', () => {
+test('under territory scoring, two passes start the encore, which the inputs show', () => {
   const one = buildHistory({ ...base, rules: 'japanese', moves: [['B', 'pass']] });
   assert.equal(one.consecutiveEndingPasses, 1);
   assert.equal(one.encorePhase, 0);
+  assert.equal(encodeHistoryV7(one).input.global[12], 0);
   const two = buildHistory({ ...base, rules: 'japanese', moves: [['B', 'pass'], ['W', 'pass']] });
   assert.equal(two.encorePhase, 1);
   assert.equal(two.isGameFinished, false);
-  assert.throws(() => encodeHistoryV7(two), UnsupportedPositionError);
+  const g = encodeHistoryV7(two).input.global;
+  assert.equal(g[12], 1, 'in the encore');
+  assert.equal(g[13], 0, 'not the second encore');
+  // The encore starts with no history.
+  assert.equal(g[0], 0);
 });
 
 test('inputs: a pass sets the history global instead of a plane', () => {
