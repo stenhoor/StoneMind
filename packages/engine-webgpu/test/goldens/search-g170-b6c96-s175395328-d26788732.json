@@ -7,9 +7,6 @@
    "nnRandomize=false",
    "useGraphSearch=false",
    "wideRootNoise=0",
-   "enablePassingHacks=false",
-   "enableMorePassingHacks=false",
-   "rootEndingBonusPoints=0",
    "rootSymmetryPruning=false",
    "rootNumSymmetriesToSample=1",
    "useFP16=false",
@@ -18,7 +15,7 @@
   "modelFile": "g170-b6c96-s175395328-d26788732.bin.gz",
   "modelSha256": "f5d32604e3675c480c7c8f6aa579a1ea857135628a0afccc8fa56330fbacd38d",
   "set": "full",
-  "date": "2026-11-27T01:56:54.039Z"
+  "date": "2026-11-27T02:46:35.452Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [
@@ -44,6 +41,7 @@
      "move": "F3",
      "order": 0,
      "visits": 42,
+     "edgeVisits": 42,
      "winrate": 0.460289639,
      "scoreLead": -0.181863236,
      "lcb": 0.432900259,
@@ -63,6 +61,7 @@
      "move": "D4",
      "order": 1,
      "visits": 37,
+     "edgeVisits": 37,
      "winrate": 0.457411759,
      "scoreLead": -0.0867151024,
      "lcb": 0.42570686,
@@ -82,6 +81,7 @@
      "move": "C5",
      "order": 2,
      "visits": 15,
+     "edgeVisits": 15,
      "winrate": 0.431440072,
      "scoreLead": -0.575441091,
      "lcb": 0.382661078,
@@ -101,6 +101,7 @@
      "move": "E3",
      "order": 3,
      "visits": 10,
+     "edgeVisits": 10,
      "winrate": 0.423317271,
      "scoreLead": -0.70741949,
      "lcb": 0.388237496,
@@ -120,6 +121,7 @@
      "move": "C6",
      "order": 4,
      "visits": 11,
+     "edgeVisits": 11,
      "winrate": 0.444707247,
      "scoreLead": -0.619003352,
      "lcb": 0.384899845,
@@ -136,6 +138,7 @@
      "move": "G6",
      "order": 5,
      "visits": 1,
+     "edgeVisits": 1,
      "winrate": 0.41440767,
      "scoreLead": -1.13992763,
      "lcb": -0.835592336,
@@ -149,6 +152,7 @@
      "move": "F7",
      "order": 6,
      "visits": 1,
+     "edgeVisits": 1,
      "winrate": 0.421805799,
      "scoreLead": -1.12461877,
      "lcb": -0.828194207,
@@ -162,6 +166,7 @@
      "move": "C4",
      "order": 7,
      "visits": 1,
+     "edgeVisits": 1,
      "winrate": 0.405741528,
      "scoreLead": -1.11990559,
      "lcb": -0.844258479,
@@ -175,6 +180,7 @@
      "move": "E7",
      "order": 8,
      "visits": 1,
+     "edgeVisits": 1,
      "winrate": 0.433527589,
      "scoreLead": -1.02511168,
      "lcb": -0.816472418,
@@ -391,15 +397,17 @@
     {
      "move": "pass",
      "order": 0,
-     "visits": 19,
-     "winrate": 0.0000220992769,
-     "scoreLead": -6.09750005,
-     "lcb": -0.0081663593,
-     "utilityLcb": -1.0941962,
-     "playSelectionValue": 19,
+     "visits": 22,
+     "edgeVisits": 22,
+     "winrate": 0.0000228618392,
+     "scoreLead": -6.03857795,
+     "lcb": -0.00655475605,
+     "utilityLcb": -1.08676124,
+     "playSelectionValue": 22,
      "pv": [
       "pass",
       "G6",
+      "C3",
       "pass",
       "pass"
      ]
@@ -407,12 +415,13 @@
     {
      "move": "D5",
      "order": 1,
-     "visits": 7,
-     "winrate": 0.0000283369053,
-     "scoreLead": -5.82823659,
-     "lcb": -0.0511600131,
-     "utilityLcb": -1.20847356,
-     "playSelectionValue": 7,
+     "visits": 8,
+     "edgeVisits": 8,
+     "winrate": 0.0000276259624,
+     "scoreLead": -5.76810362,
+     "lcb": -0.0394298576,
+     "utilityLcb": -1.17216812,
+     "playSelectionValue": 8,
      "pv": [
       "D5",
       "G6",
@@ -424,43 +433,30 @@
     {
      "move": "C4",
      "order": 2,
-     "visits": 6,
-     "winrate": 0.0000439718901,
-     "scoreLead": -5.68435376,
-     "lcb": -0.0690806801,
-     "utilityLcb": -1.25884991,
-     "playSelectionValue": 6,
+     "visits": 8,
+     "edgeVisits": 8,
+     "winrate": 0.0000381741076,
+     "scoreLead": -5.61497151,
+     "lcb": -0.0393412423,
+     "utilityLcb": -1.16841177,
+     "playSelectionValue": 8,
      "pv": [
       "C4",
       "G6",
-      "B3",
-      "pass"
-     ]
-    },
-    {
-     "move": "D3",
-     "order": 3,
-     "visits": 6,
-     "winrate": 0.0000433155765,
-     "scoreLead": -5.64913627,
-     "lcb": -0.0690807393,
-     "utilityLcb": -1.25754126,
-     "playSelectionValue": 6,
-     "pv": [
-      "D3",
-      "G6",
-      "C4",
+      "C3",
+      "pass",
       "pass"
      ]
     },
     {
      "move": "C3",
-     "order": 4,
-     "visits": 6,
-     "winrate": 0.0000430503604,
-     "scoreLead": -5.70641142,
-     "lcb": -0.0691384332,
-     "utilityLcb": -1.26130502,
+     "order": 3,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000416067765,
+     "scoreLead": -5.53360259,
+     "lcb": -0.0988845181,
+     "utilityLcb": -1.3457811,
      "playSelectionValue": 5,
      "pv": [
       "C3",
@@ -470,14 +466,49 @@
      ]
     },
     {
-     "move": "E3",
+     "move": "D3",
+     "order": 4,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000399361338,
+     "scoreLead": -5.5199546,
+     "lcb": -0.0988748595,
+     "utilityLcb": -1.34554464,
+     "playSelectionValue": 5,
+     "pv": [
+      "D3",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "D1",
      "order": 5,
      "visits": 5,
-     "winrate": 0.0000358831412,
-     "scoreLead": -5.79433737,
-     "lcb": -0.0989697878,
-     "utilityLcb": -1.34539603,
+     "edgeVisits": 5,
+     "winrate": 0.000044189523,
+     "scoreLead": -5.45177519,
+     "lcb": -0.098832882,
+     "utilityLcb": -1.34335614,
      "playSelectionValue": 5,
+     "pv": [
+      "D1",
+      "G6",
+      "C3",
+      "pass"
+     ]
+    },
+    {
+     "move": "E3",
+     "order": 6,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000392095824,
+     "scoreLead": -5.68700294,
+     "lcb": -0.0990751753,
+     "utilityLcb": -1.35265414,
+     "playSelectionValue": 4,
      "pv": [
       "E3",
       "G6",
@@ -488,13 +519,14 @@
     },
     {
      "move": "B4",
-     "order": 6,
+     "order": 7,
      "visits": 5,
-     "winrate": 0.0000394824105,
-     "scoreLead": -5.76426992,
-     "lcb": -0.0989767875,
-     "utilityLcb": -1.34434165,
-     "playSelectionValue": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000420593597,
+     "scoreLead": -5.6584281,
+     "lcb": -0.0991312995,
+     "utilityLcb": -1.35207918,
+     "playSelectionValue": 4,
      "pv": [
       "B4",
       "G6",
@@ -504,30 +536,15 @@
      ]
     },
     {
-     "move": "C2",
-     "order": 7,
-     "visits": 5,
-     "winrate": 0.0000376730957,
-     "scoreLead": -5.65506585,
-     "lcb": -0.0990414687,
-     "utilityLcb": -1.34168557,
-     "playSelectionValue": 5,
-     "pv": [
-      "C2",
-      "G6",
-      "C3",
-      "pass"
-     ]
-    },
-    {
      "move": "B2",
      "order": 8,
      "visits": 5,
-     "winrate": 0.0000440083018,
-     "scoreLead": -5.63041659,
-     "lcb": -0.0988492657,
-     "utilityLcb": -1.3395618,
-     "playSelectionValue": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000454523475,
+     "scoreLead": -5.52598379,
+     "lcb": -0.098874133,
+     "utilityLcb": -1.34649804,
+     "playSelectionValue": 4,
      "pv": [
       "B2",
       "G6",
@@ -536,16 +553,17 @@
      ]
     },
     {
-     "move": "C1",
+     "move": "C2",
      "order": 9,
-     "visits": 5,
-     "winrate": 0.0000418036518,
-     "scoreLead": -5.53089793,
-     "lcb": -0.0989983417,
-     "utilityLcb": -1.33728191,
-     "playSelectionValue": 5,
+     "visits": 4,
+     "edgeVisits": 4,
+     "winrate": 0.0000456447488,
+     "scoreLead": -5.51535439,
+     "lcb": -0.152760547,
+     "utilityLcb": -1.49887738,
+     "playSelectionValue": 4,
      "pv": [
-      "C1",
+      "C2",
       "G6",
       "C3",
       "pass"
@@ -555,10 +573,11 @@
      "move": "B3",
      "order": 10,
      "visits": 4,
-     "winrate": 0.00004527792,
-     "scoreLead": -5.62066805,
-     "lcb": -0.152857931,
-     "utilityLcb": -1.49500106,
+     "edgeVisits": 4,
+     "winrate": 0.0000480784079,
+     "scoreLead": -5.49014688,
+     "lcb": -0.152754544,
+     "utilityLcb": -1.49893331,
      "playSelectionValue": 4,
      "pv": [
       "B3",
@@ -568,29 +587,14 @@
      ]
     },
     {
-     "move": "D1",
+     "move": "A5",
      "order": 11,
      "visits": 4,
-     "winrate": 0.0000457679864,
-     "scoreLead": -5.62377739,
-     "lcb": -0.152842815,
-     "utilityLcb": -1.49456379,
-     "playSelectionValue": 4,
-     "pv": [
-      "D1",
-      "G6",
-      "C3",
-      "pass"
-     ]
-    },
-    {
-     "move": "A5",
-     "order": 12,
-     "visits": 4,
-     "winrate": 0.000045056516,
-     "scoreLead": -5.66400397,
-     "lcb": -0.152868265,
-     "utilityLcb": -1.49606885,
+     "edgeVisits": 4,
+     "winrate": 0.0000472474323,
+     "scoreLead": -5.5296675,
+     "lcb": -0.152777055,
+     "utilityLcb": -1.50001556,
      "playSelectionValue": 4,
      "pv": [
       "A5",
@@ -600,80 +604,113 @@
      ]
     },
     {
-     "move": "A7",
-     "order": 13,
+     "move": "C1",
+     "order": 12,
      "visits": 4,
-     "winrate": 0.0000448873875,
-     "scoreLead": -5.70664811,
-     "lcb": -0.152947034,
-     "utilityLcb": -1.49697179,
+     "edgeVisits": 4,
+     "winrate": 0.0000496467094,
+     "scoreLead": -5.43148017,
+     "lcb": -0.152732998,
+     "utilityLcb": -1.49444702,
      "playSelectionValue": 4,
      "pv": [
-      "A7",
+      "C1",
       "G6",
       "C3",
       "pass"
+     ]
+    },
+    {
+     "move": "A7",
+     "order": 13,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.000035708025,
+     "scoreLead": -5.5694561,
+     "lcb": -0.263631469,
+     "utilityLcb": -1.81108701,
+     "playSelectionValue": 3,
+     "pv": [
+      "A7",
+      "G6",
+      "C3"
      ]
     },
     {
      "move": "A9",
      "order": 14,
-     "visits": 4,
-     "winrate": 0.0000313258302,
-     "scoreLead": -5.57073034,
-     "lcb": -0.152803731,
-     "utilityLcb": -1.489864,
-     "playSelectionValue": 4,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000362614305,
+     "scoreLead": -5.52716208,
+     "lcb": -0.26360042,
+     "utilityLcb": -1.81094521,
+     "playSelectionValue": 3,
      "pv": [
       "A9",
       "G6",
-      "pass"
+      "C3"
      ]
     },
     {
      "move": "A4",
      "order": 15,
-     "visits": 4,
-     "winrate": 0.0000490288287,
-     "scoreLead": -5.59990215,
-     "lcb": -0.152821135,
-     "utilityLcb": -1.4932546,
-     "playSelectionValue": 4,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.000042242527,
+     "scoreLead": -5.48436848,
+     "lcb": -0.263567813,
+     "utilityLcb": -1.80729477,
+     "playSelectionValue": 3,
      "pv": [
       "A4",
       "G6",
-      "C3",
-      "pass"
-     ]
-    },
-    {
-     "move": "B6",
-     "order": 16,
-     "visits": 4,
-     "winrate": 0.0000456826908,
-     "scoreLead": -5.71854353,
-     "lcb": -0.152873002,
-     "utilityLcb": -1.49606033,
-     "playSelectionValue": 3,
-     "pv": [
-      "B6",
-      "G6",
-      "C3",
-      "pass"
+      "C3"
      ]
     },
     {
      "move": "H4",
-     "order": 17,
+     "order": 16,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.0000789908172,
      "scoreLead": -5.92393398,
      "lcb": -0.532204028,
-     "utilityLcb": -2.57795385,
+     "utilityLcb": -2.59102723,
      "playSelectionValue": 2,
      "pv": [
       "H4",
       "H5"
+     ]
+    },
+    {
+     "move": "B6",
+     "order": 17,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.0000470935311,
+     "scoreLead": -5.55199862,
+     "lcb": -0.531986885,
+     "utilityLcb": -2.57137234,
+     "playSelectionValue": 2,
+     "pv": [
+      "B6",
+      "G6"
+     ]
+    },
+    {
+     "move": "A3",
+     "order": 18,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.0000475360748,
+     "scoreLead": -5.57652807,
+     "lcb": -0.531930619,
+     "utilityLcb": -2.56916282,
+     "playSelectionValue": 2,
+     "pv": [
+      "A3",
+      "G6"
      ]
     }
    ]
@@ -895,12 +932,13 @@
     {
      "move": "pass",
      "order": 0,
-     "visits": 90,
-     "winrate": 0.99996408,
-     "scoreLead": 6.46636844,
-     "lcb": 0.996577026,
-     "utilityLcb": 1.06268244,
-     "playSelectionValue": 90,
+     "visits": 85,
+     "edgeVisits": 85,
+     "winrate": 0.999977948,
+     "scoreLead": 6.17067183,
+     "lcb": 0.997836609,
+     "utilityLcb": 1.05405513,
+     "playSelectionValue": 85,
      "pv": [
       "pass",
       "pass"
@@ -909,12 +947,13 @@
     {
      "move": "H2",
      "order": 1,
-     "visits": 3,
-     "winrate": 0.999962208,
-     "scoreLead": 5.84010092,
-     "lcb": 0.736211989,
-     "utilityLcb": 0.314394337,
-     "playSelectionValue": 3,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.999972569,
+     "scoreLead": 5.99655299,
+     "lcb": 0.900895006,
+     "utilityLcb": 0.778998079,
+     "playSelectionValue": 5,
      "pv": [
       "H2",
       "pass",
@@ -924,28 +963,32 @@
     {
      "move": "H4",
      "order": 2,
-     "visits": 2,
-     "winrate": 0.999955767,
-     "scoreLead": 5.60695148,
-     "lcb": 0.467978882,
-     "utilityLcb": -0.446206116,
-     "playSelectionValue": 2,
+     "visits": 4,
+     "edgeVisits": 4,
+     "winrate": 0.999972149,
+     "scoreLead": 5.86524946,
+     "lcb": 0.846926889,
+     "utilityLcb": 0.623577938,
+     "playSelectionValue": 3,
      "pv": [
       "H4",
+      "pass",
       "pass"
      ]
     },
     {
      "move": "J3",
      "order": 3,
-     "visits": 2,
-     "winrate": 0.999949907,
-     "scoreLead": 5.65543842,
-     "lcb": 0.468019171,
-     "utilityLcb": -0.442658514,
-     "playSelectionValue": 2,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.999966605,
+     "scoreLead": 5.93695895,
+     "lcb": 0.736217075,
+     "utilityLcb": 0.316330539,
+     "playSelectionValue": 3,
      "pv": [
       "J3",
+      "pass",
       "pass"
      ]
     },
@@ -953,10 +996,11 @@
      "move": "J4",
      "order": 4,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.999947573,
      "scoreLead": 5.67339778,
      "lcb": 0.467983843,
-     "utilityLcb": -0.44304863,
+     "utilityLcb": -0.456480914,
      "playSelectionValue": 2,
      "pv": [
       "J4",
@@ -1186,72 +1230,61 @@
     {
      "move": "pass",
      "order": 0,
-     "visits": 10,
-     "winrate": 0.00000287174717,
-     "scoreLead": -6.38432751,
-     "lcb": -0.0253260094,
-     "utilityLcb": -1.131258,
-     "playSelectionValue": 12.6703728,
+     "visits": 11,
+     "edgeVisits": 11,
+     "winrate": 0.00000261067924,
+     "scoreLead": -6.39484319,
+     "lcb": -0.0210047099,
+     "utilityLcb": -1.11938816,
+     "playSelectionValue": 12.6497277,
      "pv": [
       "pass",
-      "pass"
-     ]
-    },
-    {
-     "move": "C3",
-     "order": 1,
-     "visits": 6,
-     "winrate": 0.0000297902853,
-     "scoreLead": -6.13256035,
-     "lcb": -0.0690093238,
-     "utilityLcb": -1.25475421,
-     "playSelectionValue": 6,
-     "pv": [
-      "C3",
-      "pass",
-      "B3",
       "pass"
      ]
     },
     {
      "move": "D5",
-     "order": 2,
-     "visits": 5,
-     "winrate": 0.0000280456909,
-     "scoreLead": -6.02278907,
-     "lcb": -0.0991062332,
-     "utilityLcb": -1.33724432,
-     "playSelectionValue": 4,
+     "order": 1,
+     "visits": 6,
+     "edgeVisits": 6,
+     "winrate": 0.0000320397602,
+     "scoreLead": -5.89582503,
+     "lcb": -0.0693410224,
+     "utilityLcb": -1.24311609,
+     "playSelectionValue": 6,
      "pv": [
       "D5",
       "pass",
+      "C3",
       "pass"
      ]
     },
     {
-     "move": "B3",
-     "order": 3,
-     "visits": 4,
-     "winrate": 0.0000236164867,
-     "scoreLead": -6.2194742,
-     "lcb": -0.152738289,
-     "utilityLcb": -1.4890433,
-     "playSelectionValue": 4,
+     "move": "C3",
+     "order": 2,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000231605044,
+     "scoreLead": -6.035775,
+     "lcb": -0.0989568883,
+     "utilityLcb": -1.34493104,
+     "playSelectionValue": 5,
      "pv": [
-      "B3",
+      "C3",
       "pass",
       "pass"
      ]
     },
     {
      "move": "C4",
-     "order": 4,
-     "visits": 4,
-     "winrate": 0.0000231870695,
-     "scoreLead": -6.17311358,
-     "lcb": -0.1527502,
-     "utilityLcb": -1.48665695,
-     "playSelectionValue": 4,
+     "order": 3,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000222408397,
+     "scoreLead": -6.0421918,
+     "lcb": -0.0989663826,
+     "utilityLcb": -1.33156668,
+     "playSelectionValue": 5,
      "pv": [
       "C4",
       "pass",
@@ -1259,14 +1292,31 @@
      ]
     },
     {
+     "move": "B3",
+     "order": 4,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000309378323,
+     "scoreLead": -5.97824955,
+     "lcb": -0.26361002,
+     "utilityLcb": -1.8064163,
+     "playSelectionValue": 3,
+     "pv": [
+      "B3",
+      "pass",
+      "pass"
+     ]
+    },
+    {
      "move": "D3",
      "order": 5,
-     "visits": 4,
-     "winrate": 0.0000228127947,
-     "scoreLead": -6.1250397,
-     "lcb": -0.152778919,
-     "utilityLcb": -1.48550869,
-     "playSelectionValue": 4,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000315305394,
+     "scoreLead": -5.94860586,
+     "lcb": -0.263622599,
+     "utilityLcb": -1.8046904,
+     "playSelectionValue": 3,
      "pv": [
       "D3",
       "pass",
@@ -1274,29 +1324,14 @@
      ]
     },
     {
-     "move": "B4",
-     "order": 6,
-     "visits": 4,
-     "winrate": 0.0000510710356,
-     "scoreLead": -5.9039737,
-     "lcb": -0.152710367,
-     "utilityLcb": -1.484716,
-     "playSelectionValue": 3,
-     "pv": [
-      "B4",
-      "pass",
-      "C3",
-      "pass"
-     ]
-    },
-    {
      "move": "C2",
-     "order": 7,
+     "order": 6,
      "visits": 3,
-     "winrate": 0.0000302561869,
-     "scoreLead": -6.08071772,
-     "lcb": -0.263566937,
-     "utilityLcb": -1.79642428,
+     "edgeVisits": 3,
+     "winrate": 0.0000303360102,
+     "scoreLead": -5.98742612,
+     "lcb": -0.26360545,
+     "utilityLcb": -1.80645313,
      "playSelectionValue": 3,
      "pv": [
       "C2",
@@ -1305,13 +1340,30 @@
      ]
     },
     {
+     "move": "B4",
+     "order": 7,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000320215525,
+     "scoreLead": -6.0052673,
+     "lcb": -0.263591073,
+     "utilityLcb": -1.8070654,
+     "playSelectionValue": 3,
+     "pv": [
+      "B4",
+      "pass",
+      "pass"
+     ]
+    },
+    {
      "move": "E3",
      "order": 8,
      "visits": 3,
-     "winrate": 0.0000309090283,
-     "scoreLead": -6.05371443,
-     "lcb": -0.263575393,
-     "utilityLcb": -1.7948628,
+     "edgeVisits": 3,
+     "winrate": 0.000032603486,
+     "scoreLead": -5.97328885,
+     "lcb": -0.263623517,
+     "utilityLcb": -1.80550417,
      "playSelectionValue": 3,
      "pv": [
       "E3",
@@ -1323,10 +1375,11 @@
      "move": "C1",
      "order": 9,
      "visits": 3,
-     "winrate": 0.0000318673074,
-     "scoreLead": -6.01272027,
-     "lcb": -0.263582827,
-     "utilityLcb": -1.7943239,
+     "edgeVisits": 3,
+     "winrate": 0.0000324215013,
+     "scoreLead": -5.92311462,
+     "lcb": -0.263644172,
+     "utilityLcb": -1.80392573,
      "playSelectionValue": 3,
      "pv": [
       "C1",
@@ -1338,26 +1391,28 @@
      "move": "B2",
      "order": 10,
      "visits": 3,
-     "winrate": 0.000039711734,
-     "scoreLead": -5.98040024,
-     "lcb": -0.263540541,
-     "utilityLcb": -1.7934711,
+     "edgeVisits": 3,
+     "winrate": 0.0000334563756,
+     "scoreLead": -5.96826585,
+     "lcb": -0.263724136,
+     "utilityLcb": -1.80405367,
      "playSelectionValue": 3,
      "pv": [
       "B2",
       "pass",
-      "C3"
+      "pass"
      ]
     },
     {
      "move": "A5",
      "order": 11,
      "visits": 3,
-     "winrate": 0.0000325971259,
-     "scoreLead": -6.03706201,
-     "lcb": -0.263576728,
-     "utilityLcb": -1.79591541,
-     "playSelectionValue": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000315078169,
+     "scoreLead": -5.94334539,
+     "lcb": -0.263609176,
+     "utilityLcb": -1.80621159,
+     "playSelectionValue": 2,
      "pv": [
       "A5",
       "pass",
@@ -1368,11 +1423,12 @@
      "move": "D1",
      "order": 12,
      "visits": 3,
-     "winrate": 0.0000318890934,
-     "scoreLead": -6.05973705,
-     "lcb": -0.263569671,
-     "utilityLcb": -1.79540446,
-     "playSelectionValue": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000346443579,
+     "scoreLead": -5.90946738,
+     "lcb": -0.263692105,
+     "utilityLcb": -1.80287016,
+     "playSelectionValue": 2,
      "pv": [
       "D1",
       "pass",
@@ -1380,31 +1436,34 @@
      ]
     },
     {
-     "move": "H4",
+     "move": "A4",
      "order": 13,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.0000331030509,
+     "scoreLead": -5.94480673,
+     "lcb": -0.263642206,
+     "utilityLcb": -1.80474922,
+     "playSelectionValue": 2,
+     "pv": [
+      "A4",
+      "pass",
+      "pass"
+     ]
+    },
+    {
+     "move": "H4",
+     "order": 14,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.00006857683,
      "scoreLead": -6.56755853,
      "lcb": -0.53224521,
-     "utilityLcb": -2.58270685,
+     "utilityLcb": -2.59573986,
      "playSelectionValue": 2,
      "pv": [
       "H4",
       "J4"
-     ]
-    },
-    {
-     "move": "A4",
-     "order": 14,
-     "visits": 2,
-     "winrate": 0.0000543622791,
-     "scoreLead": -5.72969723,
-     "lcb": -0.531849608,
-     "utilityLcb": -2.53760248,
-     "playSelectionValue": 2,
-     "pv": [
-      "A4",
-      "pass"
      ]
     }
    ]
@@ -1626,15 +1685,18 @@
     {
      "move": "pass",
      "order": 0,
-     "visits": 83,
-     "winrate": 0.999970918,
-     "scoreLead": 6.18993141,
-     "lcb": 0.996008397,
-     "utilityLcb": 1.05075942,
-     "playSelectionValue": 83,
+     "visits": 80,
+     "edgeVisits": 80,
+     "winrate": 0.999974686,
+     "scoreLead": 5.99844286,
+     "lcb": 0.997143841,
+     "utilityLcb": 1.04658464,
+     "playSelectionValue": 80,
      "pv": [
       "pass",
       "C3",
+      "pass",
+      "B4",
       "pass",
       "pass",
       "pass"
@@ -1643,14 +1705,16 @@
     {
      "move": "H2",
      "order": 1,
-     "visits": 4,
-     "winrate": 0.999943834,
-     "scoreLead": 5.85804198,
-     "lcb": 0.847138879,
-     "utilityLcb": 0.627720953,
-     "playSelectionValue": 4,
+     "visits": 6,
+     "edgeVisits": 6,
+     "winrate": 0.999948772,
+     "scoreLead": 5.86679162,
+     "lcb": 0.930727386,
+     "utilityLcb": 0.859878532,
+     "playSelectionValue": 5,
      "pv": [
       "H2",
+      "pass",
       "pass",
       "pass"
      ]
@@ -1658,29 +1722,32 @@
     {
      "move": "H4",
      "order": 2,
-     "visits": 4,
-     "winrate": 0.999957498,
-     "scoreLead": 5.96474705,
-     "lcb": 0.84717563,
-     "utilityLcb": 0.63000254,
-     "playSelectionValue": 4,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.999953543,
+     "scoreLead": 5.90714957,
+     "lcb": 0.901101666,
+     "utilityLcb": 0.780894747,
+     "playSelectionValue": 5,
      "pv": [
       "H4",
-      "pass",
+      "C3",
       "pass"
      ]
     },
     {
      "move": "J3",
      "order": 3,
-     "visits": 4,
-     "winrate": 0.999953275,
-     "scoreLead": 6.00246592,
-     "lcb": 0.847194075,
-     "utilityLcb": 0.632701932,
-     "playSelectionValue": 4,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.999963087,
+     "scoreLead": 6.06985608,
+     "lcb": 0.901082518,
+     "utilityLcb": 0.783763961,
+     "playSelectionValue": 5,
      "pv": [
       "J3",
+      "pass",
       "pass",
       "pass"
      ]
@@ -1688,12 +1755,13 @@
     {
      "move": "J4",
      "order": 4,
-     "visits": 4,
-     "winrate": 0.999952572,
-     "scoreLead": 6.04567011,
-     "lcb": 0.847216363,
-     "utilityLcb": 0.633575907,
-     "playSelectionValue": 4,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.999946176,
+     "scoreLead": 6.01846615,
+     "lcb": 0.736374152,
+     "utilityLcb": 0.310795204,
+     "playSelectionValue": 3,
      "pv": [
       "J4",
       "pass",
@@ -1728,6 +1796,7 @@
      "move": "D7",
      "order": 0,
      "visits": 56,
+     "edgeVisits": 56,
      "winrate": 0.516894104,
      "scoreLead": 0.0754490454,
      "lcb": 0.48104863,
@@ -1747,6 +1816,7 @@
      "move": "G4",
      "order": 1,
      "visits": 31,
+     "edgeVisits": 31,
      "winrate": 0.487747406,
      "scoreLead": -0.488176138,
      "lcb": 0.444432751,
@@ -1766,6 +1836,7 @@
      "move": "F4",
      "order": 2,
      "visits": 10,
+     "edgeVisits": 10,
      "winrate": 0.454924166,
      "scoreLead": -0.906645491,
      "lcb": 0.408543404,
@@ -1785,6 +1856,7 @@
      "move": "C4",
      "order": 3,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.497577466,
      "scoreLead": -0.733375415,
      "lcb": -0.0347196816,
@@ -1943,11 +2015,12 @@
      "move": "E6",
      "order": 0,
      "visits": 26,
-     "winrate": 0.998482504,
-     "scoreLead": 6.72670654,
-     "lcb": 0.98559236,
-     "utilityLcb": 1.01132772,
-     "playSelectionValue": 106.915222,
+     "edgeVisits": 26,
+     "winrate": 0.998482478,
+     "scoreLead": 6.72673081,
+     "lcb": 0.985598154,
+     "utilityLcb": 1.01152579,
+     "playSelectionValue": 109.862837,
      "pv": [
       "E6",
       "A6",
@@ -1962,10 +2035,11 @@
      "move": "F1",
      "order": 1,
      "visits": 70,
-     "winrate": 0.995429211,
-     "scoreLead": 6.48466167,
-     "lcb": 0.984415446,
-     "utilityLcb": 1.00166586,
+     "edgeVisits": 70,
+     "winrate": 0.995722372,
+     "scoreLead": 6.3728069,
+     "lcb": 0.984991061,
+     "utilityLcb": 1.00139081,
      "playSelectionValue": 70,
      "pv": [
       "F1",
@@ -1981,6 +2055,7 @@
      "move": "C9",
      "order": 2,
      "visits": 3,
+     "edgeVisits": 3,
      "winrate": 0.99767119,
      "scoreLead": 3.50306726,
      "lcb": 0.733663846,
@@ -2028,6 +2103,7 @@
      "move": "H3",
      "order": 0,
      "visits": 246,
+     "edgeVisits": 246,
      "winrate": 0.496560742,
      "scoreLead": -0.413483175,
      "lcb": 0.475220047,
@@ -2047,6 +2123,7 @@
      "move": "D7",
      "order": 1,
      "visits": 19,
+     "edgeVisits": 19,
      "winrate": 0.478683922,
      "scoreLead": -0.42982195,
      "lcb": 0.414882761,
@@ -2066,6 +2143,7 @@
      "move": "F4",
      "order": 2,
      "visits": 14,
+     "edgeVisits": 14,
      "winrate": 0.432526136,
      "scoreLead": -1.58261248,
      "lcb": 0.357072513,
@@ -2085,6 +2163,7 @@
      "move": "F3",
      "order": 3,
      "visits": 10,
+     "edgeVisits": 10,
      "winrate": 0.428532517,
      "scoreLead": -1.5334169,
      "lcb": 0.370041532,
@@ -2103,6 +2182,7 @@
      "move": "C4",
      "order": 4,
      "visits": 4,
+     "edgeVisits": 4,
      "winrate": 0.476341218,
      "scoreLead": -1.30097894,
      "lcb": 0.310106252,
@@ -2119,6 +2199,7 @@
      "move": "D5",
      "order": 5,
      "visits": 4,
+     "edgeVisits": 4,
      "winrate": 0.466655523,
      "scoreLead": -0.944881797,
      "lcb": 0.311397244,
@@ -2135,6 +2216,7 @@
      "move": "C3",
      "order": 6,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.472251825,
      "scoreLead": -1.5942361,
      "lcb": -0.0646402159,
@@ -2225,6 +2307,7 @@
      "move": "H4",
      "order": 0,
      "visits": 174,
+     "edgeVisits": 174,
      "winrate": 0.0899977739,
      "scoreLead": -4.90058153,
      "lcb": 0.05549726,
@@ -2244,6 +2327,7 @@
      "move": "B7",
      "order": 1,
      "visits": 66,
+     "edgeVisits": 66,
      "winrate": 0.06743338,
      "scoreLead": -4.8288392,
      "lcb": 0.0147473786,
@@ -2263,6 +2347,7 @@
      "move": "E5",
      "order": 2,
      "visits": 38,
+     "edgeVisits": 38,
      "winrate": 0.0315268033,
      "scoreLead": -6.63822133,
      "lcb": -0.00349907425,
@@ -2282,6 +2367,7 @@
      "move": "H3",
      "order": 3,
      "visits": 16,
+     "edgeVisits": 16,
      "winrate": 0.0690726272,
      "scoreLead": -4.9931051,
      "lcb": 0.0230986019,
@@ -2299,6 +2385,7 @@
      "move": "C8",
      "order": 4,
      "visits": 3,
+     "edgeVisits": 3,
      "winrate": 0.0461895512,
      "scoreLead": -10.6862253,
      "lcb": -0.222808208,
@@ -2314,6 +2401,7 @@
      "move": "E6",
      "order": 5,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.0128158526,
      "scoreLead": -13.7931409,
      "lcb": -0.519225496,
@@ -2322,6 +2410,670 @@
      "pv": [
       "E6",
       "E5"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pass-9-turn-36",
+   "moves": [
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D6"
+    ],
+    [
+     "W",
+     "G4"
+    ],
+    [
+     "B",
+     "G3"
+    ],
+    [
+     "W",
+     "D7"
+    ],
+    [
+     "B",
+     "C7"
+    ],
+    [
+     "W",
+     "E7"
+    ],
+    [
+     "B",
+     "F4"
+    ],
+    [
+     "W",
+     "C6"
+    ],
+    [
+     "B",
+     "C5"
+    ],
+    [
+     "W",
+     "B6"
+    ],
+    [
+     "B",
+     "B5"
+    ],
+    [
+     "W",
+     "D5"
+    ],
+    [
+     "B",
+     "D4"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "B7"
+    ],
+    [
+     "W",
+     "H3"
+    ],
+    [
+     "B",
+     "H2"
+    ],
+    [
+     "W",
+     "G2"
+    ],
+    [
+     "B",
+     "F3"
+    ],
+    [
+     "W",
+     "J2"
+    ],
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "H1"
+    ],
+    [
+     "B",
+     "G7"
+    ],
+    [
+     "W",
+     "F8"
+    ],
+    [
+     "B",
+     "D8"
+    ],
+    [
+     "W",
+     "C8"
+    ],
+    [
+     "B",
+     "B8"
+    ],
+    [
+     "W",
+     "E8"
+    ],
+    [
+     "B",
+     "F2"
+    ],
+    [
+     "W",
+     "D9"
+    ],
+    [
+     "B",
+     "B9"
+    ],
+    [
+     "W",
+     "E6"
+    ],
+    [
+     "B",
+     "A6"
+    ],
+    [
+     "W",
+     "F1"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "E1",
+     "order": 0,
+     "visits": 74,
+     "edgeVisits": 74,
+     "winrate": 0.000586983303,
+     "scoreLead": -6.07554187,
+     "lcb": -0.00551800507,
+     "utilityLcb": -1.06643272,
+     "playSelectionValue": 74,
+     "pv": [
+      "E1",
+      "G1",
+      "E2",
+      "C9",
+      "F5",
+      "G6",
+      "C6"
+     ]
+    },
+    {
+     "move": "F5",
+     "order": 1,
+     "visits": 10,
+     "edgeVisits": 10,
+     "winrate": 0.0202816553,
+     "scoreLead": -9.2044633,
+     "lcb": -0.0146222747,
+     "utilityLcb": -1.15033366,
+     "playSelectionValue": 7,
+     "pv": [
+      "F5",
+      "G6",
+      "E1",
+      "G1",
+      "E2"
+     ]
+    },
+    {
+     "move": "G6",
+     "order": 2,
+     "visits": 6,
+     "edgeVisits": 6,
+     "winrate": 0.0110533386,
+     "scoreLead": -9.83799724,
+     "lcb": -0.0592192439,
+     "utilityLcb": -1.28720626,
+     "playSelectionValue": 6,
+     "pv": [
+      "G6",
+      "F5",
+      "E1",
+      "G1"
+     ]
+    },
+    {
+     "move": "E2",
+     "order": 3,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.00100739767,
+     "scoreLead": -7.89342728,
+     "lcb": -0.0987322413,
+     "utilityLcb": -1.38021679,
+     "playSelectionValue": 4,
+     "pv": [
+      "E2",
+      "E1",
+      "D1",
+      "G1",
+      "D2"
+     ]
+    },
+    {
+     "move": "H4",
+     "order": 4,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0116473469,
+     "scoreLead": -13.9369125,
+     "lcb": -1.23835266,
+     "utilityLcb": -4.65547837,
+     "playSelectionValue": 1,
+     "pv": [
+      "H4"
+     ]
+    },
+    {
+     "move": "C9",
+     "order": 5,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.00590355182,
+     "scoreLead": -14.2045116,
+     "lcb": -1.24409645,
+     "utilityLcb": -4.67645905,
+     "playSelectionValue": 1,
+     "pv": [
+      "C9"
+     ]
+    },
+    {
+     "move": "H5",
+     "order": 6,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0159323867,
+     "scoreLead": -12.8733425,
+     "lcb": -1.23406762,
+     "utilityLcb": -4.62820808,
+     "playSelectionValue": 1,
+     "pv": [
+      "H5"
+     ]
+    },
+    {
+     "move": "G8",
+     "order": 7,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0109121781,
+     "scoreLead": -15.804285,
+     "lcb": -1.23908783,
+     "utilityLcb": -4.6810294,
+     "playSelectionValue": 0,
+     "pv": [
+      "G8"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pass-9-turn-42",
+   "moves": [
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D6"
+    ],
+    [
+     "W",
+     "G4"
+    ],
+    [
+     "B",
+     "G3"
+    ],
+    [
+     "W",
+     "D7"
+    ],
+    [
+     "B",
+     "C7"
+    ],
+    [
+     "W",
+     "E7"
+    ],
+    [
+     "B",
+     "F4"
+    ],
+    [
+     "W",
+     "C6"
+    ],
+    [
+     "B",
+     "C5"
+    ],
+    [
+     "W",
+     "B6"
+    ],
+    [
+     "B",
+     "B5"
+    ],
+    [
+     "W",
+     "D5"
+    ],
+    [
+     "B",
+     "D4"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "B7"
+    ],
+    [
+     "W",
+     "H3"
+    ],
+    [
+     "B",
+     "H2"
+    ],
+    [
+     "W",
+     "G2"
+    ],
+    [
+     "B",
+     "F3"
+    ],
+    [
+     "W",
+     "J2"
+    ],
+    [
+     "B",
+     "E5"
+    ],
+    [
+     "W",
+     "H1"
+    ],
+    [
+     "B",
+     "G7"
+    ],
+    [
+     "W",
+     "F8"
+    ],
+    [
+     "B",
+     "D8"
+    ],
+    [
+     "W",
+     "C8"
+    ],
+    [
+     "B",
+     "B8"
+    ],
+    [
+     "W",
+     "E8"
+    ],
+    [
+     "B",
+     "F2"
+    ],
+    [
+     "W",
+     "D9"
+    ],
+    [
+     "B",
+     "B9"
+    ],
+    [
+     "W",
+     "E6"
+    ],
+    [
+     "B",
+     "A6"
+    ],
+    [
+     "W",
+     "F1"
+    ],
+    [
+     "B",
+     "E1"
+    ],
+    [
+     "W",
+     "G1"
+    ],
+    [
+     "B",
+     "D2"
+    ],
+    [
+     "W",
+     "C9"
+    ],
+    [
+     "B",
+     "F5"
+    ],
+    [
+     "W",
+     "F9"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "C6",
+     "order": 0,
+     "visits": 19,
+     "edgeVisits": 19,
+     "winrate": 0.0000679926888,
+     "scoreLead": -5.66138473,
+     "lcb": -0.00938597437,
+     "utilityLcb": -1.07072065,
+     "playSelectionValue": 42.1595364,
+     "pv": [
+      "C6",
+      "G6",
+      "pass",
+      "G8",
+      "pass"
+     ]
+    },
+    {
+     "move": "pass",
+     "order": 1,
+     "visits": 23,
+     "edgeVisits": 23,
+     "winrate": 0.0000619392093,
+     "scoreLead": -5.9665907,
+     "lcb": -0.00928454341,
+     "utilityLcb": -1.08342105,
+     "playSelectionValue": 23,
+     "pv": [
+      "pass",
+      "G6",
+      "pass",
+      "G8",
+      "C6"
+     ]
+    },
+    {
+     "move": "E2",
+     "order": 2,
+     "visits": 15,
+     "edgeVisits": 15,
+     "winrate": 0.0000597164107,
+     "scoreLead": -5.70805227,
+     "lcb": -0.0133882586,
+     "utilityLcb": -1.08228987,
+     "playSelectionValue": 15,
+     "pv": [
+      "E2",
+      "G6",
+      "C6",
+      "G8",
+      "pass"
+     ]
+    },
+    {
+     "move": "D5",
+     "order": 3,
+     "visits": 12,
+     "edgeVisits": 12,
+     "winrate": 0.0000558776933,
+     "scoreLead": -5.62781428,
+     "lcb": -0.0185502994,
+     "utilityLcb": -1.09578394,
+     "playSelectionValue": 12,
+     "pv": [
+      "D5",
+      "G6",
+      "pass",
+      "G8",
+      "pass"
+     ]
+    },
+    {
+     "move": "G6",
+     "order": 4,
+     "visits": 8,
+     "edgeVisits": 8,
+     "winrate": 0.000267322599,
+     "scoreLead": -6.65297336,
+     "lcb": -0.0406869907,
+     "utilityLcb": -1.18976128,
+     "playSelectionValue": 8,
+     "pv": [
+      "G6",
+      "H4",
+      "pass",
+      "G8",
+      "pass"
+     ]
+    },
+    {
+     "move": "D1",
+     "order": 5,
+     "visits": 7,
+     "edgeVisits": 7,
+     "winrate": 0.0000616801571,
+     "scoreLead": -5.79836814,
+     "lcb": -0.0510147122,
+     "utilityLcb": -1.18954673,
+     "playSelectionValue": 7,
+     "pv": [
+      "D1",
+      "G6",
+      "C6",
+      "G8"
+     ]
+    },
+    {
+     "move": "B6",
+     "order": 6,
+     "visits": 5,
+     "edgeVisits": 5,
+     "winrate": 0.0000635745668,
+     "scoreLead": -6.0666971,
+     "lcb": -0.0992627903,
+     "utilityLcb": -1.33355976,
+     "playSelectionValue": 5,
+     "pv": [
+      "B6",
+      "G6",
+      "pass",
+      "G8"
+     ]
+    },
+    {
+     "move": "E3",
+     "order": 7,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.000066217397,
+     "scoreLead": -6.0601902,
+     "lcb": -0.531911051,
+     "utilityLcb": -2.56606634,
+     "playSelectionValue": 2,
+     "pv": [
+      "E3",
+      "G6"
+     ]
+    },
+    {
+     "move": "H5",
+     "order": 8,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.00101471463,
+     "scoreLead": -6.88399553,
+     "lcb": -0.531210343,
+     "utilityLcb": -2.58232146,
+     "playSelectionValue": 2,
+     "pv": [
+      "H5",
+      "H4"
+     ]
+    },
+    {
+     "move": "A8",
+     "order": 9,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.000062168584,
+     "scoreLead": -5.82624388,
+     "lcb": -0.531946976,
+     "utilityLcb": -2.56137231,
+     "playSelectionValue": 2,
+     "pv": [
+      "A8",
+      "G6"
+     ]
+    },
+    {
+     "move": "D3",
+     "order": 10,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.0000556091991,
+     "scoreLead": -6.3594439,
+     "lcb": -0.53195048,
+     "utilityLcb": -2.56549438,
+     "playSelectionValue": 2,
+     "pv": [
+      "D3",
+      "G6"
+     ]
+    },
+    {
+     "move": "H4",
+     "order": 11,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.00037777648,
+     "scoreLead": -7.23443079,
+     "lcb": -0.531894024,
+     "utilityLcb": -2.601316,
+     "playSelectionValue": 1,
+     "pv": [
+      "H4",
+      "H5"
      ]
     }
    ]
@@ -2352,6 +3104,7 @@
      "move": "D17",
      "order": 0,
      "visits": 12,
+     "edgeVisits": 12,
      "winrate": 0.511423664,
      "scoreLead": 0.0244286125,
      "lcb": 0.491766141,
@@ -2369,6 +3122,7 @@
      "move": "C16",
      "order": 1,
      "visits": 11,
+     "edgeVisits": 11,
      "winrate": 0.511691812,
      "scoreLead": 0.021029816,
      "lcb": 0.489286121,
@@ -2386,6 +3140,7 @@
      "move": "D16",
      "order": 2,
      "visits": 6,
+     "edgeVisits": 6,
      "winrate": 0.513647599,
      "scoreLead": 0.44507192,
      "lcb": 0.443971588,
@@ -2422,6 +3177,7 @@
      "move": "C16",
      "order": 0,
      "visits": 7,
+     "edgeVisits": 7,
      "winrate": 0.498569721,
      "scoreLead": -0.0268548233,
      "lcb": 0.446904038,
@@ -2439,6 +3195,7 @@
      "move": "Q3",
      "order": 1,
      "visits": 7,
+     "edgeVisits": 7,
      "winrate": 0.496382672,
      "scoreLead": -0.0277144569,
      "lcb": 0.44517197,
@@ -2455,6 +3212,7 @@
      "move": "D17",
      "order": 2,
      "visits": 7,
+     "edgeVisits": 7,
      "winrate": 0.496801224,
      "scoreLead": -0.0185051197,
      "lcb": 0.445164545,
@@ -2472,6 +3230,7 @@
      "move": "R4",
      "order": 3,
      "visits": 6,
+     "edgeVisits": 6,
      "winrate": 0.494564719,
      "scoreLead": -0.165947914,
      "lcb": 0.424980262,
@@ -2488,6 +3247,7 @@
      "move": "Q4",
      "order": 4,
      "visits": 2,
+     "edgeVisits": 2,
      "winrate": 0.491081722,
      "scoreLead": -0.123149484,
      "lcb": -0.0409476237,

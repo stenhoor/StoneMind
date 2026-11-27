@@ -33,9 +33,6 @@ const OVERRIDES = [
   'nnRandomize=false',
   'useGraphSearch=false',
   'wideRootNoise=0',
-  'enablePassingHacks=false',
-  'enableMorePassingHacks=false',
-  'rootEndingBonusPoints=0',
   'rootSymmetryPruning=false',
   'rootNumSymmetriesToSample=1',
   'useFP16=false',
@@ -56,6 +53,9 @@ const FULL = [
   // Positions where noise pruning changes native's visits (found by scanning the game with it on and off).
   { id: 'noise-9-turn-5', moves: LATE_9.slice(0, 5), rules: 'tromp-taylor', size: 9, maxVisits: 300 },
   { id: 'noise-9-turn-16', moves: LATE_9.slice(0, 16), rules: 'tromp-taylor', size: 9, maxVisits: 300 },
+  // Positions where enableMorePassingHacks changes native's visits (found by scanning the game with it on and off).
+  { id: 'pass-9-turn-36', moves: LATE_9.slice(0, 36), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
+  { id: 'pass-9-turn-42', moves: LATE_9.slice(0, 42), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
 ];
@@ -100,7 +100,7 @@ const out = {
       ...q,
       komi: 7.5,
       rootVisits: r.rootInfo.visits,
-      moveInfos: r.moveInfos.map((m) => ({ move: m.move, order: m.order, visits: m.visits, winrate: m.winrate, scoreLead: m.scoreLead, lcb: m.lcb, utilityLcb: m.utilityLcb, playSelectionValue: m.playSelectionValue, pv: m.pv })),
+      moveInfos: r.moveInfos.map((m) => ({ move: m.move, order: m.order, visits: m.visits, edgeVisits: m.edgeVisits, winrate: m.winrate, scoreLead: m.scoreLead, lcb: m.lcb, utilityLcb: m.utilityLcb, playSelectionValue: m.playSelectionValue, pv: m.pv })),
     };
   }),
 };

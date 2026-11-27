@@ -18,18 +18,25 @@
  * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation;
  * - policy optimism (`policyOptimism`, `rootPolicyOptimism`): the policy blended toward the network's optimistic policy
  *   head, for networks that have one;
+ * - the passing hacks (`enablePassingHacks`, `enableMorePassingHacks`): the pass's prior capped, history hidden from the
+ *   network where a premature pass would lose, and an extra uncounted playout to try a pass (or a move other than a
+ *   pass) where a pass would end the phase; such playouts are why a child's visits and its parent's edge visits to it
+ *   (`edgeVisits`) can differ;
+ * - the root's ending bonus (`rootEndingBonusPoints`, `getEndingWhiteScoreBonus`): a small score penalty on root moves
+ *   that fill the player's own sure area or play into the opponent's, and on passing under territory scoring;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
- * Not yet ported (each is to be added and measured separately): graph search (transpositions), wide root noise, passing hacks and the root's ending
- * bonus, root symmetry pruning, and tree reuse.
+ * Not yet ported (each is to be added and measured separately): graph search (transpositions), wide root noise, root
+ * symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
 import type { ModelDesc } from '../model/types.js';
-import { BLACK, EMPTY, NULL_LOC, PASS_LOC, WHITE, type Board, type Stone } from '../rules/board.js';
+import { BLACK, EMPTY, NULL_LOC, PASS_LOC, WHITE, opp, type Board, type Stone } from '../rules/board.js';
 import { UnsupportedPositionError, type GameHistory } from '../rules/history.js';
 import { encodeHistoryV7, type LadderCache } from '../features/v7.js';
+import { calculateArea } from '../rules/area.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import { postProcess, type Evaluation } from '../reference/postprocess.js';
 import { copyWithSymmetry } from '../reference/symmetry.js';
@@ -131,6 +138,18 @@ export interface SearchParams {
    */
   policyOptimism: number;
   rootPolicyOptimism: number;
+  /**
+   * KataGo `enablePassingHacks`: the pass's prior is capped at 19 times the other moves' total, and the network doesn't
+   * see the history where a pass would end the game and doing so now would not win.
+   */
+  enablePassingHacks: boolean;
+  /**
+   * KataGo `enableMorePassingHacks`: where a pass would end the phase and a node has 2 or more edge visits, a playout
+   * that would not try a pass there yet (or would try only passes) tries one instead, as a playout that isn't counted.
+   */
+  enableMorePassingHacks: boolean;
+  /** KataGo `rootEndingBonusPoints`: the score penalty, in points, of the root's ending bonus. */
+  rootEndingBonusPoints: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -178,6 +197,9 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   noisePruningCap: 1e50,
   policyOptimism: 1.0,
   rootPolicyOptimism: 0.2,
+  enablePassingHacks: true,
+  enableMorePassingHacks: true,
+  rootEndingBonusPoints: 0.5,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -235,6 +257,11 @@ class SearchNode {
   scoreMeanSqAvg = 0;
   leadAvg = 0;
   virtualLosses = 0;
+  /**
+   * KataGo's edge visits: the visits its parent counts through this node. They are fewer than `visits` after a playout
+   * that wasn't counted (`enableMorePassingHacks`), until later playouts catch them up.
+   */
+  edgeVisits = 0;
   /** KataGo `subtreeValueBiasTableEntry`, and this node's last contribution to it. */
   biasEntry: SubtreeValueBiasEntry | null = null;
   lastBiasDeltaSum = 0;
@@ -256,7 +283,10 @@ class SearchNode {
 export interface SearchMoveInfo {
   /** Board location (`Board.loc`), or `PASS_LOC`. */
   loc: number;
+  /** The move's own visits (KataGo's `visits`). */
   visits: number;
+  /** The visits the root counts through this move (KataGo's `edgeVisits`). */
+  edgeVisits: number;
   /** Win probability for the player to move at the root. */
   winrate: number;
   /** Expected score lead for the player to move at the root. */
@@ -276,7 +306,7 @@ export interface SearchMoveInfo {
   utilityLcb: number;
   /** KataGo's play selection value: the weight the move would be chosen by, after LCB and the root's reductions. */
   playSelectionValue: number;
-  /** Rank, best first: by play selection value, then visits, then policy (KataGo's `AnalysisData` order). */
+  /** Rank, best first: by play selection value, then edge visits, then policy (KataGo's `AnalysisData` order). */
   order: number;
   /** Principal variation: this move, then the child with the highest play selection value at each step. */
   pv: number[];
@@ -319,6 +349,8 @@ function mulberry32(seed: number): () => number {
 
 interface Pending {
   path: SearchNode[];
+  /** KataGo `shouldCountPlayout`: false for the extra playouts of `enableMorePassingHacks`, which back up nothing. */
+  counted: boolean;
   input: NetInput;
   symmetry: number;
   key: string;
@@ -340,6 +372,8 @@ export class Search {
   readonly #sqrtBoardArea: number;
   readonly #area: number;
   #recentScoreCenter = 0;
+  /** KataGo `rootSafeArea`: the root's strictly pass-alive groups and strictly safe territory. */
+  #rootSafeArea: Uint8Array = new Uint8Array(0);
   #rootPrepared = false;
 
   /**
@@ -379,6 +413,68 @@ export class Search {
   }
 
   /** KataGo `getApproxScoreUtilityDerivative`: ignores scoreMeanSq's effect on the utility. */
+  /** KataGo `getScoreUtilityDiff`: how much the score utility changes if White's score moves by `delta`. */
+  #scoreUtilityDiff(scoreMeanAvg: number, scoreMeanSqAvg: number, delta: number): number {
+    const p = this.params;
+    const stdev = getScoreStdev(scoreMeanAvg, scoreMeanSqAvg);
+    const staticDiff =
+      expectedWhiteScoreValue(scoreMeanAvg + delta, stdev, 0, 2, this.#sqrtBoardArea) - expectedWhiteScoreValue(scoreMeanAvg, stdev, 0, 2, this.#sqrtBoardArea);
+    const dynamicDiff =
+      expectedWhiteScoreValue(scoreMeanAvg + delta, stdev, this.#recentScoreCenter, p.dynamicScoreCenterScale, this.#sqrtBoardArea) -
+      expectedWhiteScoreValue(scoreMeanAvg, stdev, this.#recentScoreCenter, p.dynamicScoreCenterScale, this.#sqrtBoardArea);
+    return staticDiff * p.staticScoreUtilityFactor + dynamicDiff * p.dynamicScoreUtilityFactor;
+  }
+
+  /**
+   * KataGo `getEndingWhiteScoreBonus`, in points for White: for root moves only, a penalty of up to
+   * `rootEndingBonusPoints` for a move on a point the opponent almost surely owns (unless it captures), or on one the
+   * player almost surely owns that touches no opponent stone and joins no chains that aren't pass-alive; under territory
+   * scoring, also two thirds of it for passing.
+   */
+  #endingWhiteScoreBonus(parent: SearchNode, moveLoc: number): number {
+    if (parent !== this.root || moveLoc === NULL_LOC) return 0;
+    const e = parent.eval;
+    if (!e) return 0;
+    const h = this.root.hist;
+    const b = h.board;
+    const rootPla = h.nextPla;
+    const bonus = this.params.rootEndingBonusPoints;
+    const extreme = 0.95;
+    const tail = 0.05;
+    // The territory-scoring encore isn't supported, so only area scoring is "area-ish".
+    const isAreaIsh = h.rules.scoringRule === 'AREA';
+    let extraRootPoints = 0;
+    const ownershipPenalty = (): void => {
+      const own = e.whiteOwnership[b.y(moveLoc) * b.xSize + b.x(moveLoc)]!;
+      const plaOwnership = rootPla === WHITE ? own : -own;
+      if (plaOwnership <= -extreme) {
+        if (isAreaIsh ? !b.wouldBeCapture(moveLoc, rootPla) : true) extraRootPoints -= bonus * ((-extreme - plaOwnership) / tail);
+      } else if (plaOwnership >= extreme) {
+        if (!b.isAdjacentToPla(moveLoc, opp(rootPla)) && !b.isNonPassAliveSelfConnection(moveLoc, rootPla, this.#rootSafeArea)) {
+          extraRootPoints -= bonus * ((plaOwnership - extreme) / tail);
+        }
+      }
+    };
+    if (isAreaIsh) {
+      // (Rules with a button, which add a penalty for passing here, aren't supported.)
+      if (moveLoc !== PASS_LOC && b.koLoc === NULL_LOC) ownershipPenalty();
+    } else if (moveLoc === PASS_LOC) {
+      extraRootPoints -= bonus * (2 / 3);
+    } else if (b.koLoc === NULL_LOC) {
+      ownershipPenalty();
+    }
+    return rootPla === WHITE ? extraRootPoints : -extraRootPoints;
+  }
+
+  /** KataGo `getChildWeight(edgeVisits, childVisits)`: the child's weight as its parent counts it. */
+  #childWeight(c: SearchNode): number {
+    return c.weightSum * (c.edgeVisits / Math.max(c.visits, 1));
+  }
+
+  #childWeightSq(c: SearchNode): number {
+    return c.weightSqSum * (c.edgeVisits / Math.max(c.visits, 1));
+  }
+
   #approxScoreUtilityDerivative(scoreMean: number): number {
     const p = this.params;
     const staticDerivative = whiteDScoreValueDScoreSmooth(scoreMean, 0, 2, this.#sqrtBoardArea);
@@ -434,6 +530,7 @@ export class Search {
       key += '|p';
       if (this.params.conservativePass && node === this.root) key += 'c';
       if (h.shouldSuppressEndGameFromFriendlyPass(pla)) key += 'f';
+      if (this.params.enablePassingHacks) key += 'h';
     }
     if (h.isGameFinished) key += '|over';
     if (this.#maxHistory(node) <= 0) key += '|nohist';
@@ -453,6 +550,7 @@ export class Search {
       preferPassAliveUnderSuicideRules: this.#model.preferPassAliveUnderSuicideRules,
       maxHistory: this.#maxHistory(node),
       conservativePassAndIsRoot: this.params.conservativePass && node === this.root,
+      enablePassingHacks: this.params.enablePassingHacks,
     });
   }
 
@@ -472,6 +570,7 @@ export class Search {
       koRuleSimple: encoded.koRuleSimple,
       scoringTerritory: encoded.scoringTerritory,
       policyOptimism,
+      enablePassingHacks: this.params.enablePassingHacks,
     });
   }
 
@@ -502,6 +601,9 @@ export class Search {
     const cap = this.#sqrtBoardArea * p.dynamicScoreCenterScale;
     center = Math.min(expectedScore + cap, Math.max(expectedScore - cap, center));
     this.#recentScoreCenter = center;
+    const rootHist = this.root.hist;
+    const suicideLegalForPassAlive = rootHist.rules.multiStoneSuicideLegal || this.#model.preferPassAliveUnderSuicideRules;
+    this.#rootSafeArea = calculateArea(rootHist.board, false, false, false, suicideLegalForPassAlive);
     if (this.root.state !== EVALUATED) {
       this.root.eval = e;
       this.root.state = EVALUATED;
@@ -671,11 +773,12 @@ export class Search {
     const selfUtilities: number[] = [];
     let totalChildWeight = 0;
     for (const c of node.children) {
-      if (c.visits <= 0 || c.weightSum <= 0) continue;
+      if (c.visits <= 0 || c.weightSum <= 0 || c.edgeVisits <= 0) continue;
+      const w = this.#childWeight(c);
       good.push(c);
-      weights.push(c.weightSum);
+      weights.push(w);
       selfUtilities.push(node.nextPla === WHITE ? c.utilityAvg : -c.utilityAvg);
-      totalChildWeight += c.weightSum;
+      totalChildWeight += w;
     }
     const origTotalChildWeight = totalChildWeight;
     if (this.params.useNoisePruning && good.length > 0) {
@@ -791,8 +894,12 @@ export class Search {
     return explore + (pla === WHITE ? childUtility : -childUtility);
   }
 
-  /** KataGo `selectBestChildToDescend`, without the features listed at the top of this file. Returns a child. */
-  #selectChild(node: SearchNode, isRoot: boolean): SearchNode {
+  /**
+   * KataGo `selectBestChildToDescend` (and the child creation of `playoutDescend`), without the features listed at the
+   * top of this file. Returns the child, whether the parent counts this visit to it (`countEdgeVisit`), and whether the
+   * child was new.
+   */
+  #selectChild(node: SearchNode, isRoot: boolean): { child: SearchNode; countEdgeVisit: boolean; isNew: boolean } {
     const p = this.params;
     const policy = node.eval!.policy;
     const b = node.hist.board;
@@ -800,11 +907,13 @@ export class Search {
 
     let policyProbMassVisited = 0;
     let totalChildWeight = 0;
+    let totalChildEdgeVisits = 0;
     for (const c of node.children) {
       const pr = policy[posOf(c.moveLoc)]!;
       if (pr < 0) continue;
       policyProbMassVisited += pr;
-      totalChildWeight += c.weightSum;
+      totalChildWeight += this.#childWeight(c);
+      totalChildEdgeVisits += c.edgeVisits;
     }
     const { fpu, stdevFactor } = this.#fpuValue(node, isRoot, policyProbMassVisited);
     const cpuct = p.cpuctExploration + p.cpuctExplorationLog * Math.log((totalChildWeight + p.cpuctExplorationBase) / p.cpuctExplorationBase);
@@ -813,14 +922,20 @@ export class Search {
     const utilityRadius = p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor;
 
     let best: SearchNode | null = null;
-    let bestNewLoc = -1;
     let bestValue = POLICY_ILLEGAL_SELECTION_VALUE;
     const tried = new Uint8Array(this.#area + 1);
     for (const c of node.children) {
       const pos = posOf(c.moveLoc);
       tried[pos] = 1;
-      let childWeight = c.weightSum;
-      let childUtility = c.visits <= 0 || childWeight <= 0 ? fpu : c.utilityAvg;
+      let childWeight = this.#childWeight(c);
+      let childUtility: number;
+      if (c.visits <= 0 || childWeight <= 0) childUtility = fpu;
+      else {
+        childUtility = c.utilityAvg;
+        // KataGo's "tiny adjustment for passing": the root's ending bonus.
+        const endingScoreBonus = this.#endingWhiteScoreBonus(node, c.moveLoc);
+        if (endingScoreBonus !== 0) childUtility += this.#scoreUtilityDiff(c.scoreMeanAvg, c.scoreMeanSqAvg, endingScoreBonus);
+      }
       if (c.virtualLosses > 0) {
         const vlWeight = c.virtualLosses * p.numVirtualLossesPerThread;
         const vlUtility = pla === WHITE ? -utilityRadius : utilityRadius;
@@ -835,6 +950,7 @@ export class Search {
       }
     }
     // Of the moves with no child yet, only the one with the highest policy can be best (they share the FPU value).
+    let bestNewLoc = NULL_LOC;
     let bestNewPolicy = -1;
     for (let pos = 0; pos <= this.#area; pos++) {
       if (tried[pos]) continue;
@@ -845,43 +961,71 @@ export class Search {
         bestNewLoc = pos === this.#area ? PASS_LOC : b.loc(pos % b.xSize, Math.floor(pos / b.xSize));
       }
     }
-    if (bestNewLoc >= 0) {
-      const value = this.#selectionValue(exploreScaling, bestNewPolicy, 0, fpu, pla);
-      if (value > bestValue) {
-        // KataGo playoutDescend: a pass that ends the game isn't terminal from the root under conservativePass, or
-        // where friendly-pass rules suppress the end of the game.
-        const friendlyPass = bestNewLoc === PASS_LOC && node.hist.shouldSuppressEndGameFromFriendlyPass(pla);
-        const hist = node.hist.clone();
-        hist.play(bestNewLoc, pla);
-        const forceNonTerminal =
-          bestNewLoc === PASS_LOC && hist.isGameFinished && ((this.params.conservativePass && isRoot) || friendlyPass);
-        const child = new SearchNode(hist, bestNewLoc, hist.isGameFinished && !forceNonTerminal);
-        // KataGo allocateOrFindNode: the table entry for this move, after the move before it, unless it's a pass.
-        if (this.params.subtreeValueBiasFactor !== 0 && hist.moves.length >= 2 && bestNewLoc !== PASS_LOC) {
-          const parentPrevMoveLoc = hist.moves[hist.moves.length - 2]!.loc;
-          if (parentPrevMoveLoc !== NULL_LOC) {
-            const key = subtreeValueBiasKey(pla, parentPrevMoveLoc, bestNewLoc, node.hist.board);
-            let biasEntry = this.#subtreeValueBiasTable.get(key);
-            if (!biasEntry) {
-              biasEntry = { deltaUtilitySum: 0, weightSum: 0 };
-              this.#subtreeValueBiasTable.set(key, biasEntry);
-            }
-            child.biasEntry = biasEntry;
-          }
-        }
-        node.children.push(child);
-        return child;
+    let newLoc = NULL_LOC;
+    if (bestNewLoc !== NULL_LOC && this.#selectionValue(exploreScaling, bestNewPolicy, 0, fpu, pla) > bestValue) newLoc = bestNewLoc;
+    const bestLoc = newLoc !== NULL_LOC ? newLoc : best ? best.moveLoc : NULL_LOC;
+
+    // KataGo enableMorePassingHacks: where a pass would end the phase, make sure both a pass and a move other than a pass
+    // get tried, by a playout the parent doesn't count.
+    let countEdgeVisit = true;
+    if (totalChildEdgeVisits >= 2 && p.enableMorePassingHacks && node.hist.passWouldEndPhase(pla)) {
+      let hasPassMove = false;
+      let hasNonPassMove = false;
+      for (const c of node.children) {
+        if (c.moveLoc === PASS_LOC) hasPassMove = true;
+        else hasNonPassMove = true;
+      }
+      if (!hasPassMove && bestLoc !== PASS_LOC && bestLoc !== NULL_LOC) {
+        newLoc = PASS_LOC;
+        countEdgeVisit = false;
+      } else if (!hasNonPassMove && bestLoc === PASS_LOC && bestNewLoc !== PASS_LOC && bestNewLoc !== NULL_LOC) {
+        newLoc = bestNewLoc;
+        countEdgeVisit = false;
       }
     }
+
+    if (newLoc !== NULL_LOC) {
+      // KataGo playoutDescend: a pass that ends the game isn't terminal from the root under conservativePass, or
+      // where friendly-pass rules suppress the end of the game.
+      const friendlyPass = newLoc === PASS_LOC && node.hist.shouldSuppressEndGameFromFriendlyPass(pla);
+      const hist = node.hist.clone();
+      hist.play(newLoc, pla);
+      const forceNonTerminal = newLoc === PASS_LOC && hist.isGameFinished && ((p.conservativePass && isRoot) || friendlyPass);
+      const child = new SearchNode(hist, newLoc, hist.isGameFinished && !forceNonTerminal);
+      // KataGo allocateOrFindNode: the table entry for this move, after the move before it, unless it's a pass.
+      if (p.subtreeValueBiasFactor !== 0 && hist.moves.length >= 2 && newLoc !== PASS_LOC) {
+        const parentPrevMoveLoc = hist.moves[hist.moves.length - 2]!.loc;
+        if (parentPrevMoveLoc !== NULL_LOC) {
+          const key = subtreeValueBiasKey(pla, parentPrevMoveLoc, newLoc, node.hist.board);
+          let biasEntry = this.#subtreeValueBiasTable.get(key);
+          if (!biasEntry) {
+            biasEntry = { deltaUtilitySum: 0, weightSum: 0 };
+            this.#subtreeValueBiasTable.set(key, biasEntry);
+          }
+          child.biasEntry = biasEntry;
+        }
+      }
+      node.children.push(child);
+      return { child, countEdgeVisit, isNew: true };
+    }
     if (!best) throw new Error('no legal move to search');
-    return best;
+    return { child: best, countEdgeVisit, isNew: false };
   }
 
   // ---------------------------------------------------------------- playouts
 
+  /** KataGo's return up `playoutDescend`: each edge on the path gains a visit and each parent is recomputed. */
   #backup(path: SearchNode[]): void {
-    for (let i = path.length - 2; i >= 0; i--) this.#recomputeNodeStats(path[i]!);
+    for (let i = path.length - 1; i >= 1; i--) {
+      path[i]!.edgeVisits += 1;
+      this.#recomputeNodeStats(path[i - 1]!);
+    }
     this.stats.visits += 1;
+  }
+
+  /** A playout's end: backed up if it counts; one that doesn't (`enableMorePassingHacks`) updates only its leaf. */
+  #finish(path: SearchNode[], counted: boolean): void {
+    if (counted) this.#backup(path);
   }
 
   /**
@@ -891,13 +1035,22 @@ export class Search {
   #descend(): Pending | 'done' | 'collision' {
     const path: SearchNode[] = [this.root];
     let node = this.root;
+    let counted = true;
     while (node.state === EVALUATED && !node.terminal) {
-      node = this.#selectChild(node, node === this.root);
-      path.push(node);
+      const sel = this.#selectChild(node, node === this.root);
+      path.push(sel.child);
+      if (!sel.countEdgeVisit) counted = false;
+      // KataGo maybeCatchUpEdgeVisits: while the parent has counted fewer visits to a child than the child has, a visit
+      // just counts one more, without descending.
+      else if (!sel.isNew && sel.child.edgeVisits < sel.child.visits) {
+        this.#backup(path);
+        return 'done';
+      }
+      node = sel.child;
     }
     if (node.terminal) {
       this.#addTerminalValue(node);
-      this.#backup(path);
+      this.#finish(path, counted);
       this.stats.terminalVisits += 1;
       return 'done';
     }
@@ -911,7 +1064,7 @@ export class Search {
       node.eval = cached;
       node.state = EVALUATED;
       this.#addNNOutputAsLeafValue(node);
-      this.#backup(path);
+      this.#finish(path, counted);
       this.stats.cacheHits += 1;
       return 'done';
     }
@@ -921,7 +1074,7 @@ export class Search {
     const symmetry = this.#nextSymmetry();
     const { xSize, ySize } = encoded.input;
     const spatial = copyWithSymmetry(encoded.input.spatial, this.#model.numInputChannels, ySize, xSize, symmetry, false);
-    return { path, input: { xSize, ySize, spatial, global: encoded.input.global }, symmetry, key, encoded };
+    return { path, counted, input: { xSize, ySize, spatial, global: encoded.input.global }, symmetry, key, encoded };
   }
 
   /**
@@ -937,12 +1090,17 @@ export class Search {
       const batch: Pending[] = [];
       // Stop gathering once a batch's worth of playouts in a row reached leaves already waiting for the network.
       let collisionsInARow = 0;
-      while (batch.length < want && this.root.visits + batch.length < options.maxVisits && collisionsInARow < want) {
+      // Only counted playouts count toward maxVisits, as in KataGo.
+      let countedInBatch = 0;
+      while (batch.length < want && this.root.visits + countedInBatch < options.maxVisits && collisionsInARow < want) {
         const r = this.#descend();
         if (r === 'collision') collisionsInARow++;
         else {
           collisionsInARow = 0;
-          if (r !== 'done') batch.push(r);
+          if (r !== 'done') {
+            batch.push(r);
+            if (r.counted) countedInBatch++;
+          }
         }
       }
       // With nothing waiting, a playout can't collide, so an empty batch means every playout was backed up already.
@@ -960,7 +1118,7 @@ export class Search {
         leaf.state = EVALUATED;
         for (let k = 1; k < b.path.length; k++) b.path[k]!.virtualLosses -= 1;
         this.#addNNOutputAsLeafValue(leaf);
-        this.#backup(b.path);
+        this.#finish(b.path, b.counted);
       });
       options.onBatch?.(this);
     }
@@ -986,13 +1144,13 @@ export class Search {
     return cpuct * Math.sqrt(totalChildWeight + TOTALCHILDWEIGHT_PUCT_OFFSET) * stdevFactor;
   }
 
-  /** KataGo `getSelfUtilityLCBAndRadius`, for the player to move at `parent`. The ending bonus isn't ported yet (zero). */
+  /** KataGo `getSelfUtilityLCBAndRadius`, for the player to move at `parent`. */
   #selfUtilityLcbAndRadius(parent: SearchNode, child: SearchNode): { lcb: number; radius: number } {
     const p = this.params;
     const utilityRangeRadius = p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor;
     let radius = 2 * utilityRangeRadius * p.lcbStdevs;
-    let weightSum = child.weightSum;
-    let weightSqSum = child.weightSqSum;
+    let weightSum = this.#childWeight(child);
+    let weightSqSum = this.#childWeightSq(child);
     if (child.visits <= 0 || weightSum <= 0 || weightSqSum <= 0) return { lcb: -radius, radius };
     const utilityAvg = child.utilityAvg;
     let ess = (weightSum * weightSum) / weightSqSum;
@@ -1003,7 +1161,9 @@ export class Search {
     weightSum += priorWeight;
     weightSqSum += priorWeight * priorWeight;
     ess = (weightSum * weightSum) / weightSqSum;
-    const selfUtility = parent.nextPla === WHITE ? utilityAvg : -utilityAvg;
+    const endingScoreBonus = this.#endingWhiteScoreBonus(parent, child.moveLoc);
+    const utilityWithBonus = utilityAvg + this.#scoreUtilityDiff(child.scoreMeanAvg, child.scoreMeanSqAvg, endingScoreBonus);
+    const selfUtility = parent.nextPla === WHITE ? utilityWithBonus : -utilityWithBonus;
     const estimateStdev = Math.sqrt((utilitySqAvg - utilityAvg * utilityAvg) / ess);
     radius = estimateStdev * p.lcbStdevs;
     return { lcb: selfUtility - radius, radius };
@@ -1011,7 +1171,7 @@ export class Search {
 
   /**
    * KataGo `getPlaySelectionValues` for a node's children, in child order, without the parts not ported (direct policy
-   * moves for a root with no children, territory scoring's pass suppression, the human-style policy, the ending bonus).
+   * moves for a root with no children, territory scoring's pass suppression, the human-style policy).
    * Returns null where KataGo returns false. `lcb` and `radius` are filled when LCB is used or `alwaysComputeLcb`.
    */
   #playSelectionValues(node: SearchNode, alwaysComputeLcb: boolean): { values: number[]; lcb: number[]; radius: number[] } | null {
@@ -1022,16 +1182,16 @@ export class Search {
     const policy = node.eval!.policy;
     const b = node.hist.board;
     const prior = children.map((c) => policy[this.#posOf(b, c.moveLoc)]!);
-    const values = children.map((c, i) => (prior[i]! < 0 ? 0 : c.weightSum));
+    const values = children.map((c, i) => (prior[i]! < 0 ? 0 : this.#childWeight(c)));
     let totalChildWeight = 0;
-    for (const c of children) totalChildWeight += c.weightSum;
+    for (const c of children) totalChildWeight += this.#childWeight(c);
 
     // The best child before LCB: the most weighted, discounting its latest visit, with a small weight on policy.
     let nonLcbBestIdx = 0;
     let nonLcbBestChildWeight = -1e30;
     let maxGoodness = -1e30;
     for (let i = 0; i < n; i++) {
-      const edgeVisits = children[i]!.visits;
+      const edgeVisits = children[i]!.edgeVisits;
       const g = (values[i]! * Math.max(0, edgeVisits - 1)) / Math.max(1, edgeVisits) + 2 * prior[i]!;
       if (g > maxGoodness) {
         maxGoodness = g;
@@ -1047,8 +1207,12 @@ export class Search {
       const pla = node.nextPla;
       const best = children[nonLcbBestIdx]!;
       const utilityRadius = p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor;
-      let bestWeight = best.weightSum;
+      let bestWeight = this.#childWeight(best);
       let bestUtility = best.visits <= 0 || bestWeight <= 0 ? fpu : best.utilityAvg;
+      if (best.visits > 0 && bestWeight > 0) {
+        const endingScoreBonus = this.#endingWhiteScoreBonus(node, best.moveLoc);
+        if (endingScoreBonus !== 0) bestUtility += this.#scoreUtilityDiff(best.scoreMeanAvg, best.scoreMeanSqAvg, endingScoreBonus);
+      }
       if (best.virtualLosses > 0) {
         const vlWeight = best.virtualLosses * p.numVirtualLossesPerThread;
         const vlUtility = pla === WHITE ? -utilityRadius : utilityRadius;
@@ -1059,15 +1223,19 @@ export class Search {
       for (let i = 0; i < n; i++) {
         if (i === nonLcbBestIdx) continue;
         const c = children[i]!;
+        const childWeight = this.#childWeight(c);
         let reduced = 0;
-        if (c.visits > 0 && c.weightSum > 0) {
+        if (c.visits > 0 && childWeight > 0) {
+          let childUtility = c.utilityAvg;
+          const endingScoreBonus = this.#endingWhiteScoreBonus(node, c.moveLoc);
+          if (endingScoreBonus !== 0) childUtility += this.#scoreUtilityDiff(c.scoreMeanAvg, c.scoreMeanSqAvg, endingScoreBonus);
           // KataGo getExploreSelectionValueInverse: the weight that would give the best child's selection value.
           let wanted = 0;
           if (prior[i]! >= 0) {
-            const explore = bestValue - (pla === WHITE ? c.utilityAvg : -c.utilityAvg);
+            const explore = bestValue - (pla === WHITE ? childUtility : -childUtility);
             wanted = explore <= 0 ? 1e100 : Math.max(0, (exploreScaling * prior[i]!) / explore - 1);
           }
-          reduced = Math.min(c.weightSum, wanted);
+          reduced = Math.min(childWeight, wanted);
         }
         values[i] = Math.ceil(reduced);
       }
@@ -1166,6 +1334,7 @@ export class Search {
       return {
         loc: c.moveLoc,
         visits: c.visits,
+        edgeVisits: c.edgeVisits,
         winrate,
         scoreLead: sign * c.leadAvg,
         scoreMean: sign * c.scoreMeanAvg,
@@ -1179,10 +1348,17 @@ export class Search {
         pv,
       };
     });
-    // KataGo's AnalysisData order (a stable sort): visited moves first, then by play selection value, visits, policy.
+    // KataGo's AnalysisData order (a stable sort): moves with edge visits first, then by play selection value, edge
+    // visits, policy. A move whose only visit wasn't counted (enableMorePassingHacks) is listed, with 0 edge visits.
     const moveInfos = infos
       .filter((m) => m.visits > 0)
-      .sort((x, y) => y.playSelectionValue - x.playSelectionValue || y.visits - x.visits || y.prior - x.prior);
+      .sort(
+        (x, y) =>
+          Number(y.edgeVisits > 0) - Number(x.edgeVisits > 0) ||
+          y.playSelectionValue - x.playSelectionValue ||
+          y.edgeVisits - x.edgeVisits ||
+          y.prior - x.prior,
+      );
     moveInfos.forEach((m, order) => (m.order = order));
     return {
       rootVisits: root.visits,
