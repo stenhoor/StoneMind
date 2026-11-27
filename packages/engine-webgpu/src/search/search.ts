@@ -45,6 +45,7 @@ import { BLACK, EMPTY, NULL_LOC, PASS_LOC, WHITE, opp, type Board, type Stone } 
 import { GameHistory, UnsupportedPositionError } from '../rules/history.js';
 import { encodeHistoryV7, type LadderCache } from '../features/v7.js';
 import { calculateArea } from '../rules/area.js';
+import { positionHashes } from '../rules/hash.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
 import { postProcess, type Evaluation } from '../reference/postprocess.js';
 import { copyWithSymmetry } from '../reference/symmetry.js';
@@ -1856,6 +1857,14 @@ export class Search {
       utility: utility * sign,
       noResultValue: noResult,
     };
+  }
+
+  /**
+   * KataGo's `rootInfo` hashes of the root position (`thisHash`, `symHash`; see `rules/hash.ts`). Needs
+   * `loadPositionHashes()` first.
+   */
+  rootHashes(): { thisHash: string; symHash: string } {
+    return positionHashes(this.root.hist.board, this.root.nextPla);
   }
 
   /** The root's own network evaluation, as KataGo's `rootInfo` reports it (`rawWinrate` and the rest). */

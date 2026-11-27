@@ -16,6 +16,7 @@ export {
 } from './features/simple.js';
 export { Board, BLACK, WHITE, EMPTY, PASS_LOC, NULL_LOC } from './rules/board.js';
 export { calculateArea } from './rules/area.js';
+export { loadPositionHashes, positionHashes, md5Words, XorShift1024Mult, PCG32, KataGoRand } from './rules/hash.js';
 export { GameHistory, UnsupportedPositionError, IllegalMoveError } from './rules/history.js';
 export { parseRules, type Rules } from './rules/rules.js';
 export { encodePositionV7, encodeHistoryV7, buildHistory, gtpMove, type EncodedPositionV7, type PositionSpec, type SpecMove, type InputOptions, type LadderCache } from './features/v7.js';
