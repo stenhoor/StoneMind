@@ -143,7 +143,10 @@ function sheetBody(id: SingletonId): Node[] {
     case 'settings':
       return settingsBody();
     case 'about':
-      return [el('p', {}, 'StoneMind is a Go coaching companion in early development. This is the app’s first frame: Files, Engines and the gobans are still to come.')];
+      return [
+        el('p', {}, 'StoneMind is a Go coaching companion in early development. This is the app’s first frame: Files, Engines and the gobans are still to come.'),
+        el('p', {}, el('a', { href: 'capabilities/' }, 'What this browser supports')),
+      ];
     default:
       return [el('p', { className: 'sm-secondary' }, `${SINGLETONS[id]} is not built yet.`)];
   }
