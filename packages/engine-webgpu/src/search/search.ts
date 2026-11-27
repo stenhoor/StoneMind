@@ -26,12 +26,14 @@
  *   that fill the player's own sure area or play into the opponent's, and on passing under territory scoring;
  * - root pruning of useless moves (`rootPruneUselessMoves`, `isAllowedRootMove`): once the opponent's last four moves
  *   were passes, the root never tries a move inside either player's pass-alive area;
+ * - root symmetry pruning (`rootSymmetryPruning`, `markDuplicateMoveLocs`): where the root position is symmetric, only
+ *   one of each set of mirror-image moves is searched, and the analysis lists the others with `isSymmetryOf`;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
- * Not yet ported (each is to be added and measured separately): graph search (transpositions), wide root noise, root
- * symmetry pruning, and tree reuse.
+ * Not yet ported (each is to be added and measured separately): graph search (transpositions), wide root noise, and
+ * tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
 import type { ModelDesc } from '../model/types.js';
@@ -157,6 +159,11 @@ export interface SearchParams {
    * never tries a move inside either player's strictly pass-alive area.
    */
   rootPruneUselessMoves: boolean;
+  /**
+   * KataGo `rootSymmetryPruning` (on in its analysis engine): where the root position is symmetric, the root searches
+   * only one of each set of mirror-image moves, and the analysis lists the others as copies.
+   */
+  rootSymmetryPruning: boolean;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -208,6 +215,7 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   enableMorePassingHacks: true,
   rootEndingBonusPoints: 0.5,
   rootPruneUselessMoves: true,
+  rootSymmetryPruning: true,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -316,6 +324,11 @@ export interface SearchMoveInfo {
   playSelectionValue: number;
   /** Rank, best first: by play selection value, then edge visits, then policy (KataGo's `AnalysisData` order). */
   order: number;
+  /**
+   * With root symmetry pruning, a move not searched because it mirrors this searched move (KataGo's `isSymmetryOf`):
+   * its line is that move's line, mirrored.
+   */
+  isSymmetryOf?: number;
   /** Principal variation: this move, then the child with the highest play selection value at each step. */
   pv: number[];
 }
@@ -355,6 +368,61 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** KataGo `SymmetryHelpers::getSymLoc`: `loc` under `symmetry` (bit 0 flips y, bit 1 flips x, bit 2 transposes). */
+function getSymLoc(loc: number, board: Board, symmetry: number): number {
+  if (loc === NULL_LOC || loc === PASS_LOC) return loc;
+  let x = board.x(loc);
+  let y = board.y(loc);
+  if (symmetry & 0x2) x = board.xSize - x - 1;
+  if (symmetry & 0x1) y = board.ySize - y - 1;
+  if (symmetry & 0x4) [x, y] = [y, x];
+  return board.loc(x, y);
+}
+
+/**
+ * KataGo `SymmetryHelpers::markDuplicateMoveLocs` (no avoided moves, no encore): the symmetries under which the
+ * position is unchanged, and the moves that mirror an earlier one. A position with a ko or superko ban has none.
+ */
+function markDuplicateMoveLocs(hist: GameHistory): { isSymDupLoc: Uint8Array; validSymmetries: number[] } {
+  const board = hist.board;
+  const isSymDupLoc = new Uint8Array(board.arraySize);
+  const validSymmetries = [0];
+  if (board.koLoc !== NULL_LOC) return { isSymDupLoc, validSymmetries };
+  for (let y = 0; y < board.ySize; y++) {
+    for (let x = 0; x < board.xSize; x++) if (hist.superKoBanned[board.loc(x, y)]) return { isSymDupLoc, validSymmetries };
+  }
+  // Rectangular boards have no transposing symmetries.
+  const upperBound = board.xSize === board.ySize ? 8 : 4;
+  for (let symmetry = 1; symmetry < upperBound; symmetry++) {
+    let isBoardSym = true;
+    for (let y = 0; y < board.ySize && isBoardSym; y++) {
+      for (let x = 0; x < board.xSize; x++) {
+        const loc = board.loc(x, y);
+        if (board.colors[loc] !== board.colors[getSymLoc(loc, board, symmetry)]) {
+          isBoardSym = false;
+          break;
+        }
+      }
+    }
+    if (isBoardSym) validSymmetries.push(symmetry);
+  }
+  // KataGo's order: Black keeps moves on the right, White on the left, as in common openings.
+  const mark = (x: number, y: number) => {
+    const loc = board.loc(x, y);
+    for (const symmetry of validSymmetries) {
+      if (symmetry === 0) continue;
+      const symLoc = getSymLoc(loc, board, symmetry);
+      if (!isSymDupLoc[loc] && loc !== symLoc) isSymDupLoc[symLoc] = 1;
+    }
+  };
+  if (hist.nextPla === BLACK) {
+    for (let x = board.xSize - 1; x >= 0; x--) for (let y = 0; y < board.ySize; y++) mark(x, y);
+  } else {
+    for (let x = 0; x < board.xSize; x++) for (let y = board.ySize - 1; y >= 0; y--) mark(x, y);
+  }
+  return { isSymDupLoc, validSymmetries };
+}
+
 interface Pending {
   path: SearchNode[];
   /** KataGo `shouldCountPlayout`: false for the extra playouts of `enableMorePassingHacks`, which back up nothing. */
@@ -384,6 +452,9 @@ export class Search {
   #rootSafeArea: Uint8Array = new Uint8Array(0);
   /** `rootPruneUselessMoves` is on and the opponent's last four moves at the root were passes. */
   #rootPrunesUselessMoves = false;
+  /** KataGo `rootSymDupLoc` and `rootSymmetries`: the root's mirror-image duplicate moves, and its symmetries. */
+  #rootSymDupLoc: Uint8Array = new Uint8Array(0);
+  #rootSymmetries: number[] = [0];
   #rootPrepared = false;
 
   /**
@@ -477,13 +548,16 @@ export class Search {
   }
 
   /**
-   * KataGo `isAllowedRootMove`, without root symmetry pruning: with `rootPruneUselessMoves`, once the opponent's last
-   * four moves were passes, no move inside either player's pass-alive area.
+   * KataGo `isAllowedRootMove`: with `rootPruneUselessMoves`, once the opponent's last four moves were passes, no move
+   * inside either player's pass-alive area; with `rootSymmetryPruning`, no move that mirrors another.
    */
   #isAllowedRootMove(moveLoc: number): boolean {
+    if (moveLoc === PASS_LOC) return true;
     // The root's history doesn't change during a search, so whether the opponent's last four moves were passes is
     // worked out once, in #prepareRoot.
-    return !(this.#rootPrunesUselessMoves && moveLoc !== PASS_LOC && this.#rootSafeArea[moveLoc] !== EMPTY);
+    if (this.#rootPrunesUselessMoves && this.#rootSafeArea[moveLoc] !== EMPTY) return false;
+    if (this.params.rootSymmetryPruning && this.#rootSymDupLoc[moveLoc]) return false;
+    return true;
   }
 
   /** KataGo `getChildWeight(edgeVisits, childVisits)`: the child's weight as its parent counts it. */
@@ -629,6 +703,14 @@ export class Search {
     const oppPassed = (i: number) => moves[i]!.loc === PASS_LOC && moves[i]!.pla === opp(rootHist.nextPla);
     this.#rootPrunesUselessMoves =
       p.rootPruneUselessMoves && lastIdx >= 6 && oppPassed(lastIdx) && oppPassed(lastIdx - 2) && oppPassed(lastIdx - 4) && oppPassed(lastIdx - 6);
+    if (p.rootSymmetryPruning) {
+      const marked = markDuplicateMoveLocs(rootHist);
+      this.#rootSymDupLoc = marked.isSymDupLoc;
+      this.#rootSymmetries = marked.validSymmetries;
+    } else {
+      this.#rootSymDupLoc = new Uint8Array(rootHist.board.arraySize);
+      this.#rootSymmetries = [0];
+    }
     if (this.root.state !== EVALUATED) {
       this.root.eval = e;
       this.root.state = EVALUATED;
@@ -1387,13 +1469,30 @@ export class Search {
           y.edgeVisits - x.edgeVisits ||
           y.prior - x.prior,
       );
-    moveInfos.forEach((m, order) => (m.order = order));
+    // KataGo getAnalysisData: with root symmetry pruning, each move is followed by its mirror images, each with the
+    // move's data and its line mirrored, in the order of the root's symmetries.
+    let listed: SearchMoveInfo[] = moveInfos;
+    if (p.rootSymmetryPruning && this.#rootSymmetries.length > 1) {
+      listed = [];
+      const isDone = new Set<number>();
+      for (const m of moveInfos) {
+        for (const symmetry of this.#rootSymmetries) {
+          const symMove = getSymLoc(m.loc, b, symmetry);
+          if (isDone.has(symMove)) continue;
+          isDone.add(symMove);
+          const copy: SearchMoveInfo = { ...m, loc: symMove, pv: m.pv.map((l) => getSymLoc(l, b, symmetry)) };
+          if (symmetry !== 0) copy.isSymmetryOf = m.loc;
+          listed.push(copy);
+        }
+      }
+    }
+    listed.forEach((m, order) => (m.order = order));
     return {
       rootVisits: root.visits,
       rootWinrate: this.#winrateFor(root, pla),
       rootScoreLead: sign * root.leadAvg,
       rootUtility: sign * root.utilityAvg,
-      moveInfos,
+      moveInfos: listed,
     };
   }
 }

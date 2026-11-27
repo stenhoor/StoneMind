@@ -33,7 +33,6 @@ const OVERRIDES = [
   'nnRandomize=false',
   'useGraphSearch=false',
   'wideRootNoise=0',
-  'rootSymmetryPruning=false',
   'rootNumSymmetriesToSample=1',
   'useFP16=false',
   'reportAnalysisWinratesAs=SIDETOMOVE',
@@ -58,6 +57,9 @@ const FULL = [
   { id: 'pass-9-turn-42', moves: LATE_9.slice(0, 42), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   // White's last four moves passes, Black filling its own territory in between: rootPruneUselessMoves applies.
   { id: 'useless-9', moves: [...LATE_9.slice(0, 48), ['B', 'C3'], ['W', 'pass'], ['B', 'C2'], ['W', 'pass'], ['B', 'B3'], ['W', 'pass'], ['B', 'B2'], ['W', 'pass']], rules: 'tromp-taylor', size: 9, maxVisits: 100 },
+  // Symmetric positions, for rootSymmetryPruning: the empty board (Black to move) and after tengen (White to move).
+  { id: 'sym-9-empty', moves: [], rules: 'tromp-taylor', size: 9, maxVisits: 100 },
+  { id: 'sym-9-tengen', moves: [['B', 'E5']], rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
 ];
@@ -102,7 +104,7 @@ const out = {
       ...q,
       komi: 7.5,
       rootVisits: r.rootInfo.visits,
-      moveInfos: r.moveInfos.map((m) => ({ move: m.move, order: m.order, visits: m.visits, edgeVisits: m.edgeVisits, winrate: m.winrate, scoreLead: m.scoreLead, lcb: m.lcb, utilityLcb: m.utilityLcb, playSelectionValue: m.playSelectionValue, pv: m.pv })),
+      moveInfos: r.moveInfos.map((m) => ({ move: m.move, order: m.order, visits: m.visits, edgeVisits: m.edgeVisits, winrate: m.winrate, scoreLead: m.scoreLead, lcb: m.lcb, utilityLcb: m.utilityLcb, playSelectionValue: m.playSelectionValue, pv: m.pv, ...(m.isSymmetryOf ? { isSymmetryOf: m.isSymmetryOf } : {}) })),
     };
   }),
 };

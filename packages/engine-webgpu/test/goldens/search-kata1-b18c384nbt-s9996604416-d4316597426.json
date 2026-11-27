@@ -7,7 +7,6 @@
    "nnRandomize=false",
    "useGraphSearch=false",
    "wideRootNoise=0",
-   "rootSymmetryPruning=false",
    "rootNumSymmetriesToSample=1",
    "useFP16=false",
    "reportAnalysisWinratesAs=SIDETOMOVE"
@@ -15,7 +14,7 @@
   "modelFile": "kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
   "modelSha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d",
   "set": "short",
-  "date": "2026-11-27T02:27:38.278Z"
+  "date": "2026-11-27T09:09:59.002Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [
@@ -38,99 +37,80 @@
    "rootVisits": 25,
    "moveInfos": [
     {
-     "move": "C5",
+     "move": "E3",
      "order": 0,
-     "visits": 15,
-     "edgeVisits": 15,
-     "winrate": 0.139864621,
-     "scoreLead": -0.628785498,
-     "lcb": 0.101383125,
-     "utilityLcb": -0.82367012,
-     "playSelectionValue": 20.3465705,
+     "visits": 19,
+     "edgeVisits": 19,
+     "winrate": 0.138260051,
+     "scoreLead": -0.629359657,
+     "lcb": 0.0840424428,
+     "utilityLcb": -0.87669157,
+     "playSelectionValue": 25.6356435,
+     "pv": [
+      "E3",
+      "C6",
+      "F7",
+      "G5",
+      "D6",
+      "C5"
+     ]
+    },
+    {
+     "move": "C5",
+     "order": 1,
+     "visits": 19,
+     "edgeVisits": 19,
+     "winrate": 0.138260051,
+     "scoreLead": -0.629359657,
+     "lcb": 0.0840424428,
+     "utilityLcb": -0.87669157,
+     "playSelectionValue": 25.6356435,
      "pv": [
       "C5",
       "F3",
       "G6",
       "E7",
-      "F4"
-     ]
+      "F4",
+      "E3"
+     ],
+     "isSymmetryOf": "E3"
     },
     {
-     "move": "E3",
-     "order": 1,
-     "visits": 4,
-     "edgeVisits": 4,
-     "winrate": 0.118833062,
-     "scoreLead": -0.593604973,
-     "lcb": -0.0425753795,
-     "utilityLcb": -1.25959441,
-     "playSelectionValue": 6,
+     "move": "F3",
+     "order": 2,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.114774207,
+     "scoreLead": -0.543541357,
+     "lcb": -0.150096277,
+     "utilityLcb": -1.53411763,
+     "playSelectionValue": 2,
      "pv": [
-      "E3",
-      "C6",
-      "G6",
-      "D7"
+      "F3",
+      "F7",
+      "G6"
      ]
     },
     {
      "move": "C6",
-     "order": 2,
-     "visits": 1,
-     "edgeVisits": 1,
-     "winrate": 0.106267326,
-     "scoreLead": -0.305432737,
-     "lcb": -1.14373268,
-     "utilityLcb": -4.30046054,
-     "playSelectionValue": 2,
-     "pv": [
-      "C6"
-     ]
-    },
-    {
-     "move": "F3",
      "order": 3,
-     "visits": 1,
-     "edgeVisits": 1,
-     "winrate": 0.114808727,
-     "scoreLead": -0.309173048,
-     "lcb": -1.13519128,
-     "utilityLcb": -4.28140984,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.114774207,
+     "scoreLead": -0.543541357,
+     "lcb": -0.150096277,
+     "utilityLcb": -1.53411763,
      "playSelectionValue": 2,
      "pv": [
-      "F3"
-     ]
-    },
-    {
-     "move": "C4",
-     "order": 4,
-     "visits": 1,
-     "edgeVisits": 1,
-     "winrate": 0.076893691,
-     "scoreLead": -0.440467894,
-     "lcb": -1.17310632,
-     "utilityLcb": -4.37090774,
-     "playSelectionValue": 1,
-     "pv": [
-      "C4"
-     ]
-    },
-    {
-     "move": "F7",
-     "order": 5,
-     "visits": 1,
-     "edgeVisits": 1,
-     "winrate": 0.0824910887,
-     "scoreLead": -0.305660903,
-     "lcb": -1.16750892,
-     "utilityLcb": -4.35147922,
-     "playSelectionValue": 1,
-     "pv": [
+      "C6",
+      "G6",
       "F7"
-     ]
+     ],
+     "isSymmetryOf": "F3"
     },
     {
      "move": "D3",
-     "order": 6,
+     "order": 4,
      "visits": 1,
      "edgeVisits": 1,
      "winrate": 0.08197283,
@@ -141,6 +121,50 @@
      "pv": [
       "D3"
      ]
+    },
+    {
+     "move": "C4",
+     "order": 5,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.08197283,
+     "scoreLead": -0.486952215,
+     "lcb": -1.16802718,
+     "utilityLcb": -4.36090929,
+     "playSelectionValue": 1,
+     "pv": [
+      "C4"
+     ],
+     "isSymmetryOf": "D3"
+    },
+    {
+     "move": "G6",
+     "order": 6,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0889930278,
+     "scoreLead": -0.280881077,
+     "lcb": -1.16100698,
+     "utilityLcb": -4.33664076,
+     "playSelectionValue": 0,
+     "pv": [
+      "G6"
+     ]
+    },
+    {
+     "move": "F7",
+     "order": 7,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0889930278,
+     "scoreLead": -0.280881077,
+     "lcb": -1.16100698,
+     "utilityLcb": -4.33664076,
+     "playSelectionValue": 0,
+     "pv": [
+      "F7"
+     ],
+     "isSymmetryOf": "G6"
     }
    ]
   },

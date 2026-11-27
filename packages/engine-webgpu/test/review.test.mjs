@@ -50,7 +50,7 @@ test('reviewGame searches every turn, several at once, with combined network cal
   assert.equal(results.length, 8);
   for (const r of results) {
     assert.equal(r.rootVisits, 24);
-    assert.equal(r.moveInfos.reduce((s, m) => s + m.visits, 0), 23);
+    assert.equal(r.moveInfos.filter((m) => m.isSymmetryOf === undefined).reduce((s, m) => s + m.visits, 0), 23);
   }
   assert.deepEqual([...seen].sort((x, y) => x - y), [0, 1, 2, 3, 4, 5, 6, 7]);
   // 8 searches × 23 visits after the root, in batches of 4 per search: alone they would need at least 8 × 6 calls.
@@ -120,7 +120,7 @@ test('reviewGame with two calls in flight still gives every turn its visits', as
   assert.equal(results.length, 6);
   for (const r of results) {
     assert.equal(r.rootVisits, 16);
-    assert.equal(r.moveInfos.reduce((s, m) => s + m.visits, 0), 15);
+    assert.equal(r.moveInfos.filter((m) => m.isSymmetryOf === undefined).reduce((s, m) => s + m.visits, 0), 15);
   }
   assert.equal(net.mostInFlight, 2, 'the two turns overlapped');
 });

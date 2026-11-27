@@ -7,7 +7,6 @@
    "nnRandomize=false",
    "useGraphSearch=false",
    "wideRootNoise=0",
-   "rootSymmetryPruning=false",
    "rootNumSymmetriesToSample=1",
    "useFP16=false",
    "reportAnalysisWinratesAs=SIDETOMOVE"
@@ -15,7 +14,7 @@
   "modelFile": "g170-b6c96-s175395328-d26788732.bin.gz",
   "modelSha256": "f5d32604e3675c480c7c8f6aa579a1ea857135628a0afccc8fa56330fbacd38d",
   "set": "full",
-  "date": "2026-11-27T08:43:06.389Z"
+  "date": "2026-11-27T09:09:32.452Z"
  },
  "note": "KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.",
  "queries": [
@@ -40,13 +39,13 @@
     {
      "move": "F3",
      "order": 0,
-     "visits": 42,
-     "edgeVisits": 42,
-     "winrate": 0.460289639,
-     "scoreLead": -0.181863236,
-     "lcb": 0.432900259,
-     "utilityLcb": -0.178228307,
-     "playSelectionValue": 52.0563538,
+     "visits": 39,
+     "edgeVisits": 39,
+     "winrate": 0.461020184,
+     "scoreLead": -0.193810617,
+     "lcb": 0.431468547,
+     "utilityLcb": -0.182584229,
+     "playSelectionValue": 53.719557,
      "pv": [
       "F3",
       "C6",
@@ -58,15 +57,36 @@
      ]
     },
     {
-     "move": "D4",
+     "move": "C6",
      "order": 1,
-     "visits": 37,
-     "edgeVisits": 37,
-     "winrate": 0.457411759,
-     "scoreLead": -0.0867151024,
-     "lcb": 0.42570686,
-     "utilityLcb": -0.213680535,
-     "playSelectionValue": 31,
+     "visits": 39,
+     "edgeVisits": 39,
+     "winrate": 0.461020184,
+     "scoreLead": -0.193810617,
+     "lcb": 0.431468547,
+     "utilityLcb": -0.182584229,
+     "playSelectionValue": 53.719557,
+     "pv": [
+      "C6",
+      "F3",
+      "F4",
+      "G3",
+      "G4",
+      "E7",
+      "E3"
+     ],
+     "isSymmetryOf": "F3"
+    },
+    {
+     "move": "D4",
+     "order": 2,
+     "visits": 35,
+     "edgeVisits": 35,
+     "winrate": 0.458769365,
+     "scoreLead": -0.062303073,
+     "lcb": 0.42556056,
+     "utilityLcb": -0.214503283,
+     "playSelectionValue": 34,
      "pv": [
       "D4",
       "D3",
@@ -78,26 +98,6 @@
      ]
     },
     {
-     "move": "C5",
-     "order": 2,
-     "visits": 15,
-     "edgeVisits": 15,
-     "winrate": 0.431440072,
-     "scoreLead": -0.575441091,
-     "lcb": 0.382661078,
-     "utilityLcb": -0.337938882,
-     "playSelectionValue": 12,
-     "pv": [
-      "C5",
-      "F3",
-      "F4",
-      "G3",
-      "E3",
-      "E2",
-      "G4"
-     ]
-    },
-    {
      "move": "E3",
      "order": 3,
      "visits": 10,
@@ -106,7 +106,7 @@
      "scoreLead": -0.70741949,
      "lcb": 0.388237496,
      "utilityLcb": -0.283125854,
-     "playSelectionValue": 9,
+     "playSelectionValue": 10,
      "pv": [
       "E3",
       "C6",
@@ -118,21 +118,25 @@
      ]
     },
     {
-     "move": "C6",
+     "move": "C5",
      "order": 4,
-     "visits": 11,
-     "edgeVisits": 11,
-     "winrate": 0.444707247,
-     "scoreLead": -0.619003352,
-     "lcb": 0.384899845,
-     "utilityLcb": -0.305959708,
-     "playSelectionValue": 8,
+     "visits": 10,
+     "edgeVisits": 10,
+     "winrate": 0.423317271,
+     "scoreLead": -0.70741949,
+     "lcb": 0.388237496,
+     "utilityLcb": -0.283125854,
+     "playSelectionValue": 10,
      "pv": [
-      "C6",
+      "C5",
       "F3",
-      "E3",
-      "E2"
-     ]
+      "F4",
+      "G3",
+      "G4",
+      "D7",
+      "F7"
+     ],
+     "isSymmetryOf": "E3"
     },
     {
      "move": "G6",
@@ -153,27 +157,28 @@
      "order": 6,
      "visits": 1,
      "edgeVisits": 1,
-     "winrate": 0.421805799,
-     "scoreLead": -1.12461877,
-     "lcb": -0.828194207,
-     "utilityLcb": -3.68621722,
+     "winrate": 0.41440767,
+     "scoreLead": -1.13992763,
+     "lcb": -0.835592336,
+     "utilityLcb": -3.70240193,
      "playSelectionValue": 1,
      "pv": [
       "F7"
-     ]
+     ],
+     "isSymmetryOf": "G6"
     },
     {
-     "move": "C4",
+     "move": "G5",
      "order": 7,
      "visits": 1,
      "edgeVisits": 1,
-     "winrate": 0.405741528,
-     "scoreLead": -1.11990559,
-     "lcb": -0.844258479,
-     "utilityLcb": -3.72363525,
+     "winrate": 0.430926144,
+     "scoreLead": -1.11469865,
+     "lcb": -0.819073862,
+     "utilityLcb": -3.66841172,
      "playSelectionValue": 1,
      "pv": [
-      "C4"
+      "G5"
      ]
     },
     {
@@ -181,14 +186,912 @@
      "order": 8,
      "visits": 1,
      "edgeVisits": 1,
-     "winrate": 0.433527589,
-     "scoreLead": -1.02511168,
-     "lcb": -0.816472418,
-     "utilityLcb": -3.66501728,
+     "winrate": 0.430926144,
+     "scoreLead": -1.11469865,
+     "lcb": -0.819073862,
+     "utilityLcb": -3.66841172,
      "playSelectionValue": 1,
      "pv": [
       "E7"
+     ],
+     "isSymmetryOf": "G5"
+    },
+    {
+     "move": "F6",
+     "order": 9,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.414789334,
+     "scoreLead": -1.1457032,
+     "lcb": -0.835210672,
+     "utilityLcb": -3.70593368,
+     "playSelectionValue": 0,
+     "pv": [
+      "F6"
      ]
+    },
+    {
+     "move": "D3",
+     "order": 10,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.401699841,
+     "scoreLead": -1.11633527,
+     "lcb": -0.848300165,
+     "utilityLcb": -3.73204738,
+     "playSelectionValue": 0,
+     "pv": [
+      "D3"
+     ]
+    },
+    {
+     "move": "C4",
+     "order": 11,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.401699841,
+     "scoreLead": -1.11633527,
+     "lcb": -0.848300165,
+     "utilityLcb": -3.73204738,
+     "playSelectionValue": 0,
+     "pv": [
+      "C4"
+     ],
+     "isSymmetryOf": "D3"
+    },
+    {
+     "move": "G4",
+     "order": 12,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.426657856,
+     "scoreLead": -1.12583351,
+     "lcb": -0.823342151,
+     "utilityLcb": -3.67631319,
+     "playSelectionValue": 0,
+     "pv": [
+      "G4"
+     ]
+    },
+    {
+     "move": "D7",
+     "order": 13,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.426657856,
+     "scoreLead": -1.12583351,
+     "lcb": -0.823342151,
+     "utilityLcb": -3.67631319,
+     "playSelectionValue": 0,
+     "pv": [
+      "D7"
+     ],
+     "isSymmetryOf": "G4"
+    },
+    {
+     "move": "F4",
+     "order": 14,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.44098483,
+     "scoreLead": -1.03128505,
+     "lcb": -0.809015176,
+     "utilityLcb": -3.64885077,
+     "playSelectionValue": 0,
+     "pv": [
+      "F4"
+     ]
+    },
+    {
+     "move": "D6",
+     "order": 15,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.44098483,
+     "scoreLead": -1.03128505,
+     "lcb": -0.809015176,
+     "utilityLcb": -3.64885077,
+     "playSelectionValue": 0,
+     "pv": [
+      "D6"
+     ],
+     "isSymmetryOf": "F4"
+    },
+    {
+     "move": "G7",
+     "order": 16,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.385488167,
+     "scoreLead": -1.23740113,
+     "lcb": -0.864511839,
+     "utilityLcb": -3.76317795,
+     "playSelectionValue": 0,
+     "pv": [
+      "G7"
+     ]
+    },
+    {
+     "move": "E2",
+     "order": 17,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.394271791,
+     "scoreLead": -1.16650605,
+     "lcb": -0.855728215,
+     "utilityLcb": -3.75133112,
+     "playSelectionValue": 0,
+     "pv": [
+      "E2"
+     ]
+    },
+    {
+     "move": "B5",
+     "order": 18,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.394271791,
+     "scoreLead": -1.16650605,
+     "lcb": -0.855728215,
+     "utilityLcb": -3.75133112,
+     "playSelectionValue": 0,
+     "pv": [
+      "B5"
+     ],
+     "isSymmetryOf": "E2"
+    },
+    {
+     "move": "F5",
+     "order": 19,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.401615083,
+     "scoreLead": -1.13100386,
+     "lcb": -0.848384923,
+     "utilityLcb": -3.73618511,
+     "playSelectionValue": 0,
+     "pv": [
+      "F5"
+     ]
+    },
+    {
+     "move": "E6",
+     "order": 20,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.401615083,
+     "scoreLead": -1.13100386,
+     "lcb": -0.848384923,
+     "utilityLcb": -3.73618511,
+     "playSelectionValue": 0,
+     "pv": [
+      "E6"
+     ],
+     "isSymmetryOf": "F5"
+    },
+    {
+     "move": "E4",
+     "order": 21,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.420172498,
+     "scoreLead": -1.0560236,
+     "lcb": -0.829827509,
+     "utilityLcb": -3.69557613,
+     "playSelectionValue": 0,
+     "pv": [
+      "E4"
+     ]
+    },
+    {
+     "move": "D5",
+     "order": 22,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.420172498,
+     "scoreLead": -1.0560236,
+     "lcb": -0.829827509,
+     "utilityLcb": -3.69557613,
+     "playSelectionValue": 0,
+     "pv": [
+      "D5"
+     ],
+     "isSymmetryOf": "E4"
+    },
+    {
+     "move": "G3",
+     "order": 23,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.398429349,
+     "scoreLead": -1.21517587,
+     "lcb": -0.851570657,
+     "utilityLcb": -3.73582035,
+     "playSelectionValue": 0,
+     "pv": [
+      "G3"
+     ]
+    },
+    {
+     "move": "C7",
+     "order": 24,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.398429349,
+     "scoreLead": -1.21517587,
+     "lcb": -0.851570657,
+     "utilityLcb": -3.73582035,
+     "playSelectionValue": 0,
+     "pv": [
+      "C7"
+     ],
+     "isSymmetryOf": "G3"
+    },
+    {
+     "move": "H5",
+     "order": 25,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.313848078,
+     "scoreLead": -2.57958508,
+     "lcb": -0.936151928,
+     "utilityLcb": -3.93030784,
+     "playSelectionValue": 0,
+     "pv": [
+      "H5"
+     ]
+    },
+    {
+     "move": "E8",
+     "order": 26,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.313848078,
+     "scoreLead": -2.57958508,
+     "lcb": -0.936151928,
+     "utilityLcb": -3.93030784,
+     "playSelectionValue": 0,
+     "pv": [
+      "E8"
+     ],
+     "isSymmetryOf": "H5"
+    },
+    {
+     "move": "F2",
+     "order": 27,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.380659461,
+     "scoreLead": -1.40715182,
+     "lcb": -0.869340545,
+     "utilityLcb": -3.77678818,
+     "playSelectionValue": 0,
+     "pv": [
+      "F2"
+     ]
+    },
+    {
+     "move": "B6",
+     "order": 28,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.380659461,
+     "scoreLead": -1.40715182,
+     "lcb": -0.869340545,
+     "utilityLcb": -3.77678818,
+     "playSelectionValue": 0,
+     "pv": [
+      "B6"
+     ],
+     "isSymmetryOf": "F2"
+    },
+    {
+     "move": "D2",
+     "order": 29,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.360628545,
+     "scoreLead": -1.93036258,
+     "lcb": -0.889371461,
+     "utilityLcb": -3.83184811,
+     "playSelectionValue": 0,
+     "pv": [
+      "D2"
+     ]
+    },
+    {
+     "move": "B4",
+     "order": 30,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.360628545,
+     "scoreLead": -1.93036258,
+     "lcb": -0.889371461,
+     "utilityLcb": -3.83184811,
+     "playSelectionValue": 0,
+     "pv": [
+      "B4"
+     ],
+     "isSymmetryOf": "D2"
+    },
+    {
+     "move": "H6",
+     "order": 31,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.293550268,
+     "scoreLead": -2.87096238,
+     "lcb": -0.956449739,
+     "utilityLcb": -3.97618546,
+     "playSelectionValue": 0,
+     "pv": [
+      "H6"
+     ]
+    },
+    {
+     "move": "F8",
+     "order": 32,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.293550268,
+     "scoreLead": -2.87096238,
+     "lcb": -0.956449739,
+     "utilityLcb": -3.97618546,
+     "playSelectionValue": 0,
+     "pv": [
+      "F8"
+     ],
+     "isSymmetryOf": "H6"
+    },
+    {
+     "move": "C2",
+     "order": 33,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.135889158,
+     "scoreLead": -5.71034479,
+     "lcb": -1.11411085,
+     "utilityLcb": -4.32470829,
+     "playSelectionValue": 0,
+     "pv": [
+      "C2"
+     ]
+    },
+    {
+     "move": "B3",
+     "order": 34,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.135889158,
+     "scoreLead": -5.71034479,
+     "lcb": -1.11411085,
+     "utilityLcb": -4.32470829,
+     "playSelectionValue": 0,
+     "pv": [
+      "B3"
+     ],
+     "isSymmetryOf": "C2"
+    },
+    {
+     "move": "H4",
+     "order": 35,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.300953746,
+     "scoreLead": -2.96773148,
+     "lcb": -0.949046261,
+     "utilityLcb": -3.9591132,
+     "playSelectionValue": 0,
+     "pv": [
+      "H4"
+     ]
+    },
+    {
+     "move": "D8",
+     "order": 36,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.300953746,
+     "scoreLead": -2.96773148,
+     "lcb": -0.949046261,
+     "utilityLcb": -3.9591132,
+     "playSelectionValue": 0,
+     "pv": [
+      "D8"
+     ],
+     "isSymmetryOf": "H4"
+    },
+    {
+     "move": "H7",
+     "order": 37,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.208934978,
+     "scoreLead": -4.33414364,
+     "lcb": -1.04106503,
+     "utilityLcb": -4.1669612,
+     "playSelectionValue": 0,
+     "pv": [
+      "H7"
+     ]
+    },
+    {
+     "move": "G8",
+     "order": 38,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.208934978,
+     "scoreLead": -4.33414364,
+     "lcb": -1.04106503,
+     "utilityLcb": -4.1669612,
+     "playSelectionValue": 0,
+     "pv": [
+      "G8"
+     ],
+     "isSymmetryOf": "H7"
+    },
+    {
+     "move": "G2",
+     "order": 39,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.245384693,
+     "scoreLead": -3.92717481,
+     "lcb": -1.00461531,
+     "utilityLcb": -4.08564033,
+     "playSelectionValue": 0,
+     "pv": [
+      "G2"
+     ]
+    },
+    {
+     "move": "B7",
+     "order": 40,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.245384693,
+     "scoreLead": -3.92717481,
+     "lcb": -1.00461531,
+     "utilityLcb": -4.08564033,
+     "playSelectionValue": 0,
+     "pv": [
+      "B7"
+     ],
+     "isSymmetryOf": "G2"
+    },
+    {
+     "move": "J5",
+     "order": 41,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0636876151,
+     "scoreLead": -10.0497866,
+     "lcb": -1.18631239,
+     "utilityLcb": -4.52016186,
+     "playSelectionValue": 0,
+     "pv": [
+      "J5"
+     ]
+    },
+    {
+     "move": "E9",
+     "order": 42,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0636876151,
+     "scoreLead": -10.0497866,
+     "lcb": -1.18631239,
+     "utilityLcb": -4.52016186,
+     "playSelectionValue": 0,
+     "pv": [
+      "E9"
+     ],
+     "isSymmetryOf": "J5"
+    },
+    {
+     "move": "H3",
+     "order": 43,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.232243061,
+     "scoreLead": -4.24332809,
+     "lcb": -1.01775695,
+     "utilityLcb": -4.11339808,
+     "playSelectionValue": 0,
+     "pv": [
+      "H3"
+     ]
+    },
+    {
+     "move": "C8",
+     "order": 44,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.232243061,
+     "scoreLead": -4.24332809,
+     "lcb": -1.01775695,
+     "utilityLcb": -4.11339808,
+     "playSelectionValue": 0,
+     "pv": [
+      "C8"
+     ],
+     "isSymmetryOf": "H3"
+    },
+    {
+     "move": "J4",
+     "order": 45,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0606423728,
+     "scoreLead": -10.3919306,
+     "lcb": -1.18935763,
+     "utilityLcb": -4.52859618,
+     "playSelectionValue": 0,
+     "pv": [
+      "J4"
+     ]
+    },
+    {
+     "move": "D9",
+     "order": 46,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0606423728,
+     "scoreLead": -10.3919306,
+     "lcb": -1.18935763,
+     "utilityLcb": -4.52859618,
+     "playSelectionValue": 0,
+     "pv": [
+      "D9"
+     ],
+     "isSymmetryOf": "J4"
+    },
+    {
+     "move": "H8",
+     "order": 47,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.109575287,
+     "scoreLead": -7.04905128,
+     "lcb": -1.14042472,
+     "utilityLcb": -4.39550362,
+     "playSelectionValue": 0,
+     "pv": [
+      "H8"
+     ]
+    },
+    {
+     "move": "E1",
+     "order": 48,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0782167166,
+     "scoreLead": -9.41804314,
+     "lcb": -1.17178329,
+     "utilityLcb": -4.47947233,
+     "playSelectionValue": 0,
+     "pv": [
+      "E1"
+     ]
+    },
+    {
+     "move": "A5",
+     "order": 49,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0782167166,
+     "scoreLead": -9.41804314,
+     "lcb": -1.17178329,
+     "utilityLcb": -4.47947233,
+     "playSelectionValue": 0,
+     "pv": [
+      "A5"
+     ],
+     "isSymmetryOf": "E1"
+    },
+    {
+     "move": "F1",
+     "order": 50,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0673211105,
+     "scoreLead": -9.9057169,
+     "lcb": -1.1826789,
+     "utilityLcb": -4.50928315,
+     "playSelectionValue": 0,
+     "pv": [
+      "F1"
+     ]
+    },
+    {
+     "move": "A6",
+     "order": 51,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0673211105,
+     "scoreLead": -9.9057169,
+     "lcb": -1.1826789,
+     "utilityLcb": -4.50928315,
+     "playSelectionValue": 0,
+     "pv": [
+      "A6"
+     ],
+     "isSymmetryOf": "F1"
+    },
+    {
+     "move": "J6",
+     "order": 52,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0617163312,
+     "scoreLead": -10.3798504,
+     "lcb": -1.18828368,
+     "utilityLcb": -4.52851586,
+     "playSelectionValue": 0,
+     "pv": [
+      "J6"
+     ]
+    },
+    {
+     "move": "F9",
+     "order": 53,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0617163312,
+     "scoreLead": -10.3798504,
+     "lcb": -1.18828368,
+     "utilityLcb": -4.52851586,
+     "playSelectionValue": 0,
+     "pv": [
+      "F9"
+     ],
+     "isSymmetryOf": "J6"
+    },
+    {
+     "move": "H2",
+     "order": 54,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103025615,
+     "scoreLead": -7.07359409,
+     "lcb": -1.14697439,
+     "utilityLcb": -4.40568146,
+     "playSelectionValue": 0,
+     "pv": [
+      "H2"
+     ]
+    },
+    {
+     "move": "B8",
+     "order": 55,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103025615,
+     "scoreLead": -7.07359409,
+     "lcb": -1.14697439,
+     "utilityLcb": -4.40568146,
+     "playSelectionValue": 0,
+     "pv": [
+      "B8"
+     ],
+     "isSymmetryOf": "H2"
+    },
+    {
+     "move": "B2",
+     "order": 56,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0982555673,
+     "scoreLead": -7.96428013,
+     "lcb": -1.15174444,
+     "utilityLcb": -4.42912627,
+     "playSelectionValue": 0,
+     "pv": [
+      "B2"
+     ]
+    },
+    {
+     "move": "J8",
+     "order": 57,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0564714205,
+     "scoreLead": -11.0329475,
+     "lcb": -1.19352859,
+     "utilityLcb": -4.55608126,
+     "playSelectionValue": 0,
+     "pv": [
+      "J8"
+     ]
+    },
+    {
+     "move": "H9",
+     "order": 58,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0564714205,
+     "scoreLead": -11.0329475,
+     "lcb": -1.19352859,
+     "utilityLcb": -4.55608126,
+     "playSelectionValue": 0,
+     "pv": [
+      "H9"
+     ],
+     "isSymmetryOf": "J8"
+    },
+    {
+     "move": "J2",
+     "order": 59,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0530278571,
+     "scoreLead": -11.0132608,
+     "lcb": -1.19697215,
+     "utilityLcb": -4.55839906,
+     "playSelectionValue": 0,
+     "pv": [
+      "J2"
+     ]
+    },
+    {
+     "move": "B9",
+     "order": 60,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0530278571,
+     "scoreLead": -11.0132608,
+     "lcb": -1.19697215,
+     "utilityLcb": -4.55839906,
+     "playSelectionValue": 0,
+     "pv": [
+      "B9"
+     ],
+     "isSymmetryOf": "J2"
+    },
+    {
+     "move": "J7",
+     "order": 61,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0617188327,
+     "scoreLead": -10.5762939,
+     "lcb": -1.18828117,
+     "utilityLcb": -4.53277434,
+     "playSelectionValue": 0,
+     "pv": [
+      "J7"
+     ]
+    },
+    {
+     "move": "G9",
+     "order": 62,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0617188327,
+     "scoreLead": -10.5762939,
+     "lcb": -1.18828117,
+     "utilityLcb": -4.53277434,
+     "playSelectionValue": 0,
+     "pv": [
+      "G9"
+     ],
+     "isSymmetryOf": "J7"
+    },
+    {
+     "move": "J3",
+     "order": 63,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.055578284,
+     "scoreLead": -10.8718662,
+     "lcb": -1.19442172,
+     "utilityLcb": -4.54854625,
+     "playSelectionValue": 0,
+     "pv": [
+      "J3"
+     ]
+    },
+    {
+     "move": "C9",
+     "order": 64,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.055578284,
+     "scoreLead": -10.8718662,
+     "lcb": -1.19442172,
+     "utilityLcb": -4.54854625,
+     "playSelectionValue": 0,
+     "pv": [
+      "C9"
+     ],
+     "isSymmetryOf": "J3"
+    },
+    {
+     "move": "H1",
+     "order": 65,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0564147122,
+     "scoreLead": -10.643693,
+     "lcb": -1.19358529,
+     "utilityLcb": -4.54845023,
+     "playSelectionValue": 0,
+     "pv": [
+      "H1"
+     ]
+    },
+    {
+     "move": "A8",
+     "order": 66,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0564147122,
+     "scoreLead": -10.643693,
+     "lcb": -1.19358529,
+     "utilityLcb": -4.54845023,
+     "playSelectionValue": 0,
+     "pv": [
+      "A8"
+     ],
+     "isSymmetryOf": "H1"
+    },
+    {
+     "move": "D1",
+     "order": 67,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.066494938,
+     "scoreLead": -10.371047,
+     "lcb": -1.18350507,
+     "utilityLcb": -4.52434862,
+     "playSelectionValue": 0,
+     "pv": [
+      "D1"
+     ]
+    },
+    {
+     "move": "A4",
+     "order": 68,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.066494938,
+     "scoreLead": -10.371047,
+     "lcb": -1.18350507,
+     "utilityLcb": -4.52434862,
+     "playSelectionValue": 0,
+     "pv": [
+      "A4"
+     ],
+     "isSymmetryOf": "D1"
+    },
+    {
+     "move": "G1",
+     "order": 69,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.062247511,
+     "scoreLead": -10.8151245,
+     "lcb": -1.1877525,
+     "utilityLcb": -4.53099453,
+     "playSelectionValue": 0,
+     "pv": [
+      "G1"
+     ]
+    },
+    {
+     "move": "A7",
+     "order": 70,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.062247511,
+     "scoreLead": -10.8151245,
+     "lcb": -1.1877525,
+     "utilityLcb": -4.53099453,
+     "playSelectionValue": 0,
+     "pv": [
+      "A7"
+     ],
+     "isSymmetryOf": "G1"
     }
    ]
   },
@@ -3532,6 +4435,1538 @@
    ]
   },
   {
+   "id": "sym-9-empty",
+   "moves": [],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "E5",
+     "order": 0,
+     "visits": 65,
+     "edgeVisits": 65,
+     "winrate": 0.450506878,
+     "scoreLead": -0.380184717,
+     "lcb": 0.431177054,
+     "utilityLcb": -0.164297577,
+     "playSelectionValue": 65,
+     "pv": [
+      "E5",
+      "G5",
+      "F3",
+      "F7",
+      "E7",
+      "E8",
+      "D7"
+     ]
+    },
+    {
+     "move": "F5",
+     "order": 1,
+     "visits": 26,
+     "edgeVisits": 26,
+     "winrate": 0.459859733,
+     "scoreLead": -0.384100843,
+     "lcb": 0.434372257,
+     "utilityLcb": -0.175433363,
+     "playSelectionValue": 26,
+     "pv": [
+      "F5",
+      "D5",
+      "E7",
+      "D7",
+      "D8",
+      "C7",
+      "E3"
+     ]
+    },
+    {
+     "move": "D5",
+     "order": 2,
+     "visits": 26,
+     "edgeVisits": 26,
+     "winrate": 0.459859733,
+     "scoreLead": -0.384100843,
+     "lcb": 0.434372257,
+     "utilityLcb": -0.175433363,
+     "playSelectionValue": 26,
+     "pv": [
+      "D5",
+      "F5",
+      "E7",
+      "F7",
+      "F8",
+      "G7",
+      "E3"
+     ],
+     "isSymmetryOf": "F5"
+    },
+    {
+     "move": "E4",
+     "order": 3,
+     "visits": 26,
+     "edgeVisits": 26,
+     "winrate": 0.459859733,
+     "scoreLead": -0.384100843,
+     "lcb": 0.434372257,
+     "utilityLcb": -0.175433363,
+     "playSelectionValue": 26,
+     "pv": [
+      "E4",
+      "E6",
+      "C5",
+      "C6",
+      "B6",
+      "C7",
+      "G5"
+     ],
+     "isSymmetryOf": "F5"
+    },
+    {
+     "move": "E6",
+     "order": 4,
+     "visits": 26,
+     "edgeVisits": 26,
+     "winrate": 0.459859733,
+     "scoreLead": -0.384100843,
+     "lcb": 0.434372257,
+     "utilityLcb": -0.175433363,
+     "playSelectionValue": 26,
+     "pv": [
+      "E6",
+      "E4",
+      "C5",
+      "C4",
+      "B4",
+      "C3",
+      "G5"
+     ],
+     "isSymmetryOf": "F5"
+    },
+    {
+     "move": "F6",
+     "order": 5,
+     "visits": 7,
+     "edgeVisits": 7,
+     "winrate": 0.445407295,
+     "scoreLead": -0.855194564,
+     "lcb": 0.386900443,
+     "utilityLcb": -0.309604746,
+     "playSelectionValue": 5,
+     "pv": [
+      "F6",
+      "D4",
+      "D6",
+      "G4"
+     ]
+    },
+    {
+     "move": "F4",
+     "order": 6,
+     "visits": 7,
+     "edgeVisits": 7,
+     "winrate": 0.445407295,
+     "scoreLead": -0.855194564,
+     "lcb": 0.386900443,
+     "utilityLcb": -0.309604746,
+     "playSelectionValue": 5,
+     "pv": [
+      "F4",
+      "D6",
+      "D4",
+      "G6"
+     ],
+     "isSymmetryOf": "F6"
+    },
+    {
+     "move": "D6",
+     "order": 7,
+     "visits": 7,
+     "edgeVisits": 7,
+     "winrate": 0.445407295,
+     "scoreLead": -0.855194564,
+     "lcb": 0.386900443,
+     "utilityLcb": -0.309604746,
+     "playSelectionValue": 5,
+     "pv": [
+      "D6",
+      "F4",
+      "F6",
+      "C4"
+     ],
+     "isSymmetryOf": "F6"
+    },
+    {
+     "move": "D4",
+     "order": 8,
+     "visits": 7,
+     "edgeVisits": 7,
+     "winrate": 0.445407295,
+     "scoreLead": -0.855194564,
+     "lcb": 0.386900443,
+     "utilityLcb": -0.309604746,
+     "playSelectionValue": 5,
+     "pv": [
+      "D4",
+      "F6",
+      "F4",
+      "C6"
+     ],
+     "isSymmetryOf": "F6"
+    },
+    {
+     "move": "G5",
+     "order": 9,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.426195309,
+     "scoreLead": -0.667507648,
+     "lcb": -0.823804698,
+     "utilityLcb": -3.67019456,
+     "playSelectionValue": 0,
+     "pv": [
+      "G5"
+     ]
+    },
+    {
+     "move": "C5",
+     "order": 10,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.426195309,
+     "scoreLead": -0.667507648,
+     "lcb": -0.823804698,
+     "utilityLcb": -3.67019456,
+     "playSelectionValue": 0,
+     "pv": [
+      "C5"
+     ],
+     "isSymmetryOf": "G5"
+    },
+    {
+     "move": "E3",
+     "order": 11,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.426195309,
+     "scoreLead": -0.667507648,
+     "lcb": -0.823804698,
+     "utilityLcb": -3.67019456,
+     "playSelectionValue": 0,
+     "pv": [
+      "E3"
+     ],
+     "isSymmetryOf": "G5"
+    },
+    {
+     "move": "E7",
+     "order": 12,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.426195309,
+     "scoreLead": -0.667507648,
+     "lcb": -0.823804698,
+     "utilityLcb": -3.67019456,
+     "playSelectionValue": 0,
+     "pv": [
+      "E7"
+     ],
+     "isSymmetryOf": "G5"
+    }
+   ]
+  },
+  {
+   "id": "sym-9-tengen",
+   "moves": [
+    [
+     "B",
+     "E5"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "size": 9,
+   "maxVisits": 100,
+   "komi": 7.5,
+   "rootVisits": 100,
+   "moveInfos": [
+    {
+     "move": "C5",
+     "order": 0,
+     "visits": 43,
+     "edgeVisits": 43,
+     "winrate": 0.538922038,
+     "scoreLead": 0.168199903,
+     "lcb": 0.510341217,
+     "utilityLcb": -0.0156191478,
+     "playSelectionValue": 43,
+     "pv": [
+      "C5",
+      "D3",
+      "G5",
+      "F6",
+      "G6",
+      "F7"
+     ]
+    },
+    {
+     "move": "G5",
+     "order": 1,
+     "visits": 43,
+     "edgeVisits": 43,
+     "winrate": 0.538922038,
+     "scoreLead": 0.168199903,
+     "lcb": 0.510341217,
+     "utilityLcb": -0.0156191478,
+     "playSelectionValue": 43,
+     "pv": [
+      "G5",
+      "F3",
+      "C5",
+      "D6",
+      "C6",
+      "D7"
+     ],
+     "isSymmetryOf": "C5"
+    },
+    {
+     "move": "E7",
+     "order": 2,
+     "visits": 43,
+     "edgeVisits": 43,
+     "winrate": 0.538922038,
+     "scoreLead": 0.168199903,
+     "lcb": 0.510341217,
+     "utilityLcb": -0.0156191478,
+     "playSelectionValue": 43,
+     "pv": [
+      "E7",
+      "G6",
+      "E3",
+      "D4",
+      "D3",
+      "C4"
+     ],
+     "isSymmetryOf": "C5"
+    },
+    {
+     "move": "E3",
+     "order": 3,
+     "visits": 43,
+     "edgeVisits": 43,
+     "winrate": 0.538922038,
+     "scoreLead": 0.168199903,
+     "lcb": 0.510341217,
+     "utilityLcb": -0.0156191478,
+     "playSelectionValue": 43,
+     "pv": [
+      "E3",
+      "G4",
+      "E7",
+      "D6",
+      "D7",
+      "C6"
+     ],
+     "isSymmetryOf": "C5"
+    },
+    {
+     "move": "C4",
+     "order": 4,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "C4",
+      "D3",
+      "G6",
+      "F7",
+      "G7",
+      "C6"
+     ]
+    },
+    {
+     "move": "C6",
+     "order": 5,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "C6",
+      "D7",
+      "G4",
+      "F3",
+      "G3",
+      "C4"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "G4",
+     "order": 6,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "G4",
+      "F3",
+      "C6",
+      "D7",
+      "C7",
+      "G6"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "G6",
+     "order": 7,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "G6",
+      "F7",
+      "C4",
+      "D3",
+      "C3",
+      "G4"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "F7",
+     "order": 8,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "F7",
+      "G6",
+      "D3",
+      "C4",
+      "C3",
+      "D7"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "D7",
+     "order": 9,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "D7",
+      "C6",
+      "F3",
+      "G4",
+      "G3",
+      "F7"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "F3",
+     "order": 10,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "F3",
+      "G4",
+      "D7",
+      "C6",
+      "C7",
+      "D3"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "D3",
+     "order": 11,
+     "visits": 40,
+     "edgeVisits": 40,
+     "winrate": 0.522712557,
+     "scoreLead": 0.0460449764,
+     "lcb": 0.4955062,
+     "utilityLcb": -0.0608982009,
+     "playSelectionValue": 2,
+     "pv": [
+      "D3",
+      "C4",
+      "F7",
+      "G6",
+      "G7",
+      "F3"
+     ],
+     "isSymmetryOf": "C4"
+    },
+    {
+     "move": "D4",
+     "order": 12,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.502478669,
+     "scoreLead": 0.0148310363,
+     "lcb": 0.229608571,
+     "utilityLcb": -0.843534965,
+     "playSelectionValue": 0,
+     "pv": [
+      "D4",
+      "D5",
+      "C4"
+     ]
+    },
+    {
+     "move": "D6",
+     "order": 13,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.502478669,
+     "scoreLead": 0.0148310363,
+     "lcb": 0.229608571,
+     "utilityLcb": -0.843534965,
+     "playSelectionValue": 0,
+     "pv": [
+      "D6",
+      "D5",
+      "C6"
+     ],
+     "isSymmetryOf": "D4"
+    },
+    {
+     "move": "F4",
+     "order": 14,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.502478669,
+     "scoreLead": 0.0148310363,
+     "lcb": 0.229608571,
+     "utilityLcb": -0.843534965,
+     "playSelectionValue": 0,
+     "pv": [
+      "F4",
+      "F5",
+      "G4"
+     ],
+     "isSymmetryOf": "D4"
+    },
+    {
+     "move": "F6",
+     "order": 15,
+     "visits": 3,
+     "edgeVisits": 3,
+     "winrate": 0.502478669,
+     "scoreLead": 0.0148310363,
+     "lcb": 0.229608571,
+     "utilityLcb": -0.843534965,
+     "playSelectionValue": 0,
+     "pv": [
+      "F6",
+      "F5",
+      "G6"
+     ],
+     "isSymmetryOf": "D4"
+    },
+    {
+     "move": "B5",
+     "order": 16,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.497283734,
+     "scoreLead": -0.961391628,
+     "lcb": -0.0359898961,
+     "utilityLcb": -1.55400565,
+     "playSelectionValue": 0,
+     "pv": [
+      "B5",
+      "C6"
+     ]
+    },
+    {
+     "move": "H5",
+     "order": 17,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.497283734,
+     "scoreLead": -0.961391628,
+     "lcb": -0.0359898961,
+     "utilityLcb": -1.55400565,
+     "playSelectionValue": 0,
+     "pv": [
+      "H5",
+      "G6"
+     ],
+     "isSymmetryOf": "B5"
+    },
+    {
+     "move": "E8",
+     "order": 18,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.497283734,
+     "scoreLead": -0.961391628,
+     "lcb": -0.0359898961,
+     "utilityLcb": -1.55400565,
+     "playSelectionValue": 0,
+     "pv": [
+      "E8",
+      "D7"
+     ],
+     "isSymmetryOf": "B5"
+    },
+    {
+     "move": "E2",
+     "order": 19,
+     "visits": 2,
+     "edgeVisits": 2,
+     "winrate": 0.497283734,
+     "scoreLead": -0.961391628,
+     "lcb": -0.0359898961,
+     "utilityLcb": -1.55400565,
+     "playSelectionValue": 0,
+     "pv": [
+      "E2",
+      "D3"
+     ],
+     "isSymmetryOf": "B5"
+    },
+    {
+     "move": "D5",
+     "order": 20,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507468984,
+     "scoreLead": -0.288981527,
+     "lcb": -0.742531023,
+     "utilityLcb": -3.51286996,
+     "playSelectionValue": 0,
+     "pv": [
+      "D5"
+     ]
+    },
+    {
+     "move": "F5",
+     "order": 21,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507468984,
+     "scoreLead": -0.288981527,
+     "lcb": -0.742531023,
+     "utilityLcb": -3.51286996,
+     "playSelectionValue": 0,
+     "pv": [
+      "F5"
+     ],
+     "isSymmetryOf": "D5"
+    },
+    {
+     "move": "E6",
+     "order": 22,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507468984,
+     "scoreLead": -0.288981527,
+     "lcb": -0.742531023,
+     "utilityLcb": -3.51286996,
+     "playSelectionValue": 0,
+     "pv": [
+      "E6"
+     ],
+     "isSymmetryOf": "D5"
+    },
+    {
+     "move": "E4",
+     "order": 23,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507468984,
+     "scoreLead": -0.288981527,
+     "lcb": -0.742531023,
+     "utilityLcb": -3.51286996,
+     "playSelectionValue": 0,
+     "pv": [
+      "E4"
+     ],
+     "isSymmetryOf": "D5"
+    },
+    {
+     "move": "C3",
+     "order": 24,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507463858,
+     "scoreLead": -0.420790583,
+     "lcb": -0.742536149,
+     "utilityLcb": -3.51490772,
+     "playSelectionValue": 0,
+     "pv": [
+      "C3"
+     ]
+    },
+    {
+     "move": "C7",
+     "order": 25,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507463858,
+     "scoreLead": -0.420790583,
+     "lcb": -0.742536149,
+     "utilityLcb": -3.51490772,
+     "playSelectionValue": 0,
+     "pv": [
+      "C7"
+     ],
+     "isSymmetryOf": "C3"
+    },
+    {
+     "move": "G3",
+     "order": 26,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507463858,
+     "scoreLead": -0.420790583,
+     "lcb": -0.742536149,
+     "utilityLcb": -3.51490772,
+     "playSelectionValue": 0,
+     "pv": [
+      "G3"
+     ],
+     "isSymmetryOf": "C3"
+    },
+    {
+     "move": "G7",
+     "order": 27,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.507463858,
+     "scoreLead": -0.420790583,
+     "lcb": -0.742536149,
+     "utilityLcb": -3.51490772,
+     "playSelectionValue": 0,
+     "pv": [
+      "G7"
+     ],
+     "isSymmetryOf": "C3"
+    },
+    {
+     "move": "B4",
+     "order": 28,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "B4"
+     ]
+    },
+    {
+     "move": "B6",
+     "order": 29,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "B6"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "H4",
+     "order": 30,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "H4"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "H6",
+     "order": 31,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "H6"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "F8",
+     "order": 32,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "F8"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "D8",
+     "order": 33,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "D8"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "F2",
+     "order": 34,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "F2"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "D2",
+     "order": 35,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.518361822,
+     "scoreLead": -0.301543057,
+     "lcb": -0.731638185,
+     "utilityLcb": -3.48862994,
+     "playSelectionValue": 0,
+     "pv": [
+      "D2"
+     ],
+     "isSymmetryOf": "B4"
+    },
+    {
+     "move": "B3",
+     "order": 36,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "B3"
+     ]
+    },
+    {
+     "move": "B7",
+     "order": 37,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "B7"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "H3",
+     "order": 38,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "H3"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "H7",
+     "order": 39,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "H7"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "G8",
+     "order": 40,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "G8"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "C8",
+     "order": 41,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "C8"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "G2",
+     "order": 42,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "G2"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "C2",
+     "order": 43,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.432856813,
+     "scoreLead": -0.936740279,
+     "lcb": -0.817143193,
+     "utilityLcb": -3.67545026,
+     "playSelectionValue": 0,
+     "pv": [
+      "C2"
+     ],
+     "isSymmetryOf": "B3"
+    },
+    {
+     "move": "B2",
+     "order": 44,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.307281628,
+     "scoreLead": -3.19489121,
+     "lcb": -0.942718378,
+     "utilityLcb": -3.94734269,
+     "playSelectionValue": 0,
+     "pv": [
+      "B2"
+     ]
+    },
+    {
+     "move": "B8",
+     "order": 45,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.307281628,
+     "scoreLead": -3.19489121,
+     "lcb": -0.942718378,
+     "utilityLcb": -3.94734269,
+     "playSelectionValue": 0,
+     "pv": [
+      "B8"
+     ],
+     "isSymmetryOf": "B2"
+    },
+    {
+     "move": "H2",
+     "order": 46,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.307281628,
+     "scoreLead": -3.19489121,
+     "lcb": -0.942718378,
+     "utilityLcb": -3.94734269,
+     "playSelectionValue": 0,
+     "pv": [
+      "H2"
+     ],
+     "isSymmetryOf": "B2"
+    },
+    {
+     "move": "H8",
+     "order": 47,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.307281628,
+     "scoreLead": -3.19489121,
+     "lcb": -0.942718378,
+     "utilityLcb": -3.94734269,
+     "playSelectionValue": 0,
+     "pv": [
+      "H8"
+     ],
+     "isSymmetryOf": "B2"
+    },
+    {
+     "move": "A4",
+     "order": 48,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "A4"
+     ]
+    },
+    {
+     "move": "A6",
+     "order": 49,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "A6"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "J4",
+     "order": 50,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "J4"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "J6",
+     "order": 51,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "J6"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "F9",
+     "order": 52,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "F9"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "D9",
+     "order": 53,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "D9"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "F1",
+     "order": 54,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "F1"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "D1",
+     "order": 55,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.126221426,
+     "scoreLead": -7.15654373,
+     "lcb": -1.12377858,
+     "utilityLcb": -4.35639876,
+     "playSelectionValue": 0,
+     "pv": [
+      "D1"
+     ],
+     "isSymmetryOf": "A4"
+    },
+    {
+     "move": "A5",
+     "order": 56,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.160075411,
+     "scoreLead": -6.38199615,
+     "lcb": -1.0899246,
+     "utilityLcb": -4.27767794,
+     "playSelectionValue": 0,
+     "pv": [
+      "A5"
+     ]
+    },
+    {
+     "move": "J5",
+     "order": 57,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.160075411,
+     "scoreLead": -6.38199615,
+     "lcb": -1.0899246,
+     "utilityLcb": -4.27767794,
+     "playSelectionValue": 0,
+     "pv": [
+      "J5"
+     ],
+     "isSymmetryOf": "A5"
+    },
+    {
+     "move": "E9",
+     "order": 58,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.160075411,
+     "scoreLead": -6.38199615,
+     "lcb": -1.0899246,
+     "utilityLcb": -4.27767794,
+     "playSelectionValue": 0,
+     "pv": [
+      "E9"
+     ],
+     "isSymmetryOf": "A5"
+    },
+    {
+     "move": "E1",
+     "order": 59,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.160075411,
+     "scoreLead": -6.38199615,
+     "lcb": -1.0899246,
+     "utilityLcb": -4.27767794,
+     "playSelectionValue": 0,
+     "pv": [
+      "E1"
+     ],
+     "isSymmetryOf": "A5"
+    },
+    {
+     "move": "A2",
+     "order": 60,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "A2"
+     ]
+    },
+    {
+     "move": "A8",
+     "order": 61,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "A8"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "J2",
+     "order": 62,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "J2"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "J8",
+     "order": 63,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "J8"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "H9",
+     "order": 64,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "H9"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "B9",
+     "order": 65,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "B9"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "H1",
+     "order": 66,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "H1"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "B1",
+     "order": 67,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.103934694,
+     "scoreLead": -8.26917648,
+     "lcb": -1.14606531,
+     "utilityLcb": -4.41602369,
+     "playSelectionValue": 0,
+     "pv": [
+      "B1"
+     ],
+     "isSymmetryOf": "A2"
+    },
+    {
+     "move": "A3",
+     "order": 68,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "A3"
+     ]
+    },
+    {
+     "move": "A7",
+     "order": 69,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "A7"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "J3",
+     "order": 70,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "J3"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "J7",
+     "order": 71,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "J7"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "G9",
+     "order": 72,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "G9"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "C9",
+     "order": 73,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "C9"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "G1",
+     "order": 74,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "G1"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "C1",
+     "order": 75,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.116981395,
+     "scoreLead": -7.4733572,
+     "lcb": -1.13301861,
+     "utilityLcb": -4.38215281,
+     "playSelectionValue": 0,
+     "pv": [
+      "C1"
+     ],
+     "isSymmetryOf": "A3"
+    },
+    {
+     "move": "pass",
+     "order": 76,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0288630798,
+     "scoreLead": -11.692605,
+     "lcb": -1.22113693,
+     "utilityLcb": -4.65921592,
+     "playSelectionValue": 0,
+     "pv": [
+      "pass"
+     ]
+    },
+    {
+     "move": "A1",
+     "order": 77,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0366087016,
+     "scoreLead": -12.3681488,
+     "lcb": -1.2133913,
+     "utilityLcb": -4.61767449,
+     "playSelectionValue": 0,
+     "pv": [
+      "A1"
+     ]
+    },
+    {
+     "move": "A9",
+     "order": 78,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0366087016,
+     "scoreLead": -12.3681488,
+     "lcb": -1.2133913,
+     "utilityLcb": -4.61767449,
+     "playSelectionValue": 0,
+     "pv": [
+      "A9"
+     ],
+     "isSymmetryOf": "A1"
+    },
+    {
+     "move": "J1",
+     "order": 79,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0366087016,
+     "scoreLead": -12.3681488,
+     "lcb": -1.2133913,
+     "utilityLcb": -4.61767449,
+     "playSelectionValue": 0,
+     "pv": [
+      "J1"
+     ],
+     "isSymmetryOf": "A1"
+    },
+    {
+     "move": "J9",
+     "order": 80,
+     "visits": 1,
+     "edgeVisits": 1,
+     "winrate": 0.0366087016,
+     "scoreLead": -12.3681488,
+     "lcb": -1.2133913,
+     "utilityLcb": -4.61767449,
+     "playSelectionValue": 0,
+     "pv": [
+      "J9"
+     ],
+     "isSymmetryOf": "A1"
+    }
+   ]
+  },
+  {
    "id": "opening-19",
    "moves": [
     [
@@ -3627,89 +6062,117 @@
    "rootVisits": 30,
    "moveInfos": [
     {
-     "move": "C16",
-     "order": 0,
-     "visits": 7,
-     "edgeVisits": 7,
-     "winrate": 0.498569721,
-     "scoreLead": -0.0268548233,
-     "lcb": 0.446904038,
-     "utilityLcb": -0.145013645,
-     "playSelectionValue": 9.16738853,
-     "pv": [
-      "C16",
-      "Q3",
-      "E16",
-      "Q5",
-      "C3"
-     ]
-    },
-    {
      "move": "Q3",
-     "order": 1,
-     "visits": 7,
-     "edgeVisits": 7,
-     "winrate": 0.496382672,
-     "scoreLead": -0.0277144569,
-     "lcb": 0.44517197,
-     "utilityLcb": -0.154509605,
-     "playSelectionValue": 7,
+     "order": 0,
+     "visits": 15,
+     "edgeVisits": 15,
+     "winrate": 0.494514108,
+     "scoreLead": -0.0961256522,
+     "lcb": 0.482574943,
+     "utilityLcb": -0.0443103553,
+     "playSelectionValue": 21.2421817,
      "pv": [
       "Q3",
-      "C16",
+      "D17",
       "Q5",
-      "E16"
+      "D15",
+      "C3",
+      "D3",
+      "C4"
      ]
     },
     {
-     "move": "D17",
-     "order": 2,
-     "visits": 7,
-     "edgeVisits": 7,
-     "winrate": 0.496801224,
-     "scoreLead": -0.0185051197,
-     "lcb": 0.445164545,
-     "utilityLcb": -0.147817749,
-     "playSelectionValue": 7,
+     "move": "C16",
+     "order": 1,
+     "visits": 15,
+     "edgeVisits": 15,
+     "winrate": 0.494514108,
+     "scoreLead": -0.0961256522,
+     "lcb": 0.482574943,
+     "utilityLcb": -0.0443103553,
+     "playSelectionValue": 21.2421817,
      "pv": [
-      "D17",
-      "Q3",
-      "D15",
-      "Q5",
-      "C3"
-     ]
+      "C16",
+      "R4",
+      "E16",
+      "P4",
+      "C3",
+      "C4",
+      "D3"
+     ],
+     "isSymmetryOf": "Q3"
     },
     {
      "move": "R4",
-     "order": 3,
-     "visits": 6,
-     "edgeVisits": 6,
-     "winrate": 0.494564719,
-     "scoreLead": -0.165947914,
-     "lcb": 0.424980262,
-     "utilityLcb": -0.20611664,
-     "playSelectionValue": 6,
+     "order": 2,
+     "visits": 10,
+     "edgeVisits": 10,
+     "winrate": 0.492342262,
+     "scoreLead": -0.273042671,
+     "lcb": 0.466708068,
+     "utilityLcb": -0.0906546806,
+     "playSelectionValue": 10,
      "pv": [
       "R4",
       "D17",
       "P4",
-      "D15"
+      "D15",
+      "C3",
+      "D3"
      ]
+    },
+    {
+     "move": "D17",
+     "order": 3,
+     "visits": 10,
+     "edgeVisits": 10,
+     "winrate": 0.492342262,
+     "scoreLead": -0.273042671,
+     "lcb": 0.466708068,
+     "utilityLcb": -0.0906546806,
+     "playSelectionValue": 10,
+     "pv": [
+      "D17",
+      "R4",
+      "D15",
+      "P4",
+      "C3",
+      "C4"
+     ],
+     "isSymmetryOf": "R4"
     },
     {
      "move": "Q4",
      "order": 4,
-     "visits": 2,
-     "edgeVisits": 2,
-     "winrate": 0.491081722,
-     "scoreLead": -0.123149484,
-     "lcb": -0.0409476237,
-     "utilityLcb": -1.51643592,
-     "playSelectionValue": 2,
+     "visits": 4,
+     "edgeVisits": 4,
+     "winrate": 0.488109079,
+     "scoreLead": -0.20409031,
+     "lcb": 0.334772449,
+     "utilityLcb": -0.454885638,
+     "playSelectionValue": 4,
      "pv": [
       "Q4",
-      "D17"
+      "D17",
+      "C15"
      ]
+    },
+    {
+     "move": "D16",
+     "order": 5,
+     "visits": 4,
+     "edgeVisits": 4,
+     "winrate": 0.488109079,
+     "scoreLead": -0.20409031,
+     "lcb": 0.334772449,
+     "utilityLcb": -0.454885638,
+     "playSelectionValue": 4,
+     "pv": [
+      "D16",
+      "R4",
+      "P3"
+     ],
+     "isSymmetryOf": "Q4"
     }
    ]
   }
