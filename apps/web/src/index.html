@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoneMind</title>
+  <link rel="icon" href="brand/logos/favicon-32.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@700;800&display=swap">
+  <link rel="stylesheet" href="brand/tokens.css">
+  <link rel="stylesheet" href="brand/components.css">
+  <link rel="stylesheet" href="app.css">
+  <script>
+    try {
+      const t = localStorage.getItem('stonemind.theme'); if (t) document.documentElement.dataset.theme = t;
+      const b = localStorage.getItem('stonemind.backdrop'); if (b) document.documentElement.dataset.backdrop = b;
+    } catch {}
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body class="sm-root">
+  <div class="frame">
+    <header class="frame-top">
+      <sm-menu-bar></sm-menu-bar>
+
+      <section id="bar-workspaces" class="sm-glass sm-bar frame-bar" aria-label="Workspaces" hidden>
+        <p class="sm-secondary">No workspaces are open. Review, Play and Problems are not built yet.</p>
+      </section>
+
+      <section id="bar-layouts" class="sm-glass sm-bar frame-bar" aria-label="Layouts" hidden>
+        <span id="layouts-profile" class="sm-chip"></span>
+        <p class="sm-secondary">Layouts belong to a workspace, and none is open.</p>
+      </section>
+
+      <section id="bar-apps" class="sm-glass sm-bar frame-bar apps-bar" aria-label="Apps" hidden>
+        <div class="apps-group" role="group" aria-labelledby="apps-panels">
+          <span id="apps-panels" class="sm-label">Panels</span>
+          <button type="button" class="sm-btn" disabled>Game tree</button>
+          <button type="button" class="sm-btn" disabled>Analysis</button>
+          <button type="button" class="sm-btn" disabled>Notes</button>
+        </div>
+        <div class="apps-group" role="group" aria-labelledby="apps-gobans">
+          <span id="apps-gobans" class="sm-label">Gobans</span>
+          <button type="button" class="sm-btn" disabled>Review</button>
+          <button type="button" class="sm-btn" disabled>Play</button>
+          <button type="button" class="sm-btn" disabled>Problems</button>
+        </div>
+        <div class="apps-group" role="group" aria-labelledby="apps-singletons">
+          <span id="apps-singletons" class="sm-label">Apps</span>
+          <button type="button" class="sm-btn" data-singleton="files">Files</button>
+          <button type="button" class="sm-btn" data-singleton="engines">Engines</button>
+          <button type="button" class="sm-btn" data-singleton="layouts">Layouts</button>
+          <button type="button" class="sm-btn" data-singleton="settings">Settings</button>
+        </div>
+        <p class="sm-secondary apps-note">Panels and gobans are not built yet.</p>
+      </section>
+    </header>
+
+    <main id="desk" class="desk">
+      <p class="desk-empty sm-secondary">No workspace is open.</p>
+      <div id="sheet-host" class="sheet-host" hidden></div>
+    </main>
+  </div>
+</body>
+</html>

@@ -201,3 +201,17 @@ KataGo's `analysis.cpp` at v1.18.2. Decided in code, with no spec covering it:
   as ±2^62, which is out of range.
 - **Messages from KataGo's C++ libraries differ:** a JSON syntax error has JavaScript's description, and config errors
   don't name a config file, since there is none.
+
+---
+
+# App
+
+## 17. Frame settings kept in localStorage until the materials kit (apps/web)
+
+The design doc puts player preferences in the materials kit, stored as JSON in OPFS. That kit does not exist yet, so
+the app's first frame keeps its two settings in `localStorage`: the theme under the brand's own key `stonemind.theme`
+(as `packages/brand/components/ThemePicker` does, so the theme applies before first paint) and the backdrop under
+`stonemind.backdrop`. When the materials kit arrives, it takes them over and reads these keys once to carry the
+player's choices across.
+
+Interim: `apps/web/src/frame/settings.ts`.
