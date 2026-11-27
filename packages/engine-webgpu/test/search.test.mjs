@@ -39,7 +39,7 @@ for (const net of NETS) {
     test(`search matches native KataGo: ${netName} ${q.id} (${q.maxVisits} visits)`, async () => {
       const hist = historyOf(q);
       const name = (loc) => (loc === PASS_LOC ? 'pass' : COLUMNS[hist.board.x(loc)] + (q.size - hist.board.y(loc)));
-      const search = new Search(netModel, netReference, hist, { symmetry: 0, batchSize: 1, analysisPVLen: 6 });
+      const search = new Search(netModel, netReference, hist, { symmetry: 0, batchSize: 1, analysisPVLen: 6, wideRootNoise: 0 });
       await search.run({ maxVisits: q.maxVisits });
       const a = search.analysis();
       assert.equal(a.rootVisits, q.rootVisits);
