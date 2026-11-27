@@ -92,7 +92,7 @@ function renderMenuBar(): void {
 menuBar.stoneMindMenu = [
   { label: 'About StoneMind', run: () => openSheet('about') },
   { label: 'Settings…', run: () => openSheet('settings') },
-  { label: 'What this browser supports', run: () => location.assign('capabilities/') },
+  { label: 'Browser Info', run: () => location.assign('capabilities/') },
 ];
 
 // ------------------------------------------------------- singleton apps
@@ -146,7 +146,6 @@ function sheetBody(id: SingletonId): Node[] {
     case 'about':
       return [
         el('p', {}, 'StoneMind is a Go coaching companion in early development. This is the app’s first frame: Files, Engines and the gobans are still to come.'),
-        el('p', {}, el('a', { href: 'capabilities/' }, 'What this browser supports')),
       ];
     default:
       return [el('p', { className: 'sm-secondary' }, `${SINGLETONS[id]} is not built yet.`)];
