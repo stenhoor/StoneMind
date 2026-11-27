@@ -32,7 +32,6 @@ const OVERRIDES = [
   'numSearchThreadsPerAnalysisThread=1',
   'nnRandomize=false',
   'useGraphSearch=false',
-  'useNoisePruning=false',
   'policyOptimism=0',
   'rootPolicyOptimism=0',
   'wideRootNoise=0',
@@ -56,6 +55,9 @@ const FULL = [
   // Positions where LCB chooses a move other than the most visited one (found by scanning the game with native).
   { id: 'lcb-9-turn-3', moves: LATE_9.slice(0, 3), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'lcb-9-turn-33', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
+  // Positions where noise pruning changes native's visits (found by scanning the game with it on and off).
+  { id: 'noise-9-turn-5', moves: LATE_9.slice(0, 5), rules: 'tromp-taylor', size: 9, maxVisits: 300 },
+  { id: 'noise-9-turn-16', moves: LATE_9.slice(0, 16), rules: 'tromp-taylor', size: 9, maxVisits: 300 },
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
 ];
