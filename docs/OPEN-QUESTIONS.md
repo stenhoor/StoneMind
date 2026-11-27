@@ -215,3 +215,13 @@ the app's first frame keeps its two settings in `localStorage`: the theme under 
 player's choices across.
 
 Interim: `apps/web/src/frame/settings.ts`.
+
+## 18. A FileStore port for the player's files (packages/storage, packages/files)
+
+The storage ports describe relational, graph and analytics data for the Smaltworks platform. The player's files
+(KataGo weights, configs, game records) are none of those: they are files the player brings in and takes out. CLAUDE.md
+says storage goes through `@stonemind/storage` ports, so a fourth port, `FileStore`, was added there, and the file kit
+(`@stonemind/files`) implements it on OPFS. When Smaltworks arrives, it can sit beside the file kit, or take files over
+if its OPFS layer covers them.
+
+Interim: `packages/storage/src/ports.ts` (`FileStore`), `packages/files/src/opfs.ts` (`OpfsFileStore`).

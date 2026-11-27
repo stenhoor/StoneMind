@@ -1,6 +1,6 @@
 # @stonemind/storage
 
-Narrow storage *ports* (`RelationalStore`, `GraphStore`, `AnalyticsStore`) that StoneMind engines depend on. A future `@stonemind/storage-smaltworks` package will implement them on Smaltworks (SQL + Cypher + DataFrames) persisted to OPFS.
+Narrow storage *ports* (`RelationalStore`, `GraphStore`, `AnalyticsStore`, and `FileStore` for the player's files) that StoneMind engines depend on. A future `@stonemind/storage-smaltworks` package will implement them on Smaltworks (SQL + Cypher + DataFrames) persisted to OPFS.
 
 Specification: docs/StoneMind-Technical-Architecture.md (Storage Architecture)
 
@@ -10,7 +10,7 @@ None.
 
 ## Used by
 
-Nothing yet. Planned: the Smaltworks adapter and the engines.
+`@stonemind/files` implements `FileStore` on OPFS. Planned: the Smaltworks adapter and the engines.
 
 ## Deployment
 

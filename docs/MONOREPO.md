@@ -35,6 +35,7 @@ StoneMind/
 │   ├── brand/               @stonemind/brand
 │   ├── domain/              @stonemind/domain
 │   ├── storage/             @stonemind/storage
+│   ├── files/               @stonemind/files: the file kit (OPFS)
 │   ├── ontology/            @stonemind/ontology
 │   ├── provider-sdk/        @stonemind/provider-sdk
 │   ├── engine/              @stonemind/engine
@@ -58,7 +59,8 @@ from the root builds dependencies before dependents.
 |---|---|---|---|---|
 | `@stonemind/brand` | Brand (CSS, JSON, SVG) | npm package; files copied unchanged by apps | none | engine-bench, web; planned: site |
 | `@stonemind/domain` | Library (types) | npm package | none | ontology, provider-sdk |
-| `@stonemind/storage` | Library (ports) | npm package | none | none yet (future Smaltworks adapter, engines) |
+| `@stonemind/storage` | Library (ports) | npm package | none | files; planned: Smaltworks adapter, engines |
+| `@stonemind/files` | Library (the file kit) | npm package; loaded in pages without a bundler | storage (types only); dev only: playwright 1.65.0 | none yet (planned: web) |
 | `@stonemind/ontology` | Library (data + logic) | npm package; `seed.json` is also a standalone data artifact | domain | none yet (future ontology engine, web app) |
 | `@stonemind/provider-sdk` | Library (contracts + registry) | npm package for third-party plugin authors | domain | none yet (future providers, engines, web app) |
 | `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-webgpu, engine-bench |
@@ -81,6 +83,7 @@ from the root builds dependencies before dependents.
 | ontology → domain | `Concept`, `ConceptRelationship`, `RelationshipType`, `ConceptCategory`, `StyleDimension` | Renaming a relationship type or category invalidates `seed.json` |
 | apps → brand (planned) | `tokens.css` custom properties, `components.css` classes (`sm-*`), logo file names | Renaming a token or class breaks every app; change brand first, then each app, in the same release |
 | katago-bridge → engine | `BRIDGE_PROTOCOL` (the WebSocket subprotocol) and the pairing link format read by `parsePairingFragment` | Changing either breaks pairing between a bridge and a page of a different version |
+| files → storage | The `FileStore` port and its types (`FileEntry`, `FileData`, `FileWriteOptions`) | Typecheck catches breaks; the file kit's browser tests exercise the port |
 | web → brand | `tokens/tokens.css`, `styles/components.css` and `logos/`, copied unchanged by the app's build; the theme key `stonemind.theme` | Moving those files breaks the build; the browser tests load the page |
 | engine-bench → engine | `connectBridge`, `parsePairingFragment`, the `AnalysisEngine` API and protocol types | Typecheck catches breaks; the site test checks the import map |
 | engine-webgpu → engine | `LineTransport`, `EngineDescriptor` and `JsonLineSession`, which `createAnalysisEngine` (`@stonemind/engine-webgpu/session`) puts the browser engine behind | Typecheck catches breaks; `test/engine.test.mjs` runs the engine through `JsonLineSession`. The main entry point imports engine for types only, so pages loading it need no import map |
@@ -148,6 +151,8 @@ CI runs only the checks a change needs (`scripts/ci-affected.mjs`):
   is what keeps CI correct.
 - **The GPU check** runs only when `@stonemind/engine-webgpu`, or something it depends on, changed in a file other than
   Markdown.
+- **Browser tests** (an `e2e` script) run in Chromium, Firefox and WebKit for each affected sub-project that has one,
+  when it, or something it depends on, changed in a file other than Markdown.
 - **Shared files** (the root package files, `tsconfig.base.json`, `.nvmrc`, `.github/`) run everything.
 - **Files only under `docs/`, or Markdown at the root,** run nothing.
 
