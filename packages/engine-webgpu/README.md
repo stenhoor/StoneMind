@@ -21,8 +21,8 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   area or territory with every tax rule, and long cycles under simple ko or in the encore end with no result. Moves are
   played, recorded and undone with KataGo's own chain bookkeeping (`Board::playMoveRecorded` and `Board::undo`), and
   pass-alive area uses KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). Rule sets
-  with a button are refused with `UnsupportedPositionError` rather than approximated, and so, for now, are the encore
-  in the network's inputs and territory scoring or a group tax in the search.
+  with a button are refused with `UnsupportedPositionError` rather than approximated, and so, for now, are territory
+  scoring and a group tax in the search.
   `rules/hash.ts` ports KataGo's position hashes (`thisHash` and `symHash` in its analysis output): its random number
   generator (MD5 and SHA-256 seeding, xorshift1024* and PCG32) and the hash tables `Board::initHash` builds from it.
   SHA-256 comes from the platform's Web Crypto, so `loadPositionHashes()` builds the tables once, asynchronously, and
@@ -30,8 +30,9 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
 - **V7 input encoder** (`src/features/v7.ts`): `encodePositionV7` builds KataGo's 22 spatial planes and 19 globals from
   a position (setup stones and moves, `[player, 'pass']` for a pass; `gtpMove` converts GTP moves), following
   `NNInputs::fillRowV7`, passes included (the pass-history globals, the pass-ends-phase flag, and history hidden under
-  friendly-pass rules). `encodeHistoryV7` encodes a `GameHistory` directly, with KataGo's conservative-pass and
-  passing-hack options. Its `ladders` option, not a KataGo option, reuses ladder results by board: KataGo searches
+  friendly-pass rules), and territory scoring's encore and every tax rule (the encore's ko planes, area planes with
+  independent life, the second encore's starting stones, and the encore globals). `encodeHistoryV7` encodes a
+  `GameHistory` directly, with KataGo's conservative-pass and passing-hack options. Its `ladders` option, not a KataGo option, reuses ladder results by board: KataGo searches
   ladders on the current board and the two before it for every input, and a search passes a cache so that a node's
   board, already searched when the node was encoded, isn't searched again for its children and grandchildren. The
   inputs are the same either way (`test/ladder-cache.test.mjs`). The earlier simple encoder
@@ -227,7 +228,10 @@ game and its score, and the score and area if the game were scored now. The game
 every tax rule and ko rule, starting in each encore phase, KataGo's history modes, the encore prevented, tolerant moves
 and moves out of turn; many start from the boards of KataGo's own rules tests, which are built around kos, with players
 that prefer ko captures and passes for ko. The test also checks that the games reach the encore's two phases, ko
-recapture blocks, passes for ko, once-only and superko bans, the encore prevented, scored ends and no-result ends.
+recapture blocks, passes for ko, once-only and superko bans, the encore prevented, scored ends and no-result ends. A
+second test checks the network's inputs at every state of the same games, exactly: `encodeHistoryV7` against KataGo's
+own `NNInputs::fillRowV7`, built into the same program, with each game's input options (the draw value,
+`conservativePassAndIsRoot`, `enablePassingHacks`, `maxHistory`).
 
 `test/search.test.mjs` checks the search against native KataGo's analysis engine (CPU build, captured with
 `scripts/capture-search-goldens.mjs`): both run one search thread, symmetry 0, and the features this search doesn't

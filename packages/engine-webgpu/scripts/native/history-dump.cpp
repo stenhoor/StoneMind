@@ -7,7 +7,12 @@
 // ko capture or pass for ko with probability koBias (if there is one), else a random legal move. With probability
 // tolerantProb a move is played with makeBoardMoveTolerant instead (and then, 30% of the time, by the player not to
 // move); with probability preventEncoreProb it's played with preventEncore.
+//
+// If the spec has inputParams ({drawEquivalentWinsForWhite, conservativePassAndIsRoot, enablePassingHacks, maxHistory}),
+// each state also records the network's inputs for the player to move (NNInputs::fillRowV7, the board's own size):
+// the spatial planes as one character per value (all are 0 or 1), and the globals.
 #include "game/boardhistory.h"
+#include "neuralnet/nninputs.h"
 #include "core/rand.h"
 #include "external/nlohmann_json/json.hpp"
 #include <iostream>
@@ -37,7 +42,7 @@ static string flagsString(const bool* f, const Board& b) {
   return s;
 }
 
-static json state(const BoardHistory& hist, const Board& board) {
+static json state(const BoardHistory& hist, const Board& board, const json& spec) {
   json j;
   Player pla = hist.presumedNextMovePla;
   j["colors"] = colorsString(board.colors, board);
@@ -94,6 +99,24 @@ static json state(const BoardHistory& hist, const Board& board) {
         il.push_back(json::object({{"area", colorsString(area, board)}, {"count", count}}));
       }
   j["independentLife"] = il;
+  if(spec.contains("inputParams")) {
+    const json& p = spec["inputParams"];
+    MiscNNInputParams params;
+    params.drawEquivalentWinsForWhite = p["drawEquivalentWinsForWhite"];
+    params.conservativePassAndIsRoot = p["conservativePassAndIsRoot"];
+    params.enablePassingHacks = p["enablePassingHacks"];
+    params.maxHistory = p["maxHistory"];
+    int area = board.x_size * board.y_size;
+    vector<float> rowBin(NNInputs::NUM_FEATURES_SPATIAL_V7 * area);
+    vector<float> rowGlobal(NNInputs::NUM_FEATURES_GLOBAL_V7);
+    NNInputs::fillRowV7(board, hist, pla, params, board.x_size, board.y_size, false, rowBin.data(), rowGlobal.data());
+    string spatial;
+    for(float v : rowBin) {
+      if(v != 0.0f && v != 1.0f) { cerr << "non-binary spatial input" << endl; exit(1); }
+      spatial += v != 0.0f ? '1' : '0';
+    }
+    j["inputs"] = json::object({{"spatial", spatial}, {"global", rowGlobal}});
+  }
   return j;
 }
 
@@ -140,7 +163,7 @@ int main() {
     json game = spec;
     game["initialActual"] = colorsString(board.colors, board);
     game["states"] = json::array();
-    game["states"].push_back(state(hist, board));
+    game["states"].push_back(state(hist, board, spec));
     json moves = json::array();
     int afterEnd = 0;
     for(int i = 0; i < numMoves; i++) {
@@ -176,7 +199,7 @@ int main() {
       else
         hist.makeBoardMoveAssumeLegal(board, loc, movePla, NULL, preventEncore);
       moves.push_back(json::object({{"loc", locJson(loc, board)}, {"pla", (int)movePla}, {"preventEncore", preventEncore}, {"tolerant", tolerant}}));
-      game["states"].push_back(state(hist, board));
+      game["states"].push_back(state(hist, board, spec));
     }
     game["moves"] = moves;
     cout << game.dump() << "\n";

@@ -1,10 +1,11 @@
 /**
  * KataGo's V7 network inputs (22 spatial planes, 19 globals), ported from `NNInputs::fillRowV7` and `iterLadders` in
- * KataGo's `cpp/neuralnet/nninputs.cpp` (KataGo 1.18, MIT, © David J Wu), for main-phase positions, passes included.
+ * KataGo's `cpp/neuralnet/nninputs.cpp` (KataGo 1.18, MIT, © David J Wu): passes, territory scoring's encore and every
+ * tax rule included.
  * Defaults match `MiscNNInputParams` as `kata-raw-nn` uses them: no playout-doubling advantage, draws worth half a win,
  * no conservative-pass or passing hacks.
  */
-import { calculateArea } from '../rules/area.js';
+import { calculateArea, calculateIndependentLifeArea } from '../rules/area.js';
 import { BLACK, Board, PASS_LOC, WHITE, opp, type Stone } from '../rules/board.js';
 import { GameHistory, UnsupportedPositionError } from '../rules/history.js';
 import { parseRules } from '../rules/rules.js';
@@ -45,7 +46,11 @@ export function gtpMove(player: Player, location: string, ySize: number): SpecMo
 
 /** KataGo `MiscNNInputParams` options that change the inputs (all off for `kata-raw-nn`). */
 export interface InputOptions {
-  /** The model's `preferPassAliveUnderSuicideRules` flag (model version 15+). Default false. */
+  /**
+   * Compute pass-alive area as if multi-stone suicide were legal (KataGo `passAliveSuicideRulesOverride`; the model's
+   * `preferPassAliveUnderSuicideRules` flag, model version 15+). By default, the history's mode
+   * (`alwaysComputePassAliveUnderSuicideRules`), as in KataGo.
+   */
   preferPassAliveUnderSuicideRules?: boolean;
   /** KataGo `conservativePassAndIsRoot`: at the root, behave as if a pass would not end the game. Default false. */
   conservativePassAndIsRoot?: boolean;
@@ -140,16 +145,15 @@ export function encodePositionV7(spec: PositionSpec, preferPassAliveUnderSuicide
 
 /** Encode a game history's current position as KataGo's V7 network input, for the player to move. */
 export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): EncodedPositionV7 {
-  const preferPassAliveUnderSuicideRules = options.preferPassAliveUnderSuicideRules ?? false;
+  const suicideLegalForPassAlive =
+    hist.rules.multiStoneSuicideLegal || (options.preferPassAliveUnderSuicideRules ?? hist.modes.alwaysComputePassAliveUnderSuicideRules);
+  const excludeTerritoryAdjacentToAtari = hist.modes.excludeTerritoryAdjacentToAtari;
   const board = hist.board;
   const { xSize, ySize } = board;
   const area = xSize * ySize;
   const pla = hist.nextPla;
   const o = opp(pla);
   const rules = hist.rules;
-  if (hist.encorePhase > 0 || hist.isPastNormalPhaseEnd) {
-    throw new UnsupportedPositionError("the network's inputs in the territory-scoring encore are not supported yet");
-  }
   const spatial = new Float32Array(22 * area);
   const global = new Float32Array(19);
   const pos = (loc: number) => board.y(loc) * xSize + board.x(loc);
@@ -171,21 +175,54 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
     }
   }
 
-  // Ko (main phase): the simple ko point, plus superko bans.
-  if (board.koLoc !== 0) set(6, board.koLoc);
-  for (let y = 0; y < ySize; y++) {
-    for (let x = 0; x < xSize; x++) {
-      const loc = board.loc(x, y);
-      if (hist.superKoBanned[loc] && loc !== board.koLoc) set(6, loc);
+  if (hist.encorePhase === 0) {
+    // Ko in the main phase: the simple ko point, plus superko bans.
+    if (board.koLoc !== 0) set(6, board.koLoc);
+    for (let y = 0; y < ySize; y++) {
+      for (let x = 0; x < xSize; x++) {
+        const loc = board.loc(x, y);
+        if (hist.superKoBanned[loc] && loc !== board.koLoc) set(6, loc);
+      }
+    }
+  } else {
+    // Ko in the encore: the ko captures already made in this position, and the stones blocked from recapture, which
+    // need a pass for ko.
+    for (let y = 0; y < ySize; y++) {
+      for (let x = 0; x < xSize; x++) {
+        const loc = board.loc(x, y);
+        if (hist.superKoBanned[loc]) set(6, loc);
+        if (hist.koRecapBlocked[loc]) set(7, loc);
+      }
     }
   }
 
-  // Area planes (18–19). In the main phase only area scoring with no tax has them.
-  let finalPhaseAndGameEndWouldNotBeWin = false;
+  // Area planes (18–19), not counting the group tax. Territory scoring has them only from the second encore, when
+  // scoring matters.
+  let areaMap: Uint8Array | null = null;
+  let groupTaxAdjustmentForPla = 0;
   if (rules.scoringRule === 'AREA' && rules.taxRule === 'NONE') {
-    const suicideLegalForPassAlive = rules.multiStoneSuicideLegal || preferPassAliveUnderSuicideRules;
-    const areaMap = calculateArea(board, true, true, true, suicideLegalForPassAlive);
-    let boardScoreForPla = 0;
+    areaMap = calculateArea(board, true, true, true, suicideLegalForPassAlive);
+  } else {
+    let keepTerritories = false;
+    let keepStones = false;
+    if (rules.scoringRule === 'AREA') {
+      areaMap = new Uint8Array(0);
+      keepStones = true;
+    } else if (hist.encorePhase >= 2) {
+      areaMap = new Uint8Array(0);
+      keepTerritories = rules.taxRule === 'NONE';
+    }
+    if (areaMap) {
+      const r = calculateIndependentLifeArea(board, keepTerritories, keepStones, excludeTerritoryAdjacentToAtari, suicideLegalForPassAlive);
+      areaMap = r.area;
+      if (rules.taxRule === 'ALL') {
+        groupTaxAdjustmentForPla = pla === WHITE ? -2 * r.whiteMinusBlackIndependentLifeRegionCount : 2 * r.whiteMinusBlackIndependentLifeRegionCount;
+      }
+    }
+  }
+  let finalPhaseAndGameEndWouldNotBeWin = false;
+  if (areaMap) {
+    let boardScoreForPla = groupTaxAdjustmentForPla;
     for (let y = 0; y < ySize; y++) {
       for (let x = 0; x < xSize; x++) {
         const loc = board.loc(x, y);
@@ -195,12 +232,19 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
         } else if (areaMap[loc] === o) {
           set(19, loc);
           boardScoreForPla -= 1;
+        } else if (rules.scoringRule === 'TERRITORY') {
+          // In the second encore: the stones that were there when it started count too.
+          if (board.colors[loc] === pla && hist.secondEncoreStartColors[loc] === pla) {
+            set(18, loc);
+            boardScoreForPla += 1;
+          } else if (board.colors[loc] === o && hist.secondEncoreStartColors[loc] === o) {
+            set(19, loc);
+            boardScoreForPla -= 1;
+          }
         }
       }
     }
-    finalPhaseAndGameEndWouldNotBeWin = boardScoreForPla + hist.currentSelfKomi(pla, options.drawEquivalentWinsForWhite ?? 0.5) <= 0;
-  } else if (rules.scoringRule === 'AREA') {
-    throw new UnsupportedPositionError('area scoring with a group tax is not supported yet');
+    finalPhaseAndGameEndWouldNotBeWin = Math.fround(boardScoreForPla + hist.currentSelfKomi(pla, options.drawEquivalentWinsForWhite ?? 0.5)) <= 0;
   }
 
   // History: the last five moves, while they alternate back from the opponent's. A pass sets global k - 1 instead of
@@ -215,7 +259,8 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   ) {
     maxTurnsOfHistoryToInclude = 0;
     suppressPassWouldEndPhase = true;
-  } else if (hist.isGameFinished) {
+  } else if (hist.isGameFinished || hist.isPastNormalPhaseEnd) {
+    // One of the passes that ended it.
     maxTurnsOfHistoryToInclude = 1;
   }
   maxTurnsOfHistoryToInclude = Math.min(maxTurnsOfHistoryToInclude, options.maxHistory ?? 5);
@@ -241,6 +286,17 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   const prevPrev = numTurnsOfHistoryIncluded < 2 ? prev : hist.recentBoard(2);
   iterLaddersCached(prevPrev, ladders, (loc) => (spatial[16 * area + prevPrev.y(loc) * xSize + prevPrev.x(loc)] = 1));
 
+  // The second encore's starting stones (20–21).
+  if (hist.encorePhase >= 2) {
+    for (let y = 0; y < ySize; y++) {
+      for (let x = 0; x < xSize; x++) {
+        const loc = board.loc(x, y);
+        if (hist.secondEncoreStartColors[loc] === pla) set(20, loc);
+        else if (hist.secondEncoreStartColors[loc] === o) set(21, loc);
+      }
+    }
+  }
+
   // Globals.
   let selfKomi = hist.currentSelfKomi(pla, options.drawEquivalentWinsForWhite ?? 0.5);
   const clip = area + 20;
@@ -261,7 +317,9 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
     global[10] = 1;
     global[11] = 1;
   }
-  if (rules.scoringRule === 'AREA') {
+  if (hist.encorePhase > 0) global[12] = 1;
+  if (hist.encorePhase > 1) global[13] = 1;
+  if (rules.scoringRule === 'AREA' || hist.encorePhase >= 2) {
     const even = area % 2 === 0;
     const komiFloor = even ? Math.floor(selfKomi / 2) * 2 : Math.floor((selfKomi - 1) / 2) * 2 + 1;
     const delta = Math.min(2, Math.max(0, selfKomi - komiFloor));

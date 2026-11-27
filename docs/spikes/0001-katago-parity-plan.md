@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111. Step 12 (the protocol check): https://github.com/stenhoor/StoneMind/pull/112. Step 13a (the rules engine: territory scoring, the encore and no-result cycles): https://github.com/stenhoor/StoneMind/pull/114.
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111. Step 12 (the protocol check): https://github.com/stenhoor/StoneMind/pull/112. Step 13a (the rules engine: territory scoring, the encore and no-result cycles): https://github.com/stenhoor/StoneMind/pull/114. Step 13b (the network's inputs in the encore): https://github.com/stenhoor/StoneMind/pull/117.
 
 ## The goal
 
@@ -148,12 +148,19 @@ speed comparison, since until now native has run features the browser doesn't ha
       refused before.
     - 13b. **The network's inputs** for territory scoring and the encore (`NNInputs::fillRowV7`). Checked with network
       goldens from native on positions in each encore phase.
+
+      Changed while doing 13b, 2026-11-27: native's GTP and analysis engine play their moves with the encore prevented
+      unless the config sets `preventCleanupPhase` to false (`cpp/command/gtp.cpp`, `analysis.cpp`), so network goldens
+      from our config can't reach the encore, and changing it is a KataGo config change. Instead, KataGo's own `fillRowV7` is built into the program 13a's check uses,
+      and the inputs are compared exactly at every state of the same games, with varied input options. Inputs equal to
+      KataGo's give the outputs the network goldens already check. The area planes with a group tax under area scoring
+      are in the same KataGo code, so 13b ports them too (they were in step 14).
     - 13c. **The search** under territory scoring and through the encore, and the analysis engine accepting these
       rules. Checked with the exact search check and the protocol check on Japanese-rules positions.
 
-14. **The rest of what's refused today:** a group tax in the network's inputs and the search (stone-scoring and
-    ancient-territory rules), and button rule sets. (No-result long cycles and the rules engine's group-tax scoring
-    moved to 13a.)
+14. **The rest of what's refused today:** a group tax in the search (stone-scoring and ancient-territory rules), and
+    button rule sets. (No-result long cycles and the rules engine's group-tax scoring moved to 13a, and the group tax in
+    the network's inputs to 13b.)
 
 Checked with rules goldens from native on positions that exercise each rule, plus the exact search check under those
 rules.

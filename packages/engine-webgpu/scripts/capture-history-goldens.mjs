@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-// Capture goldens for the rules engine (test/history.test.mjs) from KataGo's own: random games played on KataGo's
-// BoardHistory, with its state recorded after every move.
+// Capture goldens for the rules engine and the network's inputs (test/history.test.mjs) from KataGo's own: random games
+// played on KataGo's BoardHistory, with its state, and its network inputs (NNInputs::fillRowV7), recorded after every
+// move.
 //
 // It builds scripts/native/history-dump.cpp against a KataGo source tree, generates game specs, runs them through it, and
-// writes each game's moves with a digest of each state (test/history-state.mjs). The games are random games on small
+// writes each game's moves with a digest of each state and of its inputs (test/history-state.mjs). The games are random games on small
 // boards, and games from the boards of KataGo's own rules tests (cpp/tests/testrules.cpp), which are built around kos;
 // in some, the players prefer ko captures and passes for ko, to make ko fights and long cycles. Rules, the starting
 // encore phase and KataGo's history modes vary between games. Up to 10 more games come from a pool of 1500 random games:
 // those in which the encore repeats a position three times, but not with the same player to move (repeatsWithOtherPlayer).
+// Each game's inputs are made with its own options (the draw value, conservativePassAndIsRoot, enablePassingHacks,
+// maxHistory), drawn from a generator of their own so the games don't change with them.
 //
 // The source tree must be KataGo's v1.18.2 tag, the version ported. For example, from a clone of KataGo:
 //   git -C <katago clone> archive v1.18.2 cpp | tar -x -C <dir>
@@ -22,7 +25,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { digestState } from '../test/history-state.mjs';
+import { digestInputs, digestState } from '../test/history-state.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({
@@ -45,7 +48,7 @@ const work = mkdtempSync(join(tmpdir(), 'history-dump-'));
 const exe = join(work, 'history-dump');
 const sources = [
   join(here, 'native/history-dump.cpp'),
-  ...['game/board.cpp', 'game/boardhistory.cpp', 'game/rules.cpp', 'core/global.cpp', 'core/hash.cpp', 'core/rand.cpp',
+  ...['neuralnet/nninputs.cpp', 'game/board.cpp', 'game/boardhistory.cpp', 'game/rules.cpp', 'core/global.cpp', 'core/hash.cpp', 'core/rand.cpp',
     'core/md5.cpp', 'core/sha2.cpp', 'core/rand_helpers.cpp', 'core/test.cpp', 'core/bsearch.cpp', 'core/timer.cpp'].map((f) => join(cpp, f)),
 ];
 const build = spawnSync(values.cxx, ['-std=c++17', '-O2', `-I${cpp}`, '-o', exe, ...sources], { encoding: 'utf8' });
@@ -60,17 +63,24 @@ for (const m of readFileSync(join(cpp, 'tests/testrules.cpp'), 'utf8').matchAll(
   boards.push({ xSize, ySize, initial: rows.join('').replace(/[xX]/g, '1').replace(/[oO]/g, '2').replace(/\./g, '0') });
 }
 
-/** Game specs from a seeded generator (mulberry32), so a capture is reproducible. */
-function specs(count, seed, fromBoards) {
+/** A seeded generator (mulberry32), so a capture is reproducible. */
+function generator(seed) {
   let s = seed >>> 0;
-  const rnd = () => {
+  return () => {
     s = (s + 0x6d2b79f5) >>> 0;
     let t = s;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Game specs. */
+function specs(count, seed, fromBoards) {
+  const rnd = generator(seed);
   const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const inputRnd = generator(seed + 1000);
+  const inputPick = (a) => a[Math.floor(inputRnd() * a.length)];
   const out = [];
   for (let i = 0; i < count; i++) {
     let xSize = pick([2, 3, 3, 4, 4, 5, 5, 6, 7]);
@@ -88,6 +98,10 @@ function specs(count, seed, fromBoards) {
       seed: `g${i}-${seed}`, passProb: pick([0.05, 0.15, 0.3, 0.5]), preventEncoreProb: pick([0, 0, 0.2, 0.5]),
       tolerantProb: pick([0, 0.1, 0.3]), numMoves: pick([30, 60, 120]), movesAfterEnd: pick([0, 2, 6]),
       koBias: pick([0, 0.5, 0.8, 0.95]),
+      inputParams: {
+        drawEquivalentWinsForWhite: inputPick([0.5, 0.5, 0.25, 1]), conservativePassAndIsRoot: inputRnd() < 0.2,
+        enablePassingHacks: inputRnd() < 0.3, maxHistory: inputPick([1000, 1000, 1000, 3, 1, 0]),
+      },
     });
   }
   return out;
@@ -132,7 +146,7 @@ if (values.full) writeFileSync(values.full, [...main.lines, ...picked.map(([, i]
 console.log(`${picked.length} games picked from the pool for three repeats with both players to move`);
 
 const RULE_FIELDS = ['xSize', 'ySize', 'koRule', 'scoringRule', 'taxRule', 'multiStoneSuicideLegal', 'whiteHandicapBonusRule',
-  'komi', 'initial', 'nextPla', 'encorePhase', 'alwaysPassAlive', 'excludeAdjAtari', 'assumeHandicap'];
+  'komi', 'initial', 'nextPla', 'encorePhase', 'alwaysPassAlive', 'excludeAdjAtari', 'assumeHandicap', 'inputParams'];
 const out = {
   source: `KataGo ${version}'s BoardHistory, through scripts/native/history-dump.cpp (scripts/capture-history-goldens.mjs)`,
   format: {
@@ -140,11 +154,13 @@ const out = {
     initial: 'one character per point, row by row from the top: 0 empty, 1 black, 2 white (stones that would have no liberties are left off, as KataGo setStoneFailIfNoLibs)',
     moves: '[x, y, player (1 black, 2 white), flags]: x and y -1 for a pass; flags bit 0 preventEncore, bit 1 played with makeBoardMoveTolerant',
     digests: 'one 16-character digest per state (test/history-state.mjs), the start and after each move, concatenated',
+    inputDigests: "the same for the network's inputs for the player to move (NNInputs::fillRowV7), made with the game's inputParams",
   },
   games: games.map((g) => ({
     ...Object.fromEntries(RULE_FIELDS.map((k) => [k, g[k]])),
     moves: g.moves.map((m) => [...(m.loc === 'pass' ? [-1, -1] : m.loc), m.pla, (m.preventEncore ? 1 : 0) | (m.tolerant ? 2 : 0)]),
     digests: g.states.map(digestState).join(''),
+    inputDigests: g.states.map((st) => digestInputs(st.inputs)).join(''),
   })),
 };
 writeFileSync(values.out, JSON.stringify(out) + '\n');
