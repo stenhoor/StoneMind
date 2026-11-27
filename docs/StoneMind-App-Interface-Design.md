@@ -23,8 +23,9 @@ Each point is marked:
 It builds on the [Technical Architecture](StoneMind-Technical-Architecture.md), [MONOREPO.md](MONOREPO.md), the
 [brand](../packages/brand/BRAND.md) and [CLAUDE.md](../CLAUDE.md), and does not repeat them.
 
-Version 0.2 adds the frame, workspaces, tiling presets, device profiles, the panels and the engine pool, from four
-rounds of mockups reviewed with the owner on 2026-11-27. The mockups are on a private design canvas
+Version 0.2 adds the frame, the three goban types (Review, Play, Problems) and their workspaces, optional panels and
+singleton apps, tiling presets, device profiles and the engine pool, from four rounds of mockups reviewed with the owner
+on 2026-11-27. The mockups are on a private design canvas
 (https://claude.ai/artifact/SmPzj8PXCPWqyGe14AebMw); round 4 is the latest, and rounds 1 to 3 are kept there for
 comparison. Mockups show sample data only.
 
@@ -94,8 +95,18 @@ The frame is what stays on screen whatever the player is doing: the menu bar, an
 - **Workspaces:** the open workspaces as numbered cards (below), and a button for a new one.
 - **Layouts:** the presets for the current workspace, Reset splits, the workspace's engine, and the device profile in
   use.
-- **Apps:** the launcher. Some apps are panels that go into a workspace (goban, game tree, analysis, notes, coach); the
-  others (Files, Engines, Layouts, Settings) open over the workspaces and belong to none of them.
+- **Apps:** the launcher, in three groups.
+
+**Decided (2026-11-27): the Apps bar's three groups.**
+
+| Group | What it holds | What launching does |
+|---|---|---|
+| Left: optional panels | Panels a goban can use, such as the game tree, analysis and notes. They are plugins: none is required. | Adds the panel to the focused workspace. |
+| Centre: goban types | **Review**, **Play** and **Problems** (below). | Opens a new workspace of that type. |
+| Right: singleton apps | Apps that manage and configure the environment: Files, Engines, Layouts and Settings. | Opens the app. Each has one instance only, and none belongs to a workspace. |
+
+**Proposed:** the coach and territory panels join the optional panels once they exist. A singleton app opens over the
+workspaces and closes back to them.
 
 **Proposed:** the bars are glass. Earlier rounds offered launcher positions (above or below the menu bar, either side,
 the bottom); the three-button design replaced them, and other positions are not planned unless the owner asks.
@@ -113,20 +124,31 @@ washi paper are options.
 
 **Decided (2026-11-27):**
 
-- A workspace holds one goban and the panels that go with it.
-- A goban is bound to one source: an SGF file in OPFS, a live game, a problem set, or a game against the AI.
-- The panels in a workspace (game tree, notes, analysis and the rest) share that goban's game session.
+- A workspace holds one goban and the optional panels the player adds to it.
+- There are three types of goban, and so three types of workspace:
+
+  | Type | What it is for | Its source |
+  |---|---|---|
+  | **Review** | Opening a game for analysis and editing | An SGF file in OPFS |
+  | **Play** | Playing a game | A game against the AI |
+  | **Problems** | Solving problems | A problem set |
+
+- The game tree, analysis and notes are optional panels, not part of any type. The panels in a workspace share its
+  goban's game session.
 - Players move between workspaces both ways: a strip of workspaces they scroll through (as in niri) and numbers that
   jump straight to one (as in Hyprland).
 
 **Proposed:**
 
-- Opening a game, a problem set or a new game against the AI opens a workspace for it, named from its source (for an
-  SGF, from its players or file name).
+- Launching a goban type from the Apps bar opens a new workspace of that type. Opening an SGF file from Files opens a
+  Review workspace for it. Each workspace is named from its source (for an SGF, from its players or file name).
 - Keys 1 to 9 switch to workspaces 1 to 9.
 - Each workspace keeps its own preset, split sizes, tabs, maximised tile and engine.
 
-**Open:** what a live game connects to (which server or service) is not decided.
+**Open:**
+
+- What a live game connects to (which server or service) is not decided.
+- Which type a live game is: Play when the player is in the game, Review when watching it, or both.
 
 ---
 
@@ -150,20 +172,23 @@ around one goban.
   Splits also move with the arrow keys when focused.
 - **Maximise** gives one tile the whole workspace; restore puts the layout back.
 - **Minimise** in a panel that has been moved to a tab of its own puts it back in its workspace.
+- **Presets belong to a goban type.** Each type has a default preset and can have more. The goban's own controls (the
+  game panel in Play, the problem panel in Problems) come with the type; the other tiles hold optional panels.
 - **Starting presets:**
 
-  | Preset | Layout |
-  |---|---|
-  | Review (default) | Goban left; right: analysis above, game tree and notes side by side below |
-  | Study | Goban; game tree over analysis; notes |
-  | Compact | Goban; one tile with analysis, game tree and notes as tabs |
-  | Play | Goban; game panel above, coach and notes as tabs below |
-  | Problems | Goban cropped to the problem; problem panel above, game tree and notes as tabs below |
+  | Type | Preset | Layout |
+  |---|---|---|
+  | Review | Review (default) | Goban left; right: analysis above, game tree and notes side by side below |
+  | Review | Study | Goban; game tree over analysis; notes |
+  | Review | Compact | Goban; one tile with analysis, game tree and notes as tabs |
+  | Play | Play (default) | Goban; game panel above, coach and notes as tabs below |
+  | Problems | Problems (default) | Goban cropped to the problem; problem panel above, game tree and notes as tabs below |
+
+- **Adding an optional panel** that the preset has no tile for puts it as a tab in the focused tile.
 
 - **The preset editor** shows a preset as a diagram. Click a tile, then split it right or below, add a panel as a tab,
   or remove it. Any preset can be made the default.
-- **Rules** choose the preset a new workspace opens with, by kind: SGF game, game against the AI, problem set, live
-  game.
+- **Rules** choose which of a type's presets a new workspace opens with, for example by source or by device profile.
 - **Storage:** presets are JSON in OPFS, one file per device profile (for example `settings/layouts-desktop.json`).
 
 ---
@@ -327,7 +352,7 @@ sources, so they are researched from real files before the SGF kit reads them.
   (the moves of the position being analysed) and must agree.
 - **Queue:** live analysis of the focused workspace first, then live analysis of other open workspaces, then
   whole-game reviews in the background.
-- **The Engines app** lists the engines and which workspace uses which, and has a monitor for a running engine: speed,
+- **The Engines app** (a singleton app) lists the engines and which workspace uses which, and has a monitor for a running engine: speed,
   how full the GPU batches are, time per network call by stage (the stages the browser engine already measures in
   `lastCallTiming`), the work queue, and which tabs send work. Its settings start at KataGo's own defaults.
 - Settings are shown in plain words, with the KataGo key underneath.
@@ -414,8 +439,8 @@ app's ThemePicker lives here.
 2. playing against the AI, as teaching games or normal play;
 3. problem solving.
 
-**Proposed:** each use is a kind of workspace. They share one goban component and differ in their source, their panels
-and the preset they open with (Review, Play, Problems).
+**Decided (2026-11-27):** the three uses are the three goban types, Review, Play and Problems (Workspaces, above).
+They share one goban component and differ in their source, the controls that come with the type, and their presets.
 
 **Open (from round 1):**
 
@@ -445,7 +470,7 @@ and the preset they open with (Review, Play, Problems).
 # Open questions
 
 1. Which static host serves stonemind.app (Hosting).
-2. What a live game connects to (Workspaces).
+2. What a live game connects to, and whether it is a Play or a Review workspace (Workspaces).
 3. Syncing profiles and data across devices through the player's file system (Device profiles).
 4. Whether notes are kept in the SGF or beside it as Markdown (Notes).
 5. Where problems come from, and how each source marks right and wrong answers (Problems).
