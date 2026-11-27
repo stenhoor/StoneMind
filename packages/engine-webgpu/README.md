@@ -51,9 +51,12 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   random value bonuses, so more moves are looked at; 0 makes the search deterministic), and the analysis engine's
   `ignorePreRootHistory` and `conservativePass`. The analysis orders moves and builds principal variations as KataGo
   does, from its play selection values with LCB selection (`useLcbForSelection`, on by default as in native's analysis
-  engine), and reports each move's `lcb`, `utilityLcb` and `playSelectionValue`. Area scoring only for now. Not ported:
-  tree reuse, as native's analysis engine starts each search afresh. Evaluation goes through a `NetEvaluator`: the
-  WebGPU network, or the reference forward pass.
+  engine), and reports every field of KataGo's `getAnalysisJson` except the position hashes: per move, `analysis()`
+  (with each move's `lcb`, `utilityLcb`, `playSelectionValue`, weights, `pvVisits` and, if asked for, ownership averaged
+  over its subtree); for the position, `rootValues()` (KataGo's pruned root values), `rootRawValues()`, `rootPolicy()`
+  and `rootOwnership()`. Values are for the player to move. Area scoring only for now. Not ported: tree reuse, as
+  native's analysis engine starts each search afresh. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
+  the reference forward pass.
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
   small batch, sharing one evaluation cache across turns as KataGo's analysis engine does. The defaults are native
   KataGo's `analysis_example.cfg`: 2 turns at once, batch 16.

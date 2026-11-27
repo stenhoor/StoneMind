@@ -70,12 +70,15 @@ const SHORT = [
 const queries = { full: FULL, short: SHORT }[values.set];
 if (!queries) throw new Error(`--set must be full or short, not ${values.set}`);
 
+// Every optional output, so the goldens hold every field native reports.
+const INCLUDE = { includeOwnership: true, includeOwnershipStdev: true, includeMovesOwnership: true, includeMovesOwnershipStdev: true, includePolicy: true, includePVVisits: true, includeNoResultValue: true };
+
 const logDir = mkdtempSync(join(tmpdir(), 'katago-logs-'));
 // One KataGo process per query: its evaluation cache, like ours, ignores move history, so a cache shared across
 // queries would hand one query evaluations made for another query's history.
 const byId = new Map();
 for (const q of queries) {
-  const query = { id: q.id, moves: q.moves, rules: q.rules, komi: 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6 };
+  const query = { id: q.id, moves: q.moves, rules: q.rules, komi: 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6, ...INCLUDE };
   const run = spawnSync(values.katago, ['analysis', '-config', values.config, '-model', values.model, '-override-config', [`logDir=${logDir}`, ...OVERRIDES].join(',')], { input: JSON.stringify(query) + '\n', encoding: 'utf8', maxBuffer: 1 << 28 });
   if (run.status !== 0) {
     console.error(run.stderr);
@@ -95,18 +98,16 @@ const out = {
     set: values.set,
     date: new Date().toISOString(),
   },
-  note: 'KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off; winrate and scoreLead for the side to move.',
+  note: 'KataGo analysis engine, one search thread, symmetry 0, the features listed in overrides switched off, every optional output included; values for the side to move. Each query holds native\'s response as it is, less id, turnNumber and isDuringSearch.',
   queries: queries.map((q) => {
     const r = byId.get(q.id);
     if (!r || r.error) throw new Error(`${q.id}: ${r?.error ?? 'no response'}`);
-    return {
-      ...q,
-      komi: 7.5,
-      rootVisits: r.rootInfo.visits,
-      moveInfos: r.moveInfos.map((m) => ({ move: m.move, order: m.order, visits: m.visits, edgeVisits: m.edgeVisits, winrate: m.winrate, scoreLead: m.scoreLead, lcb: m.lcb, utilityLcb: m.utilityLcb, playSelectionValue: m.playSelectionValue, pv: m.pv, ...(m.isSymmetryOf ? { isSymmetryOf: m.isSymmetryOf } : {}) })),
-    };
+    const { id, turnNumber, isDuringSearch, ...response } = r;
+    return { ...q, komi: 7.5, response };
   }),
 };
 const outFile = values.out ?? join(here, '..', 'test', 'goldens', `search-${basename(values.model).replace(/\.bin\.gz$/, '')}.json`);
-writeFileSync(outFile, JSON.stringify(out, null, 1) + '\n');
+// One query per line: the ownership maps make the file long otherwise.
+const { queries: qs, ...head } = out;
+writeFileSync(outFile, JSON.stringify(head, null, 1).replace(/\n}$/, ',\n "queries": [\n') + qs.map((q) => JSON.stringify(q)).join(',\n') + '\n ]\n}\n');
 console.error(`wrote ${outFile}`);

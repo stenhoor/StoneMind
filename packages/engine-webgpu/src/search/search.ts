@@ -363,6 +363,56 @@ export interface SearchMoveInfo {
   isSymmetryOf?: number;
   /** Principal variation: this move, then the child with the highest play selection value at each step. */
   pv: number[];
+  /** The visits of each node along the principal variation (KataGo's `pvVisits`). */
+  pvVisits: number[];
+  /** The edge visits of each move along the principal variation (KataGo's `pvEdgeVisits`). */
+  pvEdgeVisits: number[];
+  /** The child's total weight (KataGo's `weight`). */
+  weight: number;
+  /** The weight the root counts through this move (KataGo's `edgeWeight`). */
+  edgeWeight: number;
+  /** The child's average no-result value (KataGo's `noResultValue`). */
+  noResultValue: number;
+  /**
+   * With `analysis({ movesOwnership })`: the child's ownership averaged over its subtree, for the player to move at
+   * the root, row-major (KataGo's per-move `ownership`). A mirror copy's is the searched move's, mirrored.
+   */
+  ownership?: number[];
+  /** With `analysis({ movesOwnershipStdev })`: the standard deviation of that ownership (KataGo's `ownershipStdev`). */
+  ownershipStdev?: number[];
+}
+
+/**
+ * KataGo `getPrunedRootValues`, for the player to move at the root: the root's children weighted by their play
+ * selection values without LCB, plus the root's own evaluation. KataGo reports these as `rootInfo`.
+ */
+export interface SearchRootValues {
+  visits: number;
+  /** The root's total weight. */
+  weight: number;
+  winrate: number;
+  /** KataGo's `scoreSelfplay`: the expected score, rather than the lead. */
+  scoreSelfplay: number;
+  scoreLead: number;
+  scoreStdev: number;
+  utility: number;
+  noResultValue: number;
+}
+
+/** The root's own network evaluation, as KataGo reports it in `rootInfo` (the `raw` fields). */
+export interface SearchRawValues {
+  /** Win probability for the player to move. */
+  winrate: number;
+  /** For the player to move. */
+  lead: number;
+  /** For the player to move. */
+  scoreSelfplay: number;
+  scoreSelfplayStdev: number;
+  noResultProb: number;
+  /** Half the network's short-term win/loss error, as KataGo reports it. */
+  stWrError: number;
+  stScoreError: number;
+  varTimeLeft: number;
 }
 
 export interface SearchAnalysis {
@@ -372,6 +422,14 @@ export interface SearchAnalysis {
   rootScoreLead: number;
   rootUtility: number;
   moveInfos: SearchMoveInfo[];
+}
+
+/** Which of KataGo's optional per-move outputs `analysis` computes. */
+export interface AnalysisOptions {
+  /** KataGo `includeMovesOwnership`. */
+  movesOwnership?: boolean;
+  /** KataGo `includeMovesOwnershipStdev`. */
+  movesOwnershipStdev?: boolean;
 }
 
 export interface SearchStats {
@@ -1471,7 +1529,7 @@ export class Search {
    * moves for a root with no children, territory scoring's pass suppression, the human-style policy).
    * Returns null where KataGo returns false. `lcb` and `radius` are filled when LCB is used or `alwaysComputeLcb`.
    */
-  #playSelectionValues(node: SearchNode, alwaysComputeLcb: boolean): { values: number[]; lcb: number[]; radius: number[] } | null {
+  #playSelectionValues(node: SearchNode, alwaysComputeLcb: boolean, neverUseLcb = false): { values: number[]; lcb: number[]; radius: number[] } | null {
     const p = this.params;
     const children = node.children;
     const n = children.length;
@@ -1542,7 +1600,7 @@ export class Search {
 
     const lcb: number[] = new Array<number>(n).fill(0);
     const radius: number[] = new Array<number>(n).fill(0);
-    if (alwaysComputeLcb || p.useLcbForSelection) {
+    if (!neverUseLcb && (alwaysComputeLcb || p.useLcbForSelection)) {
       let bestLcb = -1e10;
       let bestLcbIndex = -1;
       for (let i = 0; i < n; i++) {
@@ -1591,8 +1649,11 @@ export class Search {
     return { values, lcb, radius };
   }
 
-  /** KataGo `appendPV`: from `node`, the child with the highest play selection value, up to `maxDepth` moves. */
-  #appendPV(pv: number[], node: SearchNode, maxDepth: number): void {
+  /**
+   * KataGo `appendPV`: from `node`, the child with the highest play selection value, up to `maxDepth` moves, with each
+   * child's visits and the edge visits to it.
+   */
+  #appendPV(pv: number[], pvVisits: number[], pvEdgeVisits: number[], node: SearchNode, maxDepth: number): void {
     for (let depth = 0; depth < maxDepth; depth++) {
       const sel = this.#playSelectionValues(node, false);
       if (!sel) return;
@@ -1608,14 +1669,17 @@ export class Search {
       const edge = node.children[bestIdx]!;
       node = edge.node;
       pv.push(edge.moveLoc);
+      pvVisits.push(node.visits);
+      pvEdgeVisits.push(edge.edgeVisits);
     }
   }
 
   /**
-   * The analysis at the root (KataGo `getAnalysisData`): each searched move with its value, in KataGo's order. Moves
-   * still waiting for their first evaluation (during a search) are left out.
+   * The analysis at the root (KataGo `getAnalysisData` and `getAnalysisDataOfSingleChild`): each child of the root with
+   * its values, in KataGo's order, for the player to move at the root. A child still waiting for its first evaluation
+   * (during a search) is reported from its first-play-urgency value, as KataGo does.
    */
-  analysis(): SearchAnalysis {
+  analysis(options: AnalysisOptions = {}): SearchAnalysis {
     const root = this.root;
     const pla = root.nextPla;
     const sign = pla === WHITE ? 1 : -1;
@@ -1626,55 +1690,99 @@ export class Search {
     const zeroVisitsRadius = 2 * (p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor) * p.lcbStdevs;
     // KataGo PlayUtils::getHackedLCBForWinrate: the utility radius in win-rate units.
     const radiusToWinrate = (0.5 * p.winLossUtilityFactor) / (p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor + 1e-20);
+    const policy = root.eval!.policy;
+    // KataGo getAnalysisData: the parent's values and first-play urgency, for children with no weight yet.
+    let policyProbMassVisited = 0;
+    for (const e of root.children) policyProbMassVisited += Math.max(0, policy[this.#posOf(b, e.moveLoc)]!);
+    const { fpu } = this.#fpuValue(root, true, policyProbMassVisited);
+    const parentUtility = root.utilityAvg;
+    const parentScoreStdev = getScoreStdev(root.scoreMeanAvg, root.scoreMeanSqAvg);
+    const ownershipOf = new Map<SearchNode, { ownership: Float64Array; stdev: Float64Array | null }>();
+    const wantOwnership = options.movesOwnership === true || options.movesOwnershipStdev === true;
     const infos = root.children.map((e, i) => {
       const c = e.node;
       const pv: number[] = [e.moveLoc];
-      this.#appendPV(pv, c, p.analysisPVLen);
-      const winrate = this.#winrateFor(c, pla);
+      const pvVisits: number[] = [c.visits];
+      const pvEdgeVisits: number[] = [e.edgeVisits];
+      this.#appendPV(pv, pvVisits, pvEdgeVisits, c, p.analysisPVLen);
+      // White's values (KataGo getAnalysisDataOfSingleChild).
+      let utility: number, winLoss: number, noResult: number, scoreMean: number, scoreStdev: number, lead: number, edgeWeight: number;
+      if (c.visits <= 0 || c.weightSum <= 1e-30) {
+        utility = fpu;
+        winLoss = p.winLossUtilityFactor === 1 ? root.winLossValueAvg + (fpu - parentUtility) : 0;
+        winLoss = Math.min(1, Math.max(-1, winLoss));
+        noResult = 0;
+        scoreMean = root.scoreMeanAvg;
+        scoreStdev = parentScoreStdev;
+        lead = root.leadAvg;
+        edgeWeight = 0;
+      } else {
+        utility = c.utilityAvg;
+        winLoss = c.winLossValueAvg;
+        noResult = c.noResultValueAvg;
+        scoreMean = c.scoreMeanAvg;
+        scoreStdev = getScoreStdev(c.scoreMeanAvg, c.scoreMeanSqAvg);
+        lead = c.leadAvg;
+        edgeWeight = this.#childWeight(e);
+      }
+      const whiteWin = 0.5 * (1 + winLoss);
+      const winrate = pla === WHITE ? whiteWin : 1 - whiteWin;
       const radius = sel ? sel.radius[i]! : zeroVisitsRadius;
-      return {
+      const info: SearchMoveInfo = {
         loc: e.moveLoc,
         visits: c.visits,
         edgeVisits: e.edgeVisits,
         winrate,
-        scoreLead: sign * c.leadAvg,
-        scoreMean: sign * c.scoreMeanAvg,
-        scoreStdev: getScoreStdev(c.scoreMeanAvg, c.scoreMeanSqAvg),
-        prior: root.eval!.policy[this.#posOf(b, e.moveLoc)]!,
-        utility: sign * c.utilityAvg,
+        scoreLead: sign * lead,
+        scoreMean: sign * scoreMean,
+        scoreStdev,
+        prior: policy[this.#posOf(b, e.moveLoc)]!,
+        utility: sign * utility,
         lcb: winrate - radius * radiusToWinrate,
         utilityLcb: sel ? sel.lcb[i]! : -zeroVisitsRadius,
         playSelectionValue: sel ? sel.values[i]! : 0,
         order: 0,
         pv,
+        pvVisits,
+        pvEdgeVisits,
+        weight: c.weightSum,
+        edgeWeight,
+        noResultValue: noResult,
       };
+      if (wantOwnership) ownershipOf.set(c, this.#treeOwnership(c, options.movesOwnershipStdev === true));
+      return { info, node: c };
     });
     // KataGo's AnalysisData order (a stable sort): moves with edge visits first, then by play selection value, edge
     // visits, policy. A move whose only visit wasn't counted (enableMorePassingHacks) is listed, with 0 edge visits.
-    const moveInfos = infos
-      .filter((m) => m.visits > 0)
-      .sort(
-        (x, y) =>
+    const sorted = infos.sort(
+      (xi, yi) => {
+        const x = xi.info;
+        const y = yi.info;
+        return (
           Number(y.edgeVisits > 0) - Number(x.edgeVisits > 0) ||
           y.playSelectionValue - x.playSelectionValue ||
           y.edgeVisits - x.edgeVisits ||
-          y.prior - x.prior,
-      );
+          y.prior - x.prior
+        );
+      },
+    );
     // KataGo getAnalysisData: with root symmetry pruning, each move is followed by its mirror images, each with the
-    // move's data and its line mirrored, in the order of the root's symmetries.
-    let listed: SearchMoveInfo[] = moveInfos;
-    if (p.rootSymmetryPruning && this.#rootSymmetries.length > 1) {
-      listed = [];
-      const isDone = new Set<number>();
-      for (const m of moveInfos) {
-        for (const symmetry of this.#rootSymmetries) {
-          const symMove = getSymLoc(m.loc, b, symmetry);
-          if (isDone.has(symMove)) continue;
-          isDone.add(symMove);
-          const copy: SearchMoveInfo = { ...m, loc: symMove, pv: m.pv.map((l) => getSymLoc(l, b, symmetry)) };
-          if (symmetry !== 0) copy.isSymmetryOf = m.loc;
-          listed.push(copy);
+    // move's data and its line (and ownership) mirrored, in the order of the root's symmetries.
+    const symmetries = p.rootSymmetryPruning && this.#rootSymmetries.length > 1 ? this.#rootSymmetries : [0];
+    const listed: SearchMoveInfo[] = [];
+    const isDone = new Set<number>();
+    for (const { info: m, node } of sorted) {
+      for (const symmetry of symmetries) {
+        const symMove = getSymLoc(m.loc, b, symmetry);
+        if (isDone.has(symMove)) continue;
+        isDone.add(symMove);
+        const copy: SearchMoveInfo = symmetry === 0 ? m : { ...m, loc: symMove, pv: m.pv.map((l) => getSymLoc(l, b, symmetry)), isSymmetryOf: m.loc };
+        const own = ownershipOf.get(node);
+        if (own) {
+          if (options.movesOwnership) copy.ownership = this.#ownershipForOutput(own.ownership, pla, symmetry);
+          if (options.movesOwnershipStdev) copy.ownershipStdev = this.#ownershipForOutput(own.stdev!, WHITE, symmetry);
         }
+        listed.push(copy);
       }
     }
     listed.forEach((m, order) => (m.order = order));
@@ -1685,5 +1793,186 @@ export class Search {
       rootUtility: sign * root.utilityAvg,
       moveInfos: listed,
     };
+  }
+
+  /**
+   * KataGo `getPrunedRootValues` (falling back to `getNodeValues` with no play selection values), and the
+   * `ReportedSearchValues` it builds, for the player to move at the root.
+   */
+  rootValues(): SearchRootValues {
+    const root = this.root;
+    const pla = root.nextPla;
+    let winLoss: number, noResult: number, scoreMean: number, scoreMeanSq: number, lead: number, utility: number;
+    const sel = this.#playSelectionValues(root, false, true);
+    if (!sel) {
+      winLoss = root.winLossValueAvg;
+      noResult = root.noResultValueAvg;
+      scoreMean = root.scoreMeanAvg;
+      scoreMeanSq = root.scoreMeanSqAvg;
+      lead = root.leadAvg;
+      utility = root.utilityAvg;
+    } else {
+      let winLossSum = 0, noResultSum = 0, scoreMeanSum = 0, scoreMeanSqSum = 0, leadSum = 0, utilitySum = 0, weightSum = 0;
+      root.children.forEach((e, i) => {
+        const c = e.node;
+        if (c.visits <= 0 || c.weightSum <= 0 || e.edgeVisits <= 0) return;
+        const w = sel.values[i]!;
+        winLossSum += w * c.winLossValueAvg;
+        noResultSum += w * c.noResultValueAvg;
+        scoreMeanSum += w * c.scoreMeanAvg;
+        scoreMeanSqSum += w * c.scoreMeanSqAvg;
+        leadSum += w * c.leadAvg;
+        utilitySum += w * c.utilityAvg;
+        weightSum += w;
+      });
+      // And the root's own evaluation.
+      const ev = root.eval!;
+      const w = this.#weightFromNN(ev);
+      winLossSum += (ev.whiteWinProb - ev.whiteLossProb) * w;
+      noResultSum += ev.whiteNoResultProb * w;
+      scoreMeanSum += ev.whiteScoreMean * w;
+      scoreMeanSqSum += ev.whiteScoreMeanSq * w;
+      leadSum += ev.whiteLead * w;
+      utilitySum += this.#utilityFromNN(ev) * w;
+      weightSum += w;
+      winLoss = winLossSum / weightSum;
+      noResult = noResultSum / weightSum;
+      scoreMean = scoreMeanSum / weightSum;
+      scoreMeanSq = scoreMeanSqSum / weightSum;
+      lead = leadSum / weightSum;
+      utility = utilitySum / weightSum;
+    }
+    // ReportedSearchValues: clamped against floating-point error.
+    winLoss = Math.min(1, Math.max(-1, winLoss));
+    noResult = Math.min(1 - Math.abs(winLoss), Math.max(0, noResult));
+    const sign = pla === WHITE ? 1 : -1;
+    return {
+      visits: root.visits,
+      weight: root.weightSum,
+      winrate: 0.5 + 0.5 * winLoss * sign,
+      scoreSelfplay: scoreMean * sign,
+      scoreLead: lead * sign,
+      scoreStdev: getScoreStdev(scoreMean, scoreMeanSq),
+      utility: utility * sign,
+      noResultValue: noResult,
+    };
+  }
+
+  /** The root's own network evaluation, as KataGo's `rootInfo` reports it (`rawWinrate` and the rest). */
+  rootRawValues(): SearchRawValues {
+    const ev = this.root.eval!;
+    const sign = this.root.nextPla === WHITE ? 1 : -1;
+    return {
+      winrate: 0.5 + 0.5 * (ev.whiteWinProb - ev.whiteLossProb) * sign,
+      lead: ev.whiteLead * sign,
+      scoreSelfplay: ev.whiteScoreMean * sign,
+      scoreSelfplayStdev: Math.sqrt(Math.max(0, ev.whiteScoreMeanSq - ev.whiteScoreMean * ev.whiteScoreMean)),
+      noResultProb: ev.whiteNoResultProb,
+      stWrError: ev.shorttermWinlossError * 0.5,
+      stScoreError: ev.shorttermScoreError,
+      varTimeLeft: ev.varTimeLeft,
+    };
+  }
+
+  /**
+   * KataGo `getPolicy`: the root's policy as the search uses it (with the root's policy temperature and optimism),
+   * row-major with the pass last; -1 marks an illegal move.
+   */
+  rootPolicy(): number[] {
+    return Array.from(this.root.eval!.policy);
+  }
+
+  /**
+   * KataGo `getAverageTreeOwnership` and `getAverageAndStandardDeviationTreeOwnership` at the root: ownership averaged
+   * over the search tree, for the player to move, row-major, with its standard deviation if asked for.
+   */
+  rootOwnership(withStdev: boolean): { ownership: number[]; ownershipStdev: number[] | null } {
+    const own = this.#treeOwnership(this.root, withStdev);
+    return {
+      ownership: this.#ownershipForOutput(own.ownership, this.root.nextPla, 0),
+      ownershipStdev: own.stdev ? this.#ownershipForOutput(own.stdev, WHITE, 0) : null,
+    };
+  }
+
+  /**
+   * White's ownership averaged over the subtree at `node` (KataGo's `getAverageTreeOwnership(node)`), and the standard
+   * deviation if asked for. Nodes are weighted as KataGo weights them; it stops deepening where a node's share of the
+   * average would fall below a bound that shrinks with the visits.
+   */
+  #treeOwnership(node: SearchNode, withStdev: boolean): { ownership: Float64Array; stdev: Float64Array | null } {
+    const area = this.#area;
+    const average = new Float64Array(area);
+    const sq = withStdev ? new Float64Array(area) : null;
+    const accumulate = (ownership: Float64Array, prop: number): void => {
+      for (let pos = 0; pos < area; pos++) {
+        const v = ownership[pos]!;
+        average[pos]! += prop * v;
+        if (sq) sq[pos]! += prop * v * v;
+      }
+    };
+    const minProp = 0.5 / Math.pow(Math.max(1, node.visits), 0.75);
+    const pruneProp = minProp * 0.01;
+    this.#traverseTreeForOwnership(minProp, pruneProp, 1, node, new Set(), accumulate);
+    if (sq) for (let pos = 0; pos < area; pos++) sq[pos] = Math.sqrt(Math.max(sq[pos]! - average[pos]! * average[pos]!, 0));
+    return { ownership: average, stdev: sq };
+  }
+
+  /** KataGo `traverseTreeForOwnership` and `traverseTreeForOwnershipChildren`. Returns whether anything was added. */
+  #traverseTreeForOwnership(
+    minProp: number,
+    pruneProp: number,
+    desiredProp: number,
+    node: SearchNode,
+    graphPath: Set<SearchNode>,
+    accumulate: (ownership: Float64Array, prop: number) => void,
+  ): boolean {
+    const ev = node.eval;
+    if (!ev) return false;
+    // Base cases: a small enough share, no children, or a cycle in the graph.
+    if (desiredProp < minProp || node.children.length <= 0 || graphPath.has(node)) {
+      accumulate(ev.whiteOwnership, desiredProp);
+      return true;
+    }
+    graphPath.add(node);
+    const parentNNWeight = Math.max(this.#weightFromNN(ev), 1e-10);
+    const childWeights = node.children.map((e) => this.#childWeight(e));
+    // The children are weighted by their weight squared, sharper than the plain weight.
+    let relativeChildrenWeightSum = 0;
+    let childrenWeightSum = 0;
+    for (const w of childWeights) {
+      relativeChildrenWeightSum += w * w;
+      childrenWeightSum += w;
+    }
+    const desiredPropFromChildren = (desiredProp * childrenWeightSum) / (childrenWeightSum + parentNNWeight);
+    let selfProp = (desiredProp * parentNNWeight) / (childrenWeightSum + parentNNWeight);
+    if (desiredPropFromChildren <= 0 || relativeChildrenWeightSum <= 0) selfProp += desiredPropFromChildren;
+    else {
+      node.children.forEach((e, i) => {
+        const w = childWeights[i]!;
+        const desiredPropFromChild = ((w * w) / relativeChildrenWeightSum) * desiredPropFromChildren;
+        if (desiredPropFromChild < pruneProp) selfProp += desiredPropFromChild;
+        else if (!this.#traverseTreeForOwnership(minProp, pruneProp, desiredPropFromChild, e.node, graphPath, accumulate)) selfProp += desiredPropFromChild;
+      });
+    }
+    graphPath.delete(node);
+    accumulate(ev.whiteOwnership, selfProp);
+    return true;
+  }
+
+  /**
+   * KataGo's output step for tree ownership: for `pla`'s side (white's values negated for black), each point written at
+   * its image under `symmetry`.
+   */
+  #ownershipForOutput(values: Float64Array, pla: Stone, symmetry: number): number[] {
+    const b = this.root.hist.board;
+    const out = new Array<number>(this.#area).fill(0);
+    const sign = pla === WHITE ? 1 : -1;
+    for (let y = 0; y < b.ySize; y++) {
+      for (let x = 0; x < b.xSize; x++) {
+        const symLoc = getSymLoc(b.loc(x, y), b, symmetry);
+        out[b.y(symLoc) * b.xSize + b.x(symLoc)] = sign * values[y * b.xSize + x]!;
+      }
+    }
+    return out;
   }
 }
