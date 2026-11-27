@@ -12,18 +12,20 @@
  *   from children plus the node's own evaluation (`recomputeNodeStats`, `addLeafValue`), with the children weighted by
  *   how their values compare (`downweightBadChildrenAndNormalizeWeight`, `valueWeightExponent`), and each evaluation
  *   weighted by the network's own short-term error estimates (`computeWeightFromNNOutput`, `useUncertainty`);
+ * - subtree value bias (`subtreeValueBiasFactor`, `SubtreeValueBiasTable`): a node's evaluation is corrected by how
+ *   much searching below has, on average, changed the evaluation of the same move in the same local situation;
  * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
  * Not yet ported (each is to be added and measured separately): graph search (transpositions), noise pruning,
- * subtree value bias, policy optimism, wide root noise, passing hacks and the root's ending
+ * policy optimism, wide root noise, passing hacks and the root's ending
  * bonus, root symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
 import type { ModelDesc } from '../model/types.js';
-import { BLACK, PASS_LOC, WHITE, type Stone } from '../rules/board.js';
+import { BLACK, EMPTY, NULL_LOC, PASS_LOC, WHITE, type Board, type Stone } from '../rules/board.js';
 import { UnsupportedPositionError, type GameHistory } from '../rules/history.js';
 import { encodeHistoryV7, type LadderCache } from '../features/v7.js';
 import type { NetInput, RawOutputs } from '../reference/forward.js';
@@ -105,6 +107,13 @@ export interface SearchParams {
   uncertaintyCoeff: number;
   uncertaintyExponent: number;
   uncertaintyMaxWeight: number;
+  /**
+   * KataGo `subtreeValueBiasFactor`: the share of the table's average correction added to a node's evaluation (0
+   * switches it off). Each node's correction counts in its table entry with weight (children's weight) to the power
+   * `subtreeValueBiasWeightExponent`.
+   */
+  subtreeValueBiasFactor: number;
+  subtreeValueBiasWeightExponent: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -145,11 +154,45 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   uncertaintyCoeff: 0.25,
   uncertaintyExponent: 1.0,
   uncertaintyMaxWeight: 8.0,
+  subtreeValueBiasFactor: 0.45,
+  subtreeValueBiasWeightExponent: 0.85,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
 const TOTALCHILDWEIGHT_PUCT_OFFSET = 0.01;
 const POLICY_ILLEGAL_SELECTION_VALUE = -1e50;
+
+/** A `SubtreeValueBiasTable` entry: the summed weighted correction of the nodes that share it. */
+interface SubtreeValueBiasEntry {
+  deltaUtilitySum: number;
+  weightSum: number;
+}
+
+/**
+ * KataGo `SubtreeValueBiasTable::get`'s key, as a string in place of its 128-bit Zobrist hash: the player who moved, the
+ * move before and the move, and around the move, on the board before it, each point's colour and whether its chain is
+ * in atari (a 5x5 window clipped to the board), plus the ko point.
+ */
+function subtreeValueBiasKey(pla: Stone, parentPrevMoveLoc: number, prevMoveLoc: number, prevBoard: Board): string {
+  let key = `${pla}|${parentPrevMoveLoc}|${prevMoveLoc}|`;
+  const x = prevBoard.x(prevMoveLoc);
+  const y = prevBoard.y(prevMoveLoc);
+  const radius = 2;
+  const dxMin = x < radius ? -x : -radius;
+  const dxMax = x >= prevBoard.xSize - radius ? prevBoard.xSize - 1 - x : radius;
+  const dyMin = y < radius ? -y : -radius;
+  const dyMax = y >= prevBoard.ySize - radius ? prevBoard.ySize - 1 - y : radius;
+  for (let dy = dyMin; dy <= dyMax; dy++) {
+    for (let dx = dxMin; dx <= dxMax; dx++) {
+      const loc2 = prevBoard.loc(x + dx, y + dy);
+      const c = prevBoard.colors[loc2]!;
+      key += c;
+      if (c !== EMPTY && prevBoard.getNumLiberties(loc2) === 1) key += 'a';
+    }
+  }
+  if (prevBoard.koLoc !== NULL_LOC) key += `|ko${prevBoard.koLoc}`;
+  return key;
+}
 
 const UNEVALUATED = 0;
 const PENDING = 1;
@@ -170,6 +213,10 @@ class SearchNode {
   scoreMeanSqAvg = 0;
   leadAvg = 0;
   virtualLosses = 0;
+  /** KataGo `subtreeValueBiasTableEntry`, and this node's last contribution to it. */
+  biasEntry: SubtreeValueBiasEntry | null = null;
+  lastBiasDeltaSum = 0;
+  lastBiasWeight = 0;
 
   constructor(
     readonly hist: GameHistory,
@@ -266,6 +313,8 @@ export class Search {
   /** Ladder results by board, for this search's inputs (the inputs are the same without it; see `LadderCache`). */
   readonly #ladders: LadderCache = new Map();
   readonly #random: () => number;
+  /** KataGo's `subtreeValueBiasTable`, one per search (native's analysis engine starts each query with it empty). */
+  readonly #subtreeValueBiasTable = new Map<string, SubtreeValueBiasEntry>();
   readonly #sqrtBoardArea: number;
   readonly #area: number;
   #recentScoreCenter = 0;
@@ -435,8 +484,21 @@ export class Search {
   // ---------------------------------------------------------------- stats
 
   /** KataGo `addLeafValue`, for a node with no children yet (its first visit) or a terminal node. */
-  #addLeafValue(node: SearchNode, winLoss: number, noResult: number, scoreMean: number, scoreMeanSq: number, lead: number, weight: number): void {
-    const utility = this.#resultUtility(winLoss, noResult) + this.#scoreUtility(scoreMean, scoreMeanSq);
+  #addLeafValue(
+    node: SearchNode,
+    winLoss: number,
+    noResult: number,
+    scoreMean: number,
+    scoreMeanSq: number,
+    lead: number,
+    weight: number,
+    isTerminal: boolean,
+  ): void {
+    let utility = this.#resultUtility(winLoss, noResult) + this.#scoreUtility(scoreMean, scoreMeanSq);
+    const entry = node.biasEntry;
+    if (this.params.subtreeValueBiasFactor !== 0 && !isTerminal && entry && entry.weightSum > 0.001) {
+      utility += (this.params.subtreeValueBiasFactor * entry.deltaUtilitySum) / entry.weightSum;
+    }
     const oldW = node.weightSum;
     const newW = oldW + weight;
     const mix = (avg: number, v: number) => (avg * oldW + v * weight) / newW;
@@ -454,7 +516,7 @@ export class Search {
 
   #addNNOutputAsLeafValue(node: SearchNode): void {
     const e = node.eval!;
-    this.#addLeafValue(node, e.whiteWinProb - e.whiteLossProb, e.whiteNoResultProb, e.whiteScoreMean, e.whiteScoreMeanSq, e.whiteLead, this.#weightFromNN(e));
+    this.#addLeafValue(node, e.whiteWinProb - e.whiteLossProb, e.whiteNoResultProb, e.whiteScoreMean, e.whiteScoreMeanSq, e.whiteLead, this.#weightFromNN(e), false);
   }
 
   #addTerminalValue(node: SearchNode): void {
@@ -466,7 +528,7 @@ export class Search {
     const scoreMean = h.finalWhiteMinusBlackScore + drawAdjust;
     const scoreMeanSq = whiteScoreMeanSqOfScoreGridded(h.finalWhiteMinusBlackScore, p.drawEquivalentWinsForWhite);
     const weight = this.#usesUncertainty ? p.uncertaintyMaxWeight : 1;
-    this.#addLeafValue(node, 2 * whiteWins - 1, 0, scoreMean, scoreMeanSq, scoreMean, weight);
+    this.#addLeafValue(node, 2 * whiteWins - 1, 0, scoreMean, scoreMeanSq, scoreMean, weight, true);
   }
 
   /**
@@ -548,6 +610,7 @@ export class Search {
       selfUtilities.push(node.nextPla === WHITE ? c.utilityAvg : -c.utilityAvg);
       totalChildWeight += c.weightSum;
     }
+    const origTotalChildWeight = totalChildWeight;
     // KataGo prunes and subtracts here only with root noise, which the analysis engine doesn't use.
     this.#downweightBadChildrenAndNormalizeWeight(weights, selfUtilities, totalChildWeight, totalChildWeight, 0, 0);
 
@@ -574,7 +637,21 @@ export class Search {
       weightSqSum += scaling * scaling * c.weightSqSum;
     }
     const e = node.eval!;
-    const u = this.#utilityFromNN(e);
+    let u = this.#utilityFromNN(e);
+    const entry = node.biasEntry;
+    if (this.params.subtreeValueBiasFactor !== 0 && entry) {
+      if (totalChildWeight > 1e-10) {
+        // This node's correction: how far its children's value is from its own evaluation.
+        const utilityChildren = utility / totalChildWeight;
+        const biasWeight = Math.pow(origTotalChildWeight, this.params.subtreeValueBiasWeightExponent);
+        const biasDeltaSum = (utilityChildren - u) * biasWeight;
+        entry.deltaUtilitySum += biasDeltaSum - node.lastBiasDeltaSum;
+        entry.weightSum += biasWeight - node.lastBiasWeight;
+        node.lastBiasDeltaSum = biasDeltaSum;
+        node.lastBiasWeight = biasWeight;
+      }
+      if (entry.weightSum > 0.001) u += (this.params.subtreeValueBiasFactor * entry.deltaUtilitySum) / entry.weightSum;
+    }
     const weight = this.#weightFromNN(e);
     winLoss += (e.whiteWinProb - e.whiteLossProb) * weight;
     noResult += e.whiteNoResultProb * weight;
@@ -706,6 +783,19 @@ export class Search {
         const forceNonTerminal =
           bestNewLoc === PASS_LOC && hist.isGameFinished && ((this.params.conservativePass && isRoot) || friendlyPass);
         const child = new SearchNode(hist, bestNewLoc, hist.isGameFinished && !forceNonTerminal);
+        // KataGo allocateOrFindNode: the table entry for this move, after the move before it, unless it's a pass.
+        if (this.params.subtreeValueBiasFactor !== 0 && hist.moves.length >= 2 && bestNewLoc !== PASS_LOC) {
+          const parentPrevMoveLoc = hist.moves[hist.moves.length - 2]!.loc;
+          if (parentPrevMoveLoc !== NULL_LOC) {
+            const key = subtreeValueBiasKey(pla, parentPrevMoveLoc, bestNewLoc, node.hist.board);
+            let biasEntry = this.#subtreeValueBiasTable.get(key);
+            if (!biasEntry) {
+              biasEntry = { deltaUtilitySum: 0, weightSum: 0 };
+              this.#subtreeValueBiasTable.set(key, biasEntry);
+            }
+            child.biasEntry = biasEntry;
+          }
+        }
         node.children.push(child);
         return child;
       }

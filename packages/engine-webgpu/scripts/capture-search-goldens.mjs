@@ -33,7 +33,6 @@ const OVERRIDES = [
   'nnRandomize=false',
   'useGraphSearch=false',
   'useNoisePruning=false',
-  'subtreeValueBiasFactor=0',
   'policyOptimism=0',
   'rootPolicyOptimism=0',
   'wideRootNoise=0',
