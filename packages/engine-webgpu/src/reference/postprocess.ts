@@ -53,7 +53,9 @@ export function postProcess(model: ModelDesc, raw: RawOutputs, options: PostProc
   // Policy: blend the optimistic channel where the model has one, mask illegal moves, softmax.
   const logits = new Float64Array(area + 1);
   const p0 = raw.policy[0]!;
-  const p1 = model.numPolicyChannels >= 2 ? raw.policy[1]! : null;
+  // KataGo's backends: the optimistic channel is the second of 2, or of 4 from model version 16.
+  const hasOptimism = model.numPolicyChannels === 2 || (model.numPolicyChannels === 4 && model.modelVersion >= 16);
+  const p1 = hasOptimism ? raw.policy[1]! : null;
   for (let i = 0; i < area; i++) logits[i] = p1 ? p0[i]! + (p1[i]! - p0[i]!) * optimism : p0[i]!;
   logits[area] = p1 ? raw.pass[0]! + (raw.pass[1]! - raw.pass[0]!) * optimism : raw.pass[0]!;
 

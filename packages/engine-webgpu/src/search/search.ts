@@ -16,11 +16,13 @@
  * - subtree value bias (`subtreeValueBiasFactor`, `SubtreeValueBiasTable`): a node's evaluation is corrected by how
  *   much searching below has, on average, changed the evaluation of the same move in the same local situation;
  * - an evaluation cache keyed by the exact network inputs, and a random symmetry per evaluation;
+ * - policy optimism (`policyOptimism`, `rootPolicyOptimism`): the policy blended toward the network's optimistic policy
+ *   head, for networks that have one;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
  *
- * Not yet ported (each is to be added and measured separately): graph search (transpositions), policy optimism, wide root noise, passing hacks and the root's ending
+ * Not yet ported (each is to be added and measured separately): graph search (transpositions), wide root noise, passing hacks and the root's ending
  * bonus, root symmetry pruning, and tree reuse.
  * Search parameters that only matter for those default to values that switch them off.
  */
@@ -122,6 +124,13 @@ export interface SearchParams {
   useNoisePruning: boolean;
   noisePruneUtilityScale: number;
   noisePruningCap: number;
+  /**
+   * KataGo `policyOptimism` and `rootPolicyOptimism`: how far the policy is blended toward the network's optimistic
+   * policy head (model version 12 and later), below the root and at the root. Evaluations with different optimism are
+   * cached apart, as in KataGo.
+   */
+  policyOptimism: number;
+  rootPolicyOptimism: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -167,6 +176,8 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   useNoisePruning: true,
   noisePruneUtilityScale: 0.15,
   noisePruningCap: 1e50,
+  policyOptimism: 1.0,
+  rootPolicyOptimism: 0.2,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -426,7 +437,14 @@ export class Search {
     }
     if (h.isGameFinished) key += '|over';
     if (this.#maxHistory(node) <= 0) key += '|nohist';
+    // KataGo folds the policy optimism in, discretized to 1/1024.
+    const optimism = this.#policyOptimism(node);
+    if (optimism > 0) key += `|opt${Math.trunc(optimism * 1024)}`;
     return key;
+  }
+
+  #policyOptimism(node: SearchNode): number {
+    return node === this.root ? this.params.rootPolicyOptimism : this.params.policyOptimism;
   }
 
   #encode(node: SearchNode): ReturnType<typeof encodeHistoryV7> {
@@ -444,7 +462,7 @@ export class Search {
     return Math.floor(this.#random() * (b.xSize === b.ySize ? 8 : 4));
   }
 
-  #postProcess(raw: RawOutputs, symmetry: number, encoded: ReturnType<typeof encodeHistoryV7>): Evaluation {
+  #postProcess(raw: RawOutputs, symmetry: number, encoded: ReturnType<typeof encodeHistoryV7>, policyOptimism: number): Evaluation {
     const { xSize, ySize } = raw;
     const back = (plane: Float32Array) => copyWithSymmetry(plane, 1, ySize, xSize, symmetry, true);
     const unrotated: RawOutputs = { ...raw, policy: raw.policy.map(back), ownership: back(raw.ownership) };
@@ -453,6 +471,7 @@ export class Search {
       legal: encoded.legal,
       koRuleSimple: encoded.koRuleSimple,
       scoringTerritory: encoded.scoringTerritory,
+      policyOptimism,
     });
   }
 
@@ -468,7 +487,7 @@ export class Search {
     const [raw] = await this.#evaluator.evaluate([{ xSize, ySize, spatial, global: encoded.input.global }]);
     this.stats.nnMs += performance.now() - t0;
     this.stats.nnEvals += 1;
-    const e = this.#postProcess(raw!, symmetry, encoded);
+    const e = this.#postProcess(raw!, symmetry, encoded, this.#policyOptimism(node));
     this.#cache.set(key, e);
     return e;
   }
@@ -935,7 +954,7 @@ export class Search {
       this.stats.nnEvals += batch.length;
       batch.forEach((b, i) => {
         const leaf = b.path[b.path.length - 1]!;
-        const e = this.#postProcess(outputs[i]!, b.symmetry, b.encoded);
+        const e = this.#postProcess(outputs[i]!, b.symmetry, b.encoded, this.#policyOptimism(leaf));
         this.#cache.set(b.key, e);
         leaf.eval = e;
         leaf.state = EVALUATED;
