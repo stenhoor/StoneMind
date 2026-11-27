@@ -1,5 +1,6 @@
-// Passes in the rules engine and the V7 inputs (KataGo BoardHistory / fillRowV7), for area scoring. Hand-built
-// positions whose answers follow from KataGo's rules; native goldens for pass positions are a separate check.
+// Passes in the rules engine and the V7 inputs (KataGo BoardHistory / fillRowV7). Hand-built positions whose answers
+// follow from KataGo's rules; native goldens for pass positions are a separate check, and history.test.mjs checks the
+// rules engine against KataGo's own move by move.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildHistory, encodeHistoryV7, encodePositionV7, BLACK, WHITE, UnsupportedPositionError } from '../dist/index.js';
@@ -32,10 +33,14 @@ test('area scoring counts stones and the territory they enclose', () => {
   assert.equal(hist.winner, BLACK);
 });
 
-test('a pass that would start the territory encore is refused; one pass is fine', () => {
+test('under territory scoring, two passes start the encore; the network inputs for it are refused for now', () => {
   const one = buildHistory({ ...base, rules: 'japanese', moves: [['B', 'pass']] });
   assert.equal(one.consecutiveEndingPasses, 1);
-  assert.throws(() => buildHistory({ ...base, rules: 'japanese', moves: [['B', 'pass'], ['W', 'pass']] }), UnsupportedPositionError);
+  assert.equal(one.encorePhase, 0);
+  const two = buildHistory({ ...base, rules: 'japanese', moves: [['B', 'pass'], ['W', 'pass']] });
+  assert.equal(two.encorePhase, 1);
+  assert.equal(two.isGameFinished, false);
+  assert.throws(() => encodeHistoryV7(two), UnsupportedPositionError);
 });
 
 test('inputs: a pass sets the history global instead of a plane', () => {

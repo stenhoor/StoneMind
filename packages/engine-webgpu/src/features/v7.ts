@@ -147,6 +147,9 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   const pla = hist.nextPla;
   const o = opp(pla);
   const rules = hist.rules;
+  if (hist.encorePhase > 0 || hist.isPastNormalPhaseEnd) {
+    throw new UnsupportedPositionError("the network's inputs in the territory-scoring encore are not supported yet");
+  }
   const spatial = new Float32Array(22 * area);
   const global = new Float32Array(19);
   const pos = (loc: number) => board.y(loc) * xSize + board.x(loc);

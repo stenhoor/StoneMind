@@ -121,6 +121,11 @@ area scoring with no group tax. Still refused with `UnsupportedPositionError`: t
 and Korean games past the main phase), ending a game with a group tax (stone-scoring, ancient-territory), no-result long
 cycles, and rule sets with a button.
 
+Since part C, step 13a of the parity plan (2026-11-27), the rules engine has all of these but the button, as KataGo's
+`BoardHistory` has them: territory scoring with its encore, scoring with every tax rule, and no-result long cycles. The
+search ends a no-result game as KataGo does. Territory scoring and a group tax are still refused by the search, and the
+encore by the network's inputs, until steps 13b, 13c and 14.
+
 ## 13. Browser engine: network calls in flight (spike 0001)
 
 KataGo runs its search threads in parallel on the CPU while one neural-net server thread per model runs the GPU

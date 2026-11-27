@@ -587,7 +587,8 @@ export class Search {
   constructor(model: ModelDesc, evaluator: NetEvaluator, rootHistory: GameHistory, params: Partial<SearchParams> = {}, cache: Map<string, Evaluation> = new Map()) {
     this.#cache = cache;
     if (rootHistory.rules.scoringRule !== 'AREA' || rootHistory.rules.taxRule !== 'NONE') {
-      // The territory encore and ending a game with a group tax aren't ported yet (docs/OPEN-QUESTIONS.md).
+      // The search under territory scoring and with a group tax isn't ported yet (the parity plan's steps 13c and 14;
+      // docs/OPEN-QUESTIONS.md).
       throw new UnsupportedPositionError('the search supports area scoring with no group tax only, for now');
     }
     this.params = { ...DEFAULT_SEARCH_PARAMS, ...params };
@@ -601,6 +602,11 @@ export class Search {
     // The root is never terminal (KataGo forceNonTerminal): searching a finished position still explores it. Like
     // KataGo's root, it isn't in the node table.
     const rootHist = rootHistory.clone();
+    // KataGo Search::applyHistoryModesToRootHistory, with its params at their default (auto): the network's modes.
+    rootHist.setModes({
+      alwaysComputePassAliveUnderSuicideRules: model.preferPassAliveUnderSuicideRules,
+      excludeTerritoryAdjacentToAtari: model.preferExcludeTerritoryAdjacentToAtari,
+    });
     this.root = new SearchNode(rootHist, null, false, this.params.useGraphSearch ? this.#rootGraphKey(rootHist) : '');
   }
 
@@ -769,13 +775,13 @@ export class Search {
 
   /** KataGo `GraphHash::getGraphHashFromScratch`: the key of the root, through the game's moves from the start. */
   #rootGraphKey(h: GameHistory): string {
-    const replay = new GameHistory(h.initialBoard, h.moves[0]?.pla ?? h.nextPla, h.rules, h.komi);
+    const replay = new GameHistory(h.initialBoard, h.moves[0]?.pla ?? h.nextPla, h.rules, h.komi, h.initialEncorePhase, h.modes);
     let key = '';
-    for (const m of h.moves) {
+    h.moves.forEach((m, i) => {
       key = this.#graphKey(key, replay, m.pla);
       // KataGo getGraphHashFromScratch replays with makeBoardMoveTolerant, as a query's moves were played.
-      if (!replay.playTolerant(m.loc, m.pla)) throw new Error('the root history does not replay');
-    }
+      if (!replay.playTolerant(m.loc, m.pla, h.preventEncoreHistory[i])) throw new Error('the root history does not replay');
+    });
     return this.#graphKey(key, replay, h.nextPla);
   }
 
@@ -1054,12 +1060,16 @@ export class Search {
   /** KataGo's terminal value in `playoutDescend`, from the history of the path that reached the node. */
   #addTerminalValue(node: SearchNode, h: GameHistory): void {
     const p = this.params;
+    const weight = this.#usesUncertainty ? p.uncertaintyMaxWeight : 1;
+    if (h.isNoResult) {
+      this.#addLeafValue(node, 0, 1, 0, 0, 0, weight, true);
+      return;
+    }
     const whiteWins = h.winner === WHITE ? 1 : h.winner === BLACK ? 0 : p.drawEquivalentWinsForWhite;
     // KataGo whiteScoreDrawAdjust: the draw adjustment is zero unless the result can be a draw (integer komi).
     const drawAdjust = Number.isInteger(h.komi) ? p.drawEquivalentWinsForWhite - 0.5 : 0;
     const scoreMean = h.finalWhiteMinusBlackScore + drawAdjust;
     const scoreMeanSq = whiteScoreMeanSqOfScoreGridded(h.finalWhiteMinusBlackScore, p.drawEquivalentWinsForWhite);
-    const weight = this.#usesUncertainty ? p.uncertaintyMaxWeight : 1;
     this.#addLeafValue(node, 2 * whiteWins - 1, 0, scoreMean, scoreMeanSq, scoreMean, weight, true);
   }
 

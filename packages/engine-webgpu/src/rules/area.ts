@@ -1,6 +1,8 @@
 /**
- * Pass-alive area (Benson's algorithm with KataGo's extensions), ported from `Board::calculateArea` and
- * `Board::calculateAreaForPla` in KataGo's `cpp/game/board.cpp` (KataGo 1.18, MIT, © David J Wu).
+ * Pass-alive area (Benson's algorithm with KataGo's extensions), and the independent life area of territory scoring and
+ * the group tax. Ported from `Board::calculateArea`, `Board::calculateAreaForPla`,
+ * `Board::calculateIndependentLifeArea` and `Board::calculateIndependentLifeAreaHelper` in KataGo's
+ * `cpp/game/board.cpp` (KataGo 1.18, MIT, © David J Wu).
  */
 import { BLACK, Board, EMPTY, NULL_LOC, WHITE, opp, type Stone } from './board.js';
 
@@ -231,4 +233,123 @@ function calculateAreaForPla(
       } while (cur !== head);
     }
   }
+}
+
+/**
+ * KataGo `calculateIndependentLifeArea` and `calculateIndependentLifeAreaHelper`: the area of regions that live
+ * independently, for territory scoring and the group tax. Regions that touch dame, or hold a stone of their owner in
+ * atari, count as seki and are left out.
+ * @param keepTerritories Also mark the territory of regions that aren't independent life (with
+ *   `excludeTerritoryAdjacentToAtari`, not empty points next to a chain of the territory's owner in atari).
+ * @param keepStones Also mark the stones of regions that aren't independent life.
+ * @returns The area (result[loc] is BLACK, WHITE or EMPTY for every location of the board's array), and the number of
+ *   independent life regions White has minus Black's.
+ */
+export function calculateIndependentLifeArea(
+  board: Board,
+  keepTerritories: boolean,
+  keepStones: boolean,
+  excludeTerritoryAdjacentToAtari: boolean,
+  multiStoneSuicideLegal: boolean,
+): { area: Uint8Array; whiteMinusBlackIndependentLifeRegionCount: number } {
+  const colors = board.colors;
+  const result = new Uint8Array(board.arraySize);
+  const basicArea = new Uint8Array(board.arraySize);
+  calculateAreaForPla(board, BLACK, true, true, multiStoneSuicideLegal, basicArea);
+  calculateAreaForPla(board, WHITE, true, true, multiStoneSuicideLegal, basicArea);
+  for (let y = 0; y < board.ySize; y++) {
+    for (let x = 0; x < board.xSize; x++) {
+      const loc = board.loc(x, y);
+      if (basicArea[loc] === EMPTY) basicArea[loc] = colors[loc]!;
+    }
+  }
+
+  const whiteMinusBlackIndependentLifeRegionCount = independentLifeAreaHelper(board, basicArea, result);
+
+  if (keepTerritories) {
+    for (let y = 0; y < board.ySize; y++) {
+      for (let x = 0; x < board.xSize; x++) {
+        const loc = board.loc(x, y);
+        if (basicArea[loc] !== EMPTY && basicArea[loc] !== colors[loc]) {
+          let adjChainInAtari = false;
+          if (excludeTerritoryAdjacentToAtari && colors[loc] === EMPTY) {
+            for (const d of board.adj) {
+              const a = loc + d;
+              if (colors[a] === basicArea[loc] && board.getNumLiberties(a) === 1) adjChainInAtari = true;
+            }
+          }
+          if (!adjChainInAtari) result[loc] = basicArea[loc]!;
+        }
+      }
+    }
+  }
+  if (keepStones) {
+    for (let y = 0; y < board.ySize; y++) {
+      for (let x = 0; x < board.xSize; x++) {
+        const loc = board.loc(x, y);
+        if (basicArea[loc] !== EMPTY && basicArea[loc] === colors[loc]) result[loc] = basicArea[loc]!;
+      }
+    }
+  }
+  return { area: result, whiteMinusBlackIndependentLifeRegionCount };
+}
+
+/** KataGo `calculateIndependentLifeAreaHelper`. Returns the independent life region count, White's minus Black's. */
+function independentLifeAreaHelper(board: Board, basicArea: Uint8Array, result: Uint8Array): number {
+  const colors = board.colors;
+  const adj = board.adj;
+  const queue = new Int32Array(board.arraySize);
+  let count = 0;
+  // Mark the regions players own by area scoring that touch dame or hold a stone of their owner in atari.
+  const isSeki = new Uint8Array(board.arraySize);
+  let queueHead = 0;
+  let queueTail = 0;
+  for (let y = 0; y < board.ySize; y++) {
+    for (let x = 0; x < board.xSize; x++) {
+      const loc = board.loc(x, y);
+      if (basicArea[loc] === EMPTY || isSeki[loc]) continue;
+      let touchesDame = false;
+      for (const d of adj) if (colors[loc + d] === EMPTY && basicArea[loc + d] === EMPTY) touchesDame = true;
+      if ((colors[loc] === basicArea[loc] && board.getNumLiberties(loc) === 1) || touchesDame) {
+        const pla = basicArea[loc];
+        isSeki[loc] = 1;
+        queue[queueTail++] = loc;
+        while (queueHead !== queueTail) {
+          const next = queue[queueHead++]!;
+          for (const d of adj) {
+            const a = next + d;
+            if (basicArea[a] === pla && !isSeki[a]) {
+              isSeki[a] = 1;
+              queue[queueTail++] = a;
+            }
+          }
+        }
+      }
+    }
+  }
+  queueHead = 0;
+  queueTail = 0;
+  // Copy every region that doesn't count as seki into the result, counting them.
+  for (let y = 0; y < board.ySize; y++) {
+    for (let x = 0; x < board.xSize; x++) {
+      const loc = board.loc(x, y);
+      if (basicArea[loc] !== EMPTY && !isSeki[loc] && result[loc] !== basicArea[loc]) {
+        const pla = basicArea[loc]!;
+        count += pla === WHITE ? 1 : -1;
+        result[loc] = pla;
+        queue[queueTail++] = loc;
+        while (queueHead !== queueTail) {
+          const next = queue[queueHead++]!;
+          for (const d of adj) {
+            const a = next + d;
+            if (basicArea[a] === pla && result[a] !== basicArea[a]) {
+              result[a] = basicArea[a]!;
+              queue[queueTail++] = a;
+            }
+          }
+        }
+      }
+    }
+  }
+  return count;
 }
