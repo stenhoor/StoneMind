@@ -362,9 +362,10 @@ total_num_data_rows)`.
 
 **Open:**
 
-- Whether a `SharedWorker` can use WebGPU in each browser. MDN's compatibility data lists WebGPU in workers (Chrome and
-  Edge 113+ on desktop, Chrome Android 121+, Safari 26, Firefox 141+ with gaps) but does not say which browsers allow it
-  in a shared worker, so the app tests it in each browser.
+- Whether a `SharedWorker` can use WebGPU in each browser. The capability page's reports from the owner's Linux laptop
+  (`docs/reports/capabilities/`) show it does in Edge 158 and in Firefox 161; Safari and phones are not checked yet.
+  Firefox 161 offers WebGPU on Linux, although MDN's compatibility data said it did not; whether the browser engine
+  runs well in Firefox is not yet confirmed.
 - Whether zbaduk offers an API that StoneMind can use.
 - Using more than one engine in a workspace at once (for example, to compare two networks) is left for later.
 - The bridge already pairs with a page through a pairing link that carries a token (`packages/katago-bridge`,

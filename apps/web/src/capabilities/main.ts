@@ -10,7 +10,7 @@ interface GpuAdapterLike {
   readonly isFallbackAdapter?: boolean;
 }
 interface GpuLike {
-  requestAdapter(): Promise<GpuAdapterLike | null>;
+  requestAdapter(options?: { powerPreference?: 'low-power' | 'high-performance' }): Promise<GpuAdapterLike | null>;
 }
 
 const TIMEOUT = 8000;
@@ -61,6 +61,19 @@ function askWorker(port: Port, onerror: (handler: (e: Event) => void) => void): 
 }
 
 const WORKER_URL = new URL('worker-probe.js', import.meta.url);
+
+/** The adapter the browser gives when asked for high performance (on a laptop with two GPUs, ideally the discrete one). */
+async function probeGpuHighPerformance(): Promise<NonNullable<CapabilityReport['webgpuHighPerformance']>> {
+  const gpu = (navigator as Navigator & { gpu?: GpuLike }).gpu;
+  if (!gpu) return { adapter: false };
+  try {
+    const adapter = await withTimeout(gpu.requestAdapter({ powerPreference: 'high-performance' }), 'requestAdapter (high-performance)');
+    if (!adapter) return { adapter: false };
+    return { adapter: true, vendor: adapter.info?.vendor ?? '', architecture: adapter.info?.architecture ?? '' };
+  } catch (e) {
+    return { adapter: false, error: message(e) };
+  }
+}
 
 async function probeDedicated(): Promise<WorkerProbe> {
   try {
@@ -167,8 +180,11 @@ function probeCss(): CapabilityReport['css'] {
 }
 
 export async function runProbes(): Promise<CapabilityReport> {
-  const [webgpu, dedicatedWorker, sharedWorker, opfs, storage, webLocks, broadcastChannel] = await Promise.all([
-    probeGpu(), probeDedicated(), probeShared(), probeOpfs(), probeStorage(), probeLocks(), probeBroadcast(),
+  // The two adapter requests run one after the other, so neither changes what the other is given.
+  const webgpu = await probeGpu();
+  const webgpuHighPerformance = await probeGpuHighPerformance();
+  const [dedicatedWorker, sharedWorker, opfs, storage, webLocks, broadcastChannel] = await Promise.all([
+    probeDedicated(), probeShared(), probeOpfs(), probeStorage(), probeLocks(), probeBroadcast(),
   ]);
   const report: CapabilityReport = {
     kind: 'stonemind-capabilities',
@@ -178,7 +194,7 @@ export async function runProbes(): Promise<CapabilityReport> {
     hardwareConcurrency: navigator.hardwareConcurrency ?? 0,
     devicePixelRatio: window.devicePixelRatio,
     screen: { width: screen.width, height: screen.height },
-    webgpu, dedicatedWorker, sharedWorker, opfs, storage, webLocks, broadcastChannel,
+    webgpu, webgpuHighPerformance, dedicatedWorker, sharedWorker, opfs, storage, webLocks, broadcastChannel,
     css: probeCss(),
   };
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;

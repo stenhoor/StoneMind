@@ -19,8 +19,8 @@ So far (Milestone 1, step 1) it is the frame:
 - **The backdrop:** plain table (the default), wood grain or washi paper.
 
 **The capability page** (Milestone 1, step 2), at `/capabilities/`, opened from the StoneMind menu (What this browser supports) and from About StoneMind, checks what this
-browser offers: WebGPU in the page, a dedicated worker and a shared worker (with the adapter, `shader-f16` and buffer
-limits); OPFS with `createWritable` and, in a worker, `createSyncAccessHandle`; the storage quota and persistence; Web
+browser offers: WebGPU in the page, a dedicated worker and a shared worker (with the default adapter, the adapter given
+for `high-performance`, `shader-f16` and buffer limits); OPFS with `createWritable` and, in a worker, `createSyncAccessHandle`; the storage quota and persistence; Web
 Locks and `BroadcastChannel`; and `backdrop-filter`, SVG filters in it, and container queries. It shows the results and
 offers them as a JSON report to copy or download. It stores nothing and sends nothing. The browser tests save each
 engine's report to `dist/reports/` and print it.
