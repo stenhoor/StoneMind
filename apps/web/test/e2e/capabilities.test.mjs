@@ -50,6 +50,15 @@ for (const name of BROWSERS) {
       await page.close();
     });
 
+    test('the StoneMind menu opens the capability page', async () => {
+      const page = await browser.newPage();
+      await page.goto(url);
+      await page.getByRole('button', { name: 'StoneMind menu' }).click();
+      await page.getByRole('menuitem', { name: 'What this browser supports' }).click();
+      await page.waitForURL(/capabilities\/$/);
+      await page.close();
+    });
+
     test('the About sheet links to the capability page', async () => {
       const page = await browser.newPage();
       await page.goto(url);
