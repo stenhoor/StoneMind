@@ -56,6 +56,8 @@ const FULL = [
   // Positions where enableMorePassingHacks changes native's visits (found by scanning the game with it on and off).
   { id: 'pass-9-turn-36', moves: LATE_9.slice(0, 36), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'pass-9-turn-42', moves: LATE_9.slice(0, 42), rules: 'tromp-taylor', size: 9, maxVisits: 100 },
+  // White's last four moves passes, Black filling its own territory in between: rootPruneUselessMoves applies.
+  { id: 'useless-9', moves: [...LATE_9.slice(0, 48), ['B', 'C3'], ['W', 'pass'], ['B', 'C2'], ['W', 'pass'], ['B', 'B3'], ['W', 'pass'], ['B', 'B2'], ['W', 'pass']], rules: 'tromp-taylor', size: 9, maxVisits: 100 },
   { id: 'opening-19', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'tromp-taylor', size: 19, maxVisits: 30 },
   { id: 'opening-19-aga', moves: [['B', 'Q16'], ['W', 'D4']], rules: 'aga', size: 19, maxVisits: 30 },
 ];

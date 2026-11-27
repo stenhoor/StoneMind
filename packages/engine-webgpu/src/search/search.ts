@@ -24,6 +24,8 @@
  *   (`edgeVisits`) can differ;
  * - the root's ending bonus (`rootEndingBonusPoints`, `getEndingWhiteScoreBonus`): a small score penalty on root moves
  *   that fill the player's own sure area or play into the opponent's, and on passing under territory scoring;
+ * - root pruning of useless moves (`rootPruneUselessMoves`, `isAllowedRootMove`): once the opponent's last four moves
+ *   were passes, the root never tries a move inside either player's pass-alive area;
  * - the analysis's move order and principal variations from KataGo's play selection values
  *   (`getPlaySelectionValues`), with LCB selection (`useLcbForSelection`, `getSelfUtilityLCBAndRadius`) and the root's
  *   retrospective reduction of over-explored moves (`getReducedPlaySelectionWeight`).
@@ -150,6 +152,11 @@ export interface SearchParams {
   enableMorePassingHacks: boolean;
   /** KataGo `rootEndingBonusPoints`: the score penalty, in points, of the root's ending bonus. */
   rootEndingBonusPoints: number;
+  /**
+   * KataGo `rootPruneUselessMoves` (on in its analysis engine): if the opponent's last four moves were passes, the root
+   * never tries a move inside either player's strictly pass-alive area.
+   */
+  rootPruneUselessMoves: boolean;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -200,6 +207,7 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   enablePassingHacks: true,
   enableMorePassingHacks: true,
   rootEndingBonusPoints: 0.5,
+  rootPruneUselessMoves: true,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -374,6 +382,8 @@ export class Search {
   #recentScoreCenter = 0;
   /** KataGo `rootSafeArea`: the root's strictly pass-alive groups and strictly safe territory. */
   #rootSafeArea: Uint8Array = new Uint8Array(0);
+  /** `rootPruneUselessMoves` is on and the opponent's last four moves at the root were passes. */
+  #rootPrunesUselessMoves = false;
   #rootPrepared = false;
 
   /**
@@ -464,6 +474,16 @@ export class Search {
       ownershipPenalty();
     }
     return rootPla === WHITE ? extraRootPoints : -extraRootPoints;
+  }
+
+  /**
+   * KataGo `isAllowedRootMove`, without root symmetry pruning: with `rootPruneUselessMoves`, once the opponent's last
+   * four moves were passes, no move inside either player's pass-alive area.
+   */
+  #isAllowedRootMove(moveLoc: number): boolean {
+    // The root's history doesn't change during a search, so whether the opponent's last four moves were passes is
+    // worked out once, in #prepareRoot.
+    return !(this.#rootPrunesUselessMoves && moveLoc !== PASS_LOC && this.#rootSafeArea[moveLoc] !== EMPTY);
   }
 
   /** KataGo `getChildWeight(edgeVisits, childVisits)`: the child's weight as its parent counts it. */
@@ -604,6 +624,11 @@ export class Search {
     const rootHist = this.root.hist;
     const suicideLegalForPassAlive = rootHist.rules.multiStoneSuicideLegal || this.#model.preferPassAliveUnderSuicideRules;
     this.#rootSafeArea = calculateArea(rootHist.board, false, false, false, suicideLegalForPassAlive);
+    const moves = rootHist.moves;
+    const lastIdx = moves.length - 1;
+    const oppPassed = (i: number) => moves[i]!.loc === PASS_LOC && moves[i]!.pla === opp(rootHist.nextPla);
+    this.#rootPrunesUselessMoves =
+      p.rootPruneUselessMoves && lastIdx >= 6 && oppPassed(lastIdx) && oppPassed(lastIdx - 2) && oppPassed(lastIdx - 4) && oppPassed(lastIdx - 6);
     if (this.root.state !== EVALUATED) {
       this.root.eval = e;
       this.root.state = EVALUATED;
@@ -957,8 +982,11 @@ export class Search {
       const pr = policy[pos]!;
       if (pr < 0) continue;
       if (pr > bestNewPolicy) {
+        // Checking the root's allowed moves only for a move that would be the best so far picks the same move.
+        const loc = pos === this.#area ? PASS_LOC : b.loc(pos % b.xSize, Math.floor(pos / b.xSize));
+        if (isRoot && !this.#isAllowedRootMove(loc)) continue;
         bestNewPolicy = pr;
-        bestNewLoc = pos === this.#area ? PASS_LOC : b.loc(pos % b.xSize, Math.floor(pos / b.xSize));
+        bestNewLoc = loc;
       }
     }
     let newLoc = NULL_LOC;

@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102.
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103.
 
 ## The goal
 
@@ -33,6 +33,7 @@ Not done:
    - root symmetry pruning (`rootSymmetryPruning`, on)
    - passing hacks (`enablePassingHacks` and `enableMorePassingHacks`, on)
    - root ending bonus points (`rootEndingBonusPoints` 0.5)
+   - root pruning of useless moves (`rootPruneUselessMoves`, on; added 2026-11-27, found while porting step 7)
    - wide root noise (`wideRootNoise` 0.04)
 2. **The Analysis Engine protocol.** The engine has its own API. It doesn't yet implement `@stonemind/engine`'s
    `AnalysisEngine`, the contract native KataGo is already used through (via the bridge). Missing from the output:
@@ -84,6 +85,8 @@ Each feature is its own PR, with the exact check passing.
 5. **Noise pruning.**
 6. **Policy optimism**, at the root and below it.
 7. **Passing hacks and root ending bonus points.**
+   - 7b. **Root pruning of useless moves.** Added 2026-11-27 with the owner's approval: found while porting step 7,
+     it wasn't in the list above.
 8. **Root symmetry pruning.**
 9. **Graph search.** This is the largest step: positions reached by different move orders share one node, which
    changes how the tree is stored. My reason for putting it after the others: each earlier feature is then checked once

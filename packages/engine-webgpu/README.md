@@ -43,12 +43,13 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   the policy blended toward the network's optimistic policy head, for networks that have one), the passing hacks
   (`enablePassingHacks`, `enableMorePassingHacks`: the pass's prior capped, and an extra uncounted playout that tries a
   pass where one would end the phase), the root's ending bonus (`rootEndingBonusPoints` 0.5: a small penalty on root
-  moves that fill sure area), and the analysis engine's `ignorePreRootHistory` and `conservativePass`. The analysis
-  orders moves and builds principal variations as KataGo does, from its play selection values with LCB selection
-  (`useLcbForSelection`, on by default as in native's analysis engine), and reports each move's `lcb`, `utilityLcb` and
-  `playSelectionValue`. Area scoring only for now. Not yet ported, each to be added and measured: graph search, wide
-  root noise, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU network, or the
-  reference forward pass.
+  moves that fill sure area), root pruning of useless moves (`rootPruneUselessMoves`: after four opponent passes, no
+  root move inside a pass-alive area), and the analysis engine's `ignorePreRootHistory` and `conservativePass`. The
+  analysis orders moves and builds principal variations as KataGo does, from its play selection values with LCB
+  selection (`useLcbForSelection`, on by default as in native's analysis engine), and reports each move's `lcb`,
+  `utilityLcb` and `playSelectionValue`. Area scoring only for now. Not yet ported, each to be added and measured: graph
+  search, wide root noise, root symmetry pruning, tree reuse. Evaluation goes through a `NetEvaluator`: the WebGPU
+  network, or the reference forward pass.
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a
   small batch, sharing one evaluation cache across turns as KataGo's analysis engine does. The defaults are native
   KataGo's `analysis_example.cfg`: 2 turns at once, batch 16.
