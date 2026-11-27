@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { loadModel, forward, buildHistory, gtpMove, Search, PASS_LOC, UnsupportedPositionError } from '../dist/index.js';
+import { loadModel, forward, buildHistory, gtpMove, Search, PASS_LOC, UnsupportedPositionError, loadPositionHashes } from '../dist/index.js';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 const model = await loadModel(new Uint8Array(readFileSync(here('./fixtures/g170-b6c96-s175395328-d26788732.bin.gz'))));
@@ -41,8 +41,7 @@ const nearOwnershipStdev = (got, want, what) => {
   assert.equal(got.length, want.length, `${what} length`);
   want.forEach((w, i) => near(got[i] * got[i], w * w, TOL.ownershipVariance, `${what}[${i}] squared`));
 };
-// Every field native reports, so a field we don't check can't slip by. thisHash and symHash aren't ported yet (part B,
-// step 11b).
+// Every field native reports, so a field we don't check can't slip by.
 const MOVE_FIELDS = ['move', 'visits', 'edgeVisits', 'order', 'isSymmetryOf', 'pv', 'pvVisits', 'pvEdgeVisits', 'winrate', 'lcb', 'scoreLead', 'scoreMean', 'scoreSelfplay', 'scoreStdev', 'utility', 'utilityLcb', 'playSelectionValue', 'prior', 'noResultValue', 'weight', 'edgeWeight', 'ownership', 'ownershipStdev'];
 const ROOT_FIELDS = ['visits', 'weight', 'winrate', 'scoreSelfplay', 'scoreLead', 'scoreStdev', 'utility', 'rawWinrate', 'rawLead', 'rawScoreSelfplay', 'rawScoreSelfplayStdev', 'rawNoResultProb', 'rawStWrError', 'rawStScoreError', 'rawVarTimeLeft', 'currentPlayer', 'thisHash', 'symHash'];
 const RESPONSE_FIELDS = ['moveInfos', 'rootInfo', 'policy', 'ownership', 'ownershipStdev'];
@@ -119,6 +118,8 @@ for (const net of NETS) {
       nearScore(raw.stScoreError, root.rawStScoreError, 'rawStScoreError');
       nearScore(raw.varTimeLeft, root.rawVarTimeLeft, 'rawVarTimeLeft');
       assert.equal(hist.nextPla === 1 ? 'B' : 'W', root.currentPlayer, 'currentPlayer');
+      await loadPositionHashes();
+      assert.deepEqual(search.rootHashes(), { thisHash: root.thisHash, symHash: root.symHash }, 'thisHash and symHash');
 
       const policy = search.rootPolicy();
       assert.equal(policy.length, r.policy.length, 'policy length');

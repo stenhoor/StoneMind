@@ -21,6 +21,10 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). The territory-scoring
   encore (a pass that would end the main phase under territory scoring), ending a game with a group tax, no-result long
   cycles and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
+  `rules/hash.ts` ports KataGo's position hashes (`thisHash` and `symHash` in its analysis output): its random number
+  generator (MD5 and SHA-256 seeding, xorshift1024* and PCG32) and the hash tables `Board::initHash` builds from it.
+  SHA-256 comes from the platform's Web Crypto, so `loadPositionHashes()` builds the tables once, asynchronously, and
+  needs a secure context in a browser (https or localhost).
 - **V7 input encoder** (`src/features/v7.ts`): `encodePositionV7` builds KataGo's 22 spatial planes and 19 globals from
   a position (setup stones and moves, `[player, 'pass']` for a pass; `gtpMove` converts GTP moves), following
   `NNInputs::fillRowV7`, passes included (the pass-history globals, the pass-ends-phase flag, and history hidden under

@@ -1,0 +1,220 @@
+{
+ "capturedWith": {
+  "katagoVersion": "KataGo v1.18.2",
+  "date": "2026-11-27T13:28:26.536Z"
+ },
+ "positions": [
+  {
+   "id": "ko-9-chinese",
+   "moves": [
+    [
+     "B",
+     "E6"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D5"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F4"
+    ],
+    [
+     "B",
+     "A1"
+    ],
+    [
+     "W",
+     "E5"
+    ],
+    [
+     "B",
+     "F5"
+    ]
+   ],
+   "rules": "chinese",
+   "xSize": 9,
+   "ySize": 9,
+   "komi": 7.5,
+   "thisHash": "C3DDD0B81D794F2037CF3DB8B8D8966D",
+   "symHash": "1739FBC53E0B610407DA307EDE3C109D",
+   "currentPlayer": "W"
+  },
+  {
+   "id": "ko-9-tromp-taylor",
+   "moves": [
+    [
+     "B",
+     "E6"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D5"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F4"
+    ],
+    [
+     "B",
+     "A1"
+    ],
+    [
+     "W",
+     "E5"
+    ],
+    [
+     "B",
+     "F5"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "xSize": 9,
+   "ySize": 9,
+   "komi": 7.5,
+   "thisHash": "C3DDD0B81D794F2037CF3DB8B8D8966D",
+   "symHash": "1739FBC53E0B610407DA307EDE3C109D",
+   "currentPlayer": "W"
+  },
+  {
+   "id": "ko-19-chinese",
+   "moves": [
+    [
+     "B",
+     "E6"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D5"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F4"
+    ],
+    [
+     "B",
+     "A1"
+    ],
+    [
+     "W",
+     "E5"
+    ],
+    [
+     "B",
+     "F5"
+    ]
+   ],
+   "rules": "chinese",
+   "xSize": 19,
+   "ySize": 19,
+   "komi": 7.5,
+   "thisHash": "D2154647736C37F52DDAF0EBBC306806",
+   "symHash": "30D069D1E5FCC5D35E8A8C36956812BF",
+   "currentPlayer": "W"
+  },
+  {
+   "id": "ko-9x7-chinese",
+   "moves": [
+    [
+     "B",
+     "E6"
+    ],
+    [
+     "W",
+     "F6"
+    ],
+    [
+     "B",
+     "D5"
+    ],
+    [
+     "W",
+     "G5"
+    ],
+    [
+     "B",
+     "E4"
+    ],
+    [
+     "W",
+     "F4"
+    ],
+    [
+     "B",
+     "A1"
+    ],
+    [
+     "W",
+     "E5"
+    ],
+    [
+     "B",
+     "F5"
+    ]
+   ],
+   "rules": "chinese",
+   "xSize": 9,
+   "ySize": 7,
+   "komi": 7.5,
+   "thisHash": "BAD8B75FD22A30415EFD4C65C92BA139",
+   "symHash": "447DCC220F2BE1EF24D531A4128D4510",
+   "currentPlayer": "W"
+  },
+  {
+   "id": "rect-7x9",
+   "moves": [
+    [
+     "B",
+     "C3"
+    ],
+    [
+     "W",
+     "E7"
+    ]
+   ],
+   "rules": "tromp-taylor",
+   "xSize": 7,
+   "ySize": 9,
+   "komi": 7.5,
+   "thisHash": "07D26AF35249CADADE17E31521CC7B73",
+   "symHash": "07D26AF35249CADADE17E31521CC7B73",
+   "currentPlayer": "B"
+  }
+ ]
+}
