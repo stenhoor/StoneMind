@@ -151,6 +151,11 @@ function sheetBody(id: SingletonId): Node[] {
 
 function renderSheet(): void {
   const id = state.sheet;
+  // The open singleton's tile is lit in the Apps bar.
+  for (const tile of document.querySelectorAll<HTMLButtonElement>('#bar-apps [data-singleton]')) {
+    if (tile.dataset['singleton'] === id) tile.setAttribute('aria-current', 'true');
+    else tile.removeAttribute('aria-current');
+  }
   if (!id) {
     sheetHost.replaceChildren();
     sheetHost.hidden = true;
