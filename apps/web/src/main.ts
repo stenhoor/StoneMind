@@ -92,6 +92,7 @@ function renderMenuBar(): void {
 menuBar.stoneMindMenu = [
   { label: 'About StoneMind', run: () => openSheet('about') },
   { label: 'Settings…', run: () => openSheet('settings') },
+  { label: 'What this browser supports', run: () => location.assign('capabilities/') },
 ];
 
 // ------------------------------------------------------- singleton apps
