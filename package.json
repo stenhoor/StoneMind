@@ -12,6 +12,7 @@
     "packages/brand",
     "packages/domain",
     "packages/storage",
+    "packages/files",
     "packages/ontology",
     "packages/provider-sdk",
     "packages/engine",

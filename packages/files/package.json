@@ -1,0 +1,35 @@
+{
+  "name": "@stonemind/files",
+  "version": "0.0.1",
+  "description": "The file kit: the FileStore port on the browser's origin private file system (OPFS), with streamed writes, cross-tab locking and change events, and browser helpers for import, download, quota and persistence.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "exports": {
+    ".": {
+      "stonemind-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "e2e": "npm run build && node --test test/e2e/*.test.mjs",
+    "check": "npm run typecheck && npm run test",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stonemind/storage": "0.0.1"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0",
+    "typescript": "^5.9.3"
+  }
+}

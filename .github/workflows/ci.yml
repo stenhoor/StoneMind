@@ -38,11 +38,12 @@ jobs:
         run: npx -w @stonemind/engine-webgpu playwright install --with-deps chromium
       - if: steps.affected.outputs.gpu == 'true'
         run: npm run gpu-check -w @stonemind/engine-webgpu
-      # The app's browser tests, in Chromium, Firefox and WebKit (Playwright's builds; WebKit is not Safari). Only when
-      # the app, or something it depends on, changed.
-      - if: steps.affected.outputs.web == 'true'
-        run: npx -w @stonemind/web playwright install --with-deps chromium firefox webkit
-      - if: steps.affected.outputs.web == 'true'
+      # Browser tests, in Chromium, Firefox and WebKit (Playwright's builds; WebKit is not Safari), for each affected
+      # workspace that has an e2e script: only when it, or something it depends on, changed.
+      - if: steps.affected.outputs.e2e != ''
+        run: npx playwright install --with-deps chromium firefox webkit
+      - if: steps.affected.outputs.e2e != ''
         env:
           BROWSERS: chromium,firefox,webkit
-        run: npm run e2e -w @stonemind/web
+          E2E: ${{ steps.affected.outputs.e2e }}
+        run: for p in $E2E; do npm run e2e -w "$p" || exit 1; done

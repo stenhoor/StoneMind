@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>@stonemind/files test page</title>
+  <script type="module">
+    // The browser tests drive the file kit through window.files.
+    import * as files from '../../dist/index.js';
+    window.files = files;
+    document.body.dataset.ready = 'true';
+  </script>
+</head>
+<body><p>Test page for @stonemind/files. The browser tests drive it.</p></body>
+</html>
