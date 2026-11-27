@@ -197,6 +197,22 @@ export class GameHistory {
    *   territory-scoring encore.
    */
   play(loc: number, pla: Stone): void {
+    this._play(loc, pla, false);
+  }
+
+  /**
+   * KataGo `makeBoardMoveTolerant`, as its analysis engine replays a query's moves: a move on an empty point is played
+   * even if ko or superko forbids it, or it's a suicide the rules forbid. (KataGo then also resets
+   * `numConsecValidTurnsThisGame`, which only its older input versions read, so it isn't kept here.) Returns false,
+   * changing nothing, for a move on an occupied point or a single-stone suicide.
+   */
+  playTolerant(loc: number, pla: Stone): boolean {
+    if (!this.board.isLegalIgnoringKo(loc, pla, true)) return false;
+    this._play(loc, pla, true);
+    return true;
+  }
+
+  private _play(loc: number, pla: Stone, tolerant: boolean): void {
     if (this.isGameFinished) {
       this.numApproxValidTurnsThisPhase = Math.min(this.numApproxValidTurnsThisPhase, 1);
       this.isGameFinished = false;
@@ -208,7 +224,7 @@ export class GameHistory {
       this.nextPla = pla;
       this._refreshSuperKo();
     }
-    if (!this.isLegal(loc, pla)) throw new IllegalMoveError(`illegal move at (${this.board.x(loc)},${this.board.y(loc)})`);
+    if (!tolerant && !this.isLegal(loc, pla)) throw new IllegalMoveError(`illegal move at (${this.board.x(loc)},${this.board.y(loc)})`);
     let spightlikeEndingPass = false;
     if (loc === PASS_LOC) {
       if (this.passWouldEndPhase(pla)) {

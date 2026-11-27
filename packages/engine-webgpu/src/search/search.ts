@@ -182,6 +182,17 @@ export interface SearchParams {
    * the player to move. 0 switches it off, and the search is then deterministic for a fixed symmetry.
    */
   wideRootNoise: number;
+  /**
+   * KataGo `rootPolicyTemperature` and `rootPolicyTemperatureEarly`: the root's policy, as the search uses it, is raised
+   * to the power 1 / temperature and renormalised. The temperature goes from the early value toward the other, halving
+   * the gap every `chosenMoveTemperatureHalflife` turns (scaled to a 19x19 board). 1 leaves the policy as it is.
+   */
+  rootPolicyTemperature: number;
+  rootPolicyTemperatureEarly: number;
+  /** KataGo `chosenMoveTemperatureHalflife` (19): only the root's policy temperature uses it here. */
+  chosenMoveTemperatureHalflife: number;
+  /** KataGo `rootFpuLossProp`: `fpuLossProp` at the root. KataGo's config loader defaults it to `fpuLossProp`. */
+  rootFpuLossProp: number;
 }
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -237,6 +248,10 @@ export const DEFAULT_SEARCH_PARAMS: SearchParams = {
   useGraphSearch: true,
   graphSearchRepBound: 11,
   wideRootNoise: 0.04,
+  rootPolicyTemperature: 1.0,
+  rootPolicyTemperatureEarly: 1.0,
+  chosenMoveTemperatureHalflife: 19,
+  rootFpuLossProp: 0,
 };
 
 /** KataGo `TOTALCHILDWEIGHT_PUCT_OFFSET`. */
@@ -471,10 +486,11 @@ function getSymLoc(loc: number, board: Board, symmetry: number): number {
 }
 
 /**
- * KataGo `SymmetryHelpers::markDuplicateMoveLocs` (no avoided moves, no encore): the symmetries under which the
- * position is unchanged, and the moves that mirror an earlier one. A position with a ko or superko ban has none.
+ * KataGo `SymmetryHelpers::markDuplicateMoveLocs` (no encore): the symmetries under which the position is unchanged,
+ * and the moves that mirror an earlier one, skipping moves the player to move avoids at the root. A position with a ko
+ * or superko ban has none.
  */
-function markDuplicateMoveLocs(hist: GameHistory): { isSymDupLoc: Uint8Array; validSymmetries: number[] } {
+function markDuplicateMoveLocs(hist: GameHistory, avoidMoves: Int32Array | null): { isSymDupLoc: Uint8Array; validSymmetries: number[] } {
   const board = hist.board;
   const isSymDupLoc = new Uint8Array(board.arraySize);
   const validSymmetries = [0];
@@ -500,6 +516,7 @@ function markDuplicateMoveLocs(hist: GameHistory): { isSymDupLoc: Uint8Array; va
   // KataGo's order: Black keeps moves on the right, White on the left, as in common openings.
   const mark = (x: number, y: number) => {
     const loc = board.loc(x, y);
+    if (avoidMoves && avoidMoves[loc]! > 0) return;
     for (const symmetry of validSymmetries) {
       if (symmetry === 0) continue;
       const symLoc = getSymLoc(loc, board, symmetry);
@@ -555,6 +572,13 @@ export class Search {
   #rootSymDupLoc: Uint8Array = new Uint8Array(0);
   #rootSymmetries: number[] = [0];
   #rootPrepared = false;
+  /**
+   * KataGo's `noisedPolicyProbs` of the root: its policy with the root policy temperature, which the search uses in
+   * place of the network's (`getPolicyProbsMaybeNoised`). Null when the temperature is 1.
+   */
+  #rootSearchPolicy: Float64Array | null = null;
+  /** KataGo `avoidMoveUntilByLocBlack` and `avoidMoveUntilByLocWhite` (see `setAvoidMoveUntilByLoc`). */
+  #avoidMoveUntilByLoc: Record<Stone, Int32Array | null> = { [BLACK]: null, [WHITE]: null } as Record<Stone, Int32Array | null>;
 
   /**
    * @param cache An evaluation cache to share with other searches (KataGo's analysis engine shares one across the turns
@@ -578,6 +602,51 @@ export class Search {
     // KataGo's root, it isn't in the node table.
     const rootHist = rootHistory.clone();
     this.root = new SearchNode(rootHist, null, false, this.params.useGraphSearch ? this.#rootGraphKey(rootHist) : '');
+  }
+
+  /**
+   * KataGo `setAvoidMoveUntilByLoc`, as its analysis engine applies `avoidMoves` and `allowMoves` (see
+   * `avoidMoveUntilByLoc`): for each player, indexed by board location (`PASS_LOC` included), the depth below the root
+   * until which the search doesn't try that move; 0 or less, no limit. Null for a player with no limits. KataGo clears
+   * the search when these change; here they must be set before the search starts.
+   */
+  setAvoidMoveUntilByLoc(black: Int32Array | null, white: Int32Array | null): void {
+    if (this.#rootPrepared) throw new Error('setAvoidMoveUntilByLoc must be called before the search starts');
+    this.#avoidMoveUntilByLoc = { [BLACK]: black, [WHITE]: white } as Record<Stone, Int32Array | null>;
+  }
+
+  /** The policy the search uses at `node`: the root's has the root policy temperature (KataGo `getPolicyProbsMaybeNoised`). */
+  #searchPolicy(node: SearchNode): Float64Array {
+    return node === this.root && this.#rootSearchPolicy ? this.#rootSearchPolicy : node.eval!.policy;
+  }
+
+  /**
+   * KataGo `maybeAddPolicyNoiseAndTemp` at the root, with only its policy temperature ported (root Dirichlet noise and
+   * `avoidMoveUntilRescaleRoot` are off in KataGo's analysis engine). Values are 32-bit floats, as KataGo keeps them.
+   */
+  #rootPolicyWithTemperature(policy: Float64Array): Float64Array | null {
+    const p = this.params;
+    if (p.rootPolicyTemperature === 1.0 && p.rootPolicyTemperatureEarly === 1.0) return null;
+    // KataGo interpolateEarly.
+    const b = this.root.hist.board;
+    const rawHalflives = this.root.hist.moves.length / p.chosenMoveTemperatureHalflife;
+    const halflives = (rawHalflives * 19.0) / Math.sqrt(b.xSize * b.ySize);
+    const temperature = p.rootPolicyTemperature + (p.rootPolicyTemperatureEarly - p.rootPolicyTemperature) * Math.pow(0.5, halflives);
+    const out = Float64Array.from(policy);
+    let maxValue = 0;
+    for (const prob of out) if (prob > maxValue) maxValue = prob;
+    const logMaxValue = Math.log(maxValue);
+    const invTemp = 1.0 / temperature;
+    let sum = 0;
+    for (let i = 0; i < out.length; i++) {
+      if (out[i]! > 0) {
+        const q = Math.fround(Math.exp((Math.log(out[i]!) - logMaxValue) * invTemp));
+        out[i] = q;
+        sum += q;
+      }
+    }
+    for (let i = 0; i < out.length; i++) if (out[i]! >= 0) out[i] = Math.fround(out[i]! / sum);
+    return out;
   }
 
   // ---------------------------------------------------------------- utilities
@@ -704,7 +773,8 @@ export class Search {
     let key = '';
     for (const m of h.moves) {
       key = this.#graphKey(key, replay, m.pla);
-      replay.play(m.loc, m.pla);
+      // KataGo getGraphHashFromScratch replays with makeBoardMoveTolerant, as a query's moves were played.
+      if (!replay.playTolerant(m.loc, m.pla)) throw new Error('the root history does not replay');
     }
     return this.#graphKey(key, replay, h.nextPla);
   }
@@ -920,13 +990,14 @@ export class Search {
     this.#rootPrunesUselessMoves =
       p.rootPruneUselessMoves && lastIdx >= 6 && oppPassed(lastIdx) && oppPassed(lastIdx - 2) && oppPassed(lastIdx - 4) && oppPassed(lastIdx - 6);
     if (p.rootSymmetryPruning) {
-      const marked = markDuplicateMoveLocs(rootHist);
+      const marked = markDuplicateMoveLocs(rootHist, this.#avoidMoveUntilByLoc[rootHist.nextPla]);
       this.#rootSymDupLoc = marked.isSymDupLoc;
       this.#rootSymmetries = marked.validSymmetries;
     } else {
       this.#rootSymDupLoc = new Uint8Array(rootHist.board.arraySize);
       this.#rootSymmetries = [0];
     }
+    this.#rootSearchPolicy = this.#rootPolicyWithTemperature(e.policy);
     if (this.root.state !== EVALUATED) {
       this.root.eval = e;
       this.root.state = EVALUATED;
@@ -1108,7 +1179,7 @@ export class Search {
     }
     const origTotalChildWeight = totalChildWeight;
     if (this.params.useNoisePruning && good.length > 0) {
-      const policy = node.eval!.policy;
+      const policy = this.#searchPolicy(node);
       const b = node.hist.board;
       const policyProbs = goodMoves.map((loc) => Math.max(1e-30, policy[this.#posOf(b, loc)]!));
       totalChildWeight = this.#pruneNoiseWeight(weights, selfUtilities, totalChildWeight, policyProbs);
@@ -1210,7 +1281,7 @@ export class Search {
     const reduction = reductionMax * Math.sqrt(policyProbMassVisited);
     let fpu = node.nextPla === WHITE ? parentUtilityForFpu - reduction : parentUtilityForFpu + reduction;
     const lossValue = node.nextPla === WHITE ? -utilityRadius : utilityRadius;
-    fpu += (lossValue - fpu) * p.fpuLossProp;
+    fpu += (lossValue - fpu) * (isRoot ? p.rootFpuLossProp : p.fpuLossProp);
     return { fpu, stdevFactor };
   }
 
@@ -1225,9 +1296,9 @@ export class Search {
    * top of this file. Returns the edge to the child and whether the parent counts this visit to it (`countEdgeVisit`).
    * `pathHistory` gives the history of the path to `node`, for a new child.
    */
-  #selectChild(node: SearchNode, isRoot: boolean, pathHistory: () => GameHistory): { edge: SearchEdge; countEdgeVisit: boolean } {
+  #selectChild(node: SearchNode, isRoot: boolean, depth: number, pathHistory: () => GameHistory): { edge: SearchEdge; countEdgeVisit: boolean } {
     const p = this.params;
-    const policy = node.eval!.policy;
+    const policy = this.#searchPolicy(node);
     const b = node.hist.board;
     const posOf = (loc: number) => (loc === PASS_LOC ? this.#area : b.y(loc) * b.xSize + b.x(loc));
 
@@ -1246,6 +1317,7 @@ export class Search {
     const exploreScaling = cpuct * Math.sqrt(totalChildWeight + TOTALCHILDWEIGHT_PUCT_OFFSET) * stdevFactor;
     const pla = node.nextPla;
     const utilityRadius = p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor;
+    const avoidMoveUntilByLoc = this.#avoidMoveUntilByLoc[pla];
 
     let best: SearchEdge | null = null;
     let bestValue = POLICY_ILLEGAL_SELECTION_VALUE;
@@ -1293,6 +1365,7 @@ export class Search {
         // Checking the root's allowed moves only for a move that would be the best so far picks the same move.
         const loc = pos === this.#area ? PASS_LOC : b.loc(pos % b.xSize, Math.floor(pos / b.xSize));
         if (isRoot && !this.#isAllowedRootMove(loc)) continue;
+        if (avoidMoveUntilByLoc && depth < avoidMoveUntilByLoc[loc]!) continue;
         bestNewPolicy = pr;
         bestNewLoc = loc;
       }
@@ -1313,9 +1386,10 @@ export class Search {
 
     // KataGo enableMorePassingHacks: where a pass would end the phase, make sure both a pass and a move other than a pass
     // get tried, by a playout the parent doesn't count. (Whether a pass would end the phase is part of the graph key, so
-    // the node's own history answers it for every path to the node.)
+    // the node's own history answers it for every path to the node.) Not with avoided moves for the player, which a
+    // forced playout could try.
     let countEdgeVisit = true;
-    if (totalChildEdgeVisits >= 2 && p.enableMorePassingHacks && node.hist.passWouldEndPhase(pla)) {
+    if (totalChildEdgeVisits >= 2 && p.enableMorePassingHacks && node.hist.passWouldEndPhase(pla) && !avoidMoveUntilByLoc) {
       let hasPassMove = false;
       let hasNonPassMove = false;
       for (const e of node.children) {
@@ -1383,7 +1457,7 @@ export class Search {
     let uncountedIdx = -1;
     while (node.state === EVALUATED && !node.terminal) {
       const depth = nodes.length - 1;
-      const sel = this.#selectChild(node, node === this.root, pathHistoryHere);
+      const sel = this.#selectChild(node, node === this.root, depth, pathHistoryHere);
       const child = sel.edge.node;
       nodes.push(child);
       edges.push(sel.edge);
@@ -1535,7 +1609,7 @@ export class Search {
     const children = node.children;
     const n = children.length;
     if (n === 0) return null;
-    const policy = node.eval!.policy;
+    const policy = this.#searchPolicy(node);
     const b = node.hist.board;
     const prior = children.map((c) => policy[this.#posOf(b, c.moveLoc)]!);
     const values = children.map((c, i) => (prior[i]! < 0 ? 0 : this.#childWeight(c)));
@@ -1691,7 +1765,7 @@ export class Search {
     const zeroVisitsRadius = 2 * (p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor) * p.lcbStdevs;
     // KataGo PlayUtils::getHackedLCBForWinrate: the utility radius in win-rate units.
     const radiusToWinrate = (0.5 * p.winLossUtilityFactor) / (p.winLossUtilityFactor + p.staticScoreUtilityFactor + p.dynamicScoreUtilityFactor + 1e-20);
-    const policy = root.eval!.policy;
+    const policy = this.#searchPolicy(root);
     // KataGo getAnalysisData: the parent's values and first-play urgency, for children with no weight yet.
     let policyProbMassVisited = 0;
     for (const e of root.children) policyProbMassVisited += Math.max(0, policy[this.#posOf(b, e.moveLoc)]!);
@@ -1770,12 +1844,14 @@ export class Search {
     // KataGo getAnalysisData: with root symmetry pruning, each move is followed by its mirror images, each with the
     // move's data and its line (and ownership) mirrored, in the order of the root's symmetries.
     const symmetries = p.rootSymmetryPruning && this.#rootSymmetries.length > 1 ? this.#rootSymmetries : [0];
+    const rootAvoid = this.#avoidMoveUntilByLoc[pla];
     const listed: SearchMoveInfo[] = [];
     const isDone = new Set<number>();
     for (const { info: m, node } of sorted) {
       for (const symmetry of symmetries) {
         const symMove = getSymLoc(m.loc, b, symmetry);
         if (isDone.has(symMove)) continue;
+        if (rootAvoid && rootAvoid[symMove]! > 0) continue;
         isDone.add(symMove);
         const copy: SearchMoveInfo = symmetry === 0 ? m : { ...m, loc: symMove, pv: m.pv.map((l) => getSymLoc(l, b, symmetry)), isSymmetryOf: m.loc };
         const own = ownershipOf.get(node);
@@ -1884,8 +1960,8 @@ export class Search {
   }
 
   /**
-   * KataGo `getPolicy`: the root's policy as the search uses it (with the root's policy temperature and optimism),
-   * row-major with the pass last; -1 marks an illegal move.
+   * KataGo `getPolicy`: the root's policy from the network (with the root's policy optimism, without its policy
+   * temperature), row-major with the pass last; -1 marks an illegal move.
    */
   rootPolicy(): number[] {
     return Array.from(this.root.eval!.policy);

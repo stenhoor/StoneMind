@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { XorShift1024Mult, PCG32, KataGoRand, loadPositionHashes, positionHashes, buildHistory, gtpMove } from '../dist/index.js';
+import { queryHistory } from './query-position.mjs';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 
@@ -50,14 +51,14 @@ test('thisHash and symHash match native KataGo on every search golden position',
   for (const file of readdirSync(here('./goldens')).filter((f) => /^search-.*-s\d+-d\d+\.json$/.test(f))) {
     const golden = JSON.parse(readFileSync(here(`./goldens/${file}`), 'utf8'));
     for (const q of golden.queries) {
-      const hist = buildHistory({ xSize: q.size, ySize: q.size, rules: q.rules, komi: q.komi, moves: q.moves.map(([c, l]) => gtpMove(c, l, q.size)) });
+      const hist = queryHistory(q);
       const got = positionHashes(hist.board, hist.nextPla);
       assert.equal(got.thisHash, q.response.rootInfo.thisHash, `${file} ${q.id} thisHash`);
       assert.equal(got.symHash, q.response.rootInfo.symHash, `${file} ${q.id} symHash`);
       checked++;
     }
   }
-  assert.equal(checked, 19, 'positions checked');
+  assert.equal(checked, 31, 'positions checked');
 });
 
 test('thisHash and symHash match native KataGo with a ko and on rectangular boards', async () => {

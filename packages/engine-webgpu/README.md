@@ -52,13 +52,19 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   each set of mirror-image moves is searched and the rest are listed as copies, with `isSymmetryOf`), graph search
   (`useGraphSearch`: positions reached by different move orders share one node, keyed as KataGo's graph hash is), wide
   root noise (`wideRootNoise`, 0.04 as in native's analysis engine: at the root, the policy is flattened and moves get
-  random value bonuses, so more moves are looked at; 0 makes the search deterministic), and the analysis engine's
-  `ignorePreRootHistory` and `conservativePass`. The analysis orders moves and builds principal variations as KataGo
+  random value bonuses, so more moves are looked at; 0 makes the search deterministic), the root's policy temperature
+  (`rootPolicyTemperature` and `rootPolicyTemperatureEarly`), avoided moves (`setAvoidMoveUntilByLoc`: moves a player
+  doesn't try until a given depth below the root), and the analysis engine's `ignorePreRootHistory` and
+  `conservativePass`. The analysis orders moves and builds principal variations as KataGo
   does, from its play selection values with LCB selection (`useLcbForSelection`, on by default as in native's analysis
-  engine), and reports every field of KataGo's `getAnalysisJson` except the position hashes: per move, `analysis()`
+  engine), and reports every field of KataGo's `getAnalysisJson`: per move, `analysis()`
   (with each move's `lcb`, `utilityLcb`, `playSelectionValue`, weights, `pvVisits` and, if asked for, ownership averaged
-  over its subtree); for the position, `rootValues()` (KataGo's pruned root values), `rootRawValues()`, `rootPolicy()`
-  and `rootOwnership()`. Values are for the player to move. Area scoring only for now. Not ported: tree reuse, as
+  over its subtree); for the position, `rootValues()` (KataGo's pruned root values), `rootRawValues()`, `rootPolicy()`,
+  `rootOwnership()` and `rootHashes()`. The query fields of KataGo's analysis engine that change the search have their
+  parts here too: `analysisHistory` builds a query's position as the engine does (`initialStones`, `initialPlayer`, and
+  the moves replayed as KataGo replays them, tolerating moves ko forbids and starting the history again where a player
+  moves twice), `avoidMoveUntilByLoc` builds the lists for `avoidMoves` and `allowMoves`, and `searchParamsFromConfig`
+  ports KataGo's config loader for its search parameters, for `overrideSettings`. Values are for the player to move. Area scoring only for now. Not ported: tree reuse, as
   native's analysis engine starts each search afresh. Evaluation goes through a `NetEvaluator`: the WebGPU network, or
   the reference forward pass.
 - **Review** (`src/search/review.ts`): `reviewGame` searches every turn of a game, several turns at once, each with a

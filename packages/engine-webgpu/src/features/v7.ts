@@ -119,7 +119,7 @@ export function buildHistory(spec: PositionSpec): GameHistory {
   const rules = parseRules(spec.rules);
   const board = new Board(spec.xSize, spec.ySize);
   for (const [p, x, y] of spec.initialStones ?? []) {
-    if (!board.setStone(board.loc(x, y), stone(p))) throw new UnsupportedPositionError(`setup stone at (${x},${y}) has no liberties`);
+    if (!board.setStoneFailIfNoLibs(board.loc(x, y), stone(p))) throw new UnsupportedPositionError(`setup stone at (${x},${y}) has no liberties`);
   }
   const moves = spec.moves ?? [];
   const first = moves[0]?.[0] ?? spec.initialPlayer ?? 'B';
