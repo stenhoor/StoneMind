@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111. Step 12 (the protocol check): https://github.com/stenhoor/StoneMind/pull/112.
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111. Step 12 (the protocol check): https://github.com/stenhoor/StoneMind/pull/112. Step 13a (the rules engine: territory scoring, the encore and no-result cycles): https://github.com/stenhoor/StoneMind/pull/114.
 
 ## The goal
 
@@ -129,7 +129,31 @@ speed comparison, since until now native has run features the browser doesn't ha
 ### Part C: rules
 
 13. **Territory scoring in the search,** with KataGo's encore (`BoardHistory`), for Japanese and similar rules.
-14. **The rest of what's refused today:** group-tax endings, no-result long cycles, button rule sets.
+
+    Split into three PRs on 2026-11-27, when Part C started, following how KataGo divides the code. Each is ported
+    from KataGo's `v1.18.2` tag:
+    - 13a. **The rules engine:** territory scoring and the encore in `GameHistory`, as KataGo's `BoardHistory` has
+      them. That covers the encore phases, ko recapture blocks and passing for ko, the once-only ko captures of the
+      encore, the second encore's starting stones, the end of the main phase when the encore is prevented
+      (`preventCleanupPhase`), scoring at the end (`Board::calculateIndependentLifeArea`, with
+      `excludeTerritoryAdjacentToAtari`), and the encore's part of the ko hash. Checked against KataGo's own
+      `BoardHistory`: random games played on it, built from its v1.18.2 source, with its state compared after every
+      move.
+
+      Changed while doing 13a, 2026-11-27: two items of step 14 sit in the same KataGo functions, so 13a ports them
+      too. The rules engine scores the end of a game with every tax rule (the seki tax and the tax on all groups,
+      under area and territory scoring), and it ends long cycles with no result (under simple ko and in the encore).
+      The search gets KataGo's terminal value for a no-result end, since area-scored searches under simple ko now
+      reach it; checked with a search golden that does. The search and the network's inputs still refuse what they
+      refused before.
+    - 13b. **The network's inputs** for territory scoring and the encore (`NNInputs::fillRowV7`). Checked with network
+      goldens from native on positions in each encore phase.
+    - 13c. **The search** under territory scoring and through the encore, and the analysis engine accepting these
+      rules. Checked with the exact search check and the protocol check on Japanese-rules positions.
+
+14. **The rest of what's refused today:** a group tax in the network's inputs and the search (stone-scoring and
+    ancient-territory rules), and button rule sets. (No-result long cycles and the rules engine's group-tax scoring
+    moved to 13a.)
 
 Checked with rules goldens from native on positions that exercise each rule, plus the exact search check under those
 rules.

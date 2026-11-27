@@ -13,14 +13,16 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
 - **Reference network** (`src/reference/`): a plain fp32 TypeScript forward pass, post-processing and the 8 symmetries,
   following KataGo's CPU (Eigen) backend and `nneval.cpp`. It is slow on purpose: it is the correctness reference for
   the WGSL kernels in phase 4.
-- **Rules engine** (`src/rules/`): a port of the parts of KataGo's `Board` and `BoardHistory` that the network's inputs
-  depend on: captures, suicide, simple ko, positional and situational superko, the ladder search, pass-alive area, the
-  named rule sets, territory scoring's per-stone adjustment and the white handicap bonus, and passes: consecutive
-  ending passes, simple ko's spight-like ending, and the end and score of an area-scored game. Moves are played, recorded and
-  undone with KataGo's own chain bookkeeping (`Board::playMoveRecorded` and `Board::undo`), and pass-alive area uses
-  KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). The territory-scoring
-  encore (a pass that would end the main phase under territory scoring), ending a game with a group tax, no-result long
-  cycles and rule sets with a button are refused with `UnsupportedPositionError` rather than approximated.
+- **Rules engine** (`src/rules/`): a port of KataGo's `Board` and `BoardHistory`: captures, suicide, simple ko,
+  positional and situational superko, the ladder search, pass-alive area and independent life area, the named rule
+  sets, the white handicap bonus, and passes: consecutive ending passes and the spight-like ending. Territory scoring
+  has its per-stone adjustment and KataGo's encore: its two phases, ko recapture blocks and passes for ko, once-only ko
+  captures, and the encore prevented (`preventEncore`, KataGo's `preventCleanupPhase`). The end of a game is scored by
+  area or territory with every tax rule, and long cycles under simple ko or in the encore end with no result. Moves are
+  played, recorded and undone with KataGo's own chain bookkeeping (`Board::playMoveRecorded` and `Board::undo`), and
+  pass-alive area uses KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). Rule sets
+  with a button are refused with `UnsupportedPositionError` rather than approximated, and so, for now, are the encore
+  in the network's inputs and territory scoring or a group tax in the search.
   `rules/hash.ts` ports KataGo's position hashes (`thisHash` and `symHash` in its analysis output): its random number
   generator (MD5 and SHA-256 seeding, xorshift1024* and PCG32) and the hash tables `Board::initHash` builds from it.
   SHA-256 comes from the platform's Web Crypto, so `loadPositionHashes()` builds the tables once, asynchronously, and
@@ -215,14 +217,25 @@ it runs when `STONEMIND_B18_MODEL` is set. `test/f16.test.mjs` checks the fp32 �
 under positional, situational and simple ko, a ladder with and without a ladder breaker, and pass-alive area. It also
 plays random games on 5×5 and 9×9 and checks the board's incremental chains (stones, liberties, heads) against a flood
 fill after every move and undo. `test/passes.test.mjs` checks passes: the end and score of area-scored games, the
-territory encore refused, and the pass inputs. The goldens include four positions with passes.
+start of the territory encore, and the pass inputs. The goldens include four positions with passes.
+
+`test/history.test.mjs` checks the rules engine against KataGo's own `BoardHistory`, move by move. The goldens
+(`scripts/capture-history-goldens.mjs`) are 402 random games played on KataGo's rules engine, built from its v1.18.2
+source with `scripts/native/history-dump.cpp`, with a digest of its state after every move: the board, the encore phase,
+ko recapture blocks, superko and once-only bans, legality and passes for ko at every point, pass endings, the end of the
+game and its score, and the score and area if the game were scored now. The games cover area and territory scoring,
+every tax rule and ko rule, starting in each encore phase, KataGo's history modes, the encore prevented, tolerant moves
+and moves out of turn; many start from the boards of KataGo's own rules tests, which are built around kos, with players
+that prefer ko captures and passes for ko. The test also checks that the games reach the encore's two phases, ko
+recapture blocks, passes for ko, once-only and superko bans, the encore prevented, scored ends and no-result ends.
 
 `test/search.test.mjs` checks the search against native KataGo's analysis engine (CPU build, captured with
 `scripts/capture-search-goldens.mjs`): both run one search thread, symmetry 0, and the features this search doesn't
-have yet switched off, on 9×9 and 19×19 positions under tromp-taylor, Chinese (friendly passes, simple ko) and AGA
-(situational superko) rules, including a root after a pass and a root after the end of the game. The same moves get
-exactly the same visits, with the same principal variations, and win rates and leads within the network goldens'
-tolerances. A one-constant change to the search (`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
+have yet switched off, on 7×7, 9×9 and 19×19 positions under tromp-taylor, Chinese (friendly passes, simple ko) and AGA
+(situational superko) rules, including a root after a pass, a root after the end of the game, and a triple ko that
+the search follows to a no-result end. The same moves get exactly the same visits, with the same principal
+variations, and win rates and leads within the network goldens' tolerances. A one-constant change to the search
+(`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
 
 `test/protocol.test.mjs` checks the analysis engine against native KataGo's: scripted sessions of query lines, captured
 from native with `scripts/capture-protocol-goldens.mjs` (one search thread, no randomness), are replayed on

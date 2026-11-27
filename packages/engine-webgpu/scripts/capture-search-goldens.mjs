@@ -71,6 +71,13 @@ const FULL = [
   // White retakes a ko at once, which the rules forbid: KataGo plays it anyway. Searched with the history before the root
   // shown (the analysis engine otherwise leaves it out), so the network sees the illegal move.
   { id: 'tolerant-ko-9', moves: [['B', 'E6'], ['W', 'F6'], ['B', 'D5'], ['W', 'G5'], ['B', 'E4'], ['W', 'F4'], ['B', 'A1'], ['W', 'E5'], ['B', 'F5'], ['W', 'E5']], rules: 'tromp-taylor', size: 9, maxVisits: 60, extra: { overrideSettings: { ignorePreRootHistory: false } } },
+  // Three kos under simple ko (KataGo's own rules test "Triple ko simple", cpp/tests/testrules.cpp, with an empty row
+  // added): the cycle has been played once and five moves more, so White's F5 repeats the position a third time and
+  // ends the game with no result, a terminal node of the search.
+  { id: 'no-result-7', moves: [['B', 'D6'], ['W', 'B5'], ['B', 'F6'], ['W', 'D5'], ['B', 'B6'], ['W', 'F5'], ['B', 'D6'], ['W', 'B5'], ['B', 'F6'], ['W', 'D5'], ['B', 'B6']], rules: 'chinese', size: 7, maxVisits: 60, extra: { initialStones: [
+    ...['A7', 'B7', 'C7', 'D7', 'E7', 'F7', 'G7', 'A6', 'C6', 'E6', 'G6', 'D5', 'F5', 'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3'].map((v) => ['W', v]),
+    ...['B6', 'A5', 'C5', 'E5', 'G5', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'G4'].map((v) => ['B', v]),
+  ] } },
   // Black avoids moves at the root, White its usual replies until depth 4.
   { id: 'avoid-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { avoidMoves: [{ player: 'B', moves: ['D3', 'C4', 'D4'], untilDepth: 1 }, { player: 'W', moves: ['C6', 'F3', 'D3', 'pass'], untilDepth: 4 }] } },
   // An avoid list turns off enableMorePassingHacks for that player at every depth: here both players avoid an empty
