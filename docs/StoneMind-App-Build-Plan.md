@@ -153,28 +153,30 @@ the file name, size and date.
 
 ## Step 5: Engine host
 
-**Builds:** the engine pool from the design doc:
+**Builds:** one engine first, in a host built for more (owner, 2026-11-28: start with one engine, then add more, so that
+multiple GPUs and the CPU can run as the end state).
 
-- **The browser engine:** at most one per browser.
-  - **Baseline:** one tab runs `@stonemind/engine-webgpu` in a dedicated worker, chosen with Web Locks, and another tab
-    takes over if it closes.
-  - **Upgrade:** a shared worker where step 2 showed it can run WebGPU.
-- **Requests from other tabs:** they reach the running engine through `BroadcastChannel`.
-- **A queue with priorities:** live analysis of the focused workspace first, then of other open workspaces, then
-  background reviews.
-- **Native KataGo:** connects through the bridge's existing pairing link.
-- **Both engines:** implement `AnalysisEngine` from `@stonemind/engine`.
+- **The browser engine** (`@stonemind/engine-webgpu`), one at a time, in a **shared worker**: every tab of the app in
+  this browser connects to it and sends it work, and it runs while any tab is open.
+- **Where a shared worker can't run WebGPU** but the page can, the host runs as a dedicated worker for that one tab,
+  and its status says so. Other tabs see no engine there. (No hand-over between tabs.)
+- **The tabs:** each gets an ordinary `AnalysisEngine` (`JsonLineSession` over the host). The host prefixes each tab's
+  query ids, so replies reach only the tab that asked, and stops a closed tab's queries.
+- **Priorities:** KataGo's own `priority` field in each query, as the engine already reads it.
+- **A list of engines**, each named by the tab that talks to it, so more can be added without changing the tabs: one per
+  GPU, a CPU engine (the reference network), and **native KataGo through the bridge, next**.
+- **Settings** start at KataGo's `analysis_example.cfg`.
 
 **Tests:**
 
-- `node --test` for the queue and the messages between tabs;
-- Playwright in Chromium with a fake evaluator:
-  - two tabs share one engine;
-  - closing the tab that runs it hands it to another;
-  - the queue order.
-- The real GPU check runs on the owner's machines with the capability page's engine section.
+- `node --test` for the id rewriting and the host, with fake tabs and engines;
+- Playwright in Chromium, Firefox and WebKit with a fake engine: two tabs share one engine and each gets only its own
+  results; the engine outlives the tab that started it; a failed start says why; the one-tab host;
+- Playwright with the real browser engine and KataGo's test network: it runs where the browser has WebGPU (headless
+  Chromium, on a software adapter) and says plainly where it doesn't;
+- the owner's machines with real GPUs (Step 6's Engines app starts it).
 
-**Proves:** one engine shared safely by every tab, on real GPUs and with the bridge.
+**Proves:** one engine shared safely by every tab, ready for more.
 
 ## Step 6: Engines app
 

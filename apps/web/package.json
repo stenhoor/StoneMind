@@ -2,23 +2,25 @@
   "name": "@stonemind/web",
   "version": "0.0.1",
   "private": true,
-  "description": "The StoneMind app (stonemind.app): the frame, the Files app, and later the Engines app, the gobans and their panels. Runs locally for now.",
+  "description": "The StoneMind app (stonemind.app): the frame, the Files app, the engine host, and later the Engines app, the gobans and their panels. Runs locally for now.",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.18"
   },
   "scripts": {
-    "build": "npm run build -w @stonemind/files && tsc -p tsconfig.build.json && node scripts/assemble.mjs",
+    "build": "npm run build -w @stonemind/files && npm run build -w @stonemind/engine && npm run build -w @stonemind/engine-webgpu && tsc -p tsconfig.build.json && node scripts/assemble.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
-    "e2e": "npm run build && node --test --test-timeout=300000 test/e2e/*.test.mjs",
+    "e2e": "npm run build && npm run fixtures -w @stonemind/engine-webgpu && node --test --test-timeout=300000 test/e2e/*.test.mjs",
     "check": "npm run typecheck && npm run test",
     "serve": "npm run build && node scripts/serve.mjs",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@stonemind/brand": "0.0.1",
+    "@stonemind/engine": "0.0.1",
+    "@stonemind/engine-webgpu": "0.0.1",
     "@stonemind/files": "0.0.1"
   },
   "devDependencies": {
