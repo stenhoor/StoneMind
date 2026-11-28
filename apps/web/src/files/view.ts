@@ -5,7 +5,7 @@
 // columns that depend on the folder; an inspector for the selected file (for KataGo weights: the network from its
 // name, the model version from its header, a SHA-256 on request); import from the file picker or by dropping files,
 // streamed with progress and a Cancel button; new folder, rename, download and delete (with a confirmation).
-import { type FileEntry, NotFoundError, OpfsFileStore, type StorageInfo, downloadBlob, filesFromDrop, importFiles, join, nameOf, normalize, parentOf, pickFiles, requestPersistence, storageInfo } from '@stonemind/files';
+import { type FileEntry, NotFoundError, OpfsFileStore, type StorageInfo, downloadBlob, filesFromDrop, importFiles, join, nameOf, normalize, parentOf, requestPersistence, storageInfo } from '@stonemind/files';
 import type { Menu } from '../frame/menu.js';
 import { type WeightsHeader, describeNetwork, formatBytes, grouped, parseWeightsName, readWeightsHeader, sha256 } from './weights.js';
 
@@ -101,9 +101,22 @@ export class FilesView {
     return this.#entries.find((e) => e.path === this.#selected) ?? null;
   }
 
-  async importPicked(): Promise<void> {
-    const files = await pickFiles({ multiple: true });
-    if (files.length) await this.import(files);
+  // One file input for the app's life. Whatever files it is given are imported when it fires `change`; `cancel` is
+  // ignored. (Firefox under Playwright fires `cancel` and then `change` for the same pick, so a picker that settles
+  // on the first of them sees nothing chosen.)
+  #picker = (() => {
+    const input = el('input', { type: 'file', multiple: true });
+    input.addEventListener('change', () => {
+      const files = [...(input.files ?? [])];
+      input.value = '';
+      if (files.length) void this.import(files);
+    });
+    return input;
+  })();
+
+  /** Opens the browser's file picker; the chosen files are imported into the open folder. */
+  importPicked(): void {
+    this.#picker.click();
   }
 
   async import(files: File[]): Promise<void> {
@@ -194,7 +207,7 @@ export class FilesView {
       {
         label: 'File',
         items: [
-          { label: 'Import…', run: () => void this.importPicked() },
+          { label: 'Import…', run: () => this.importPicked() },
           { label: 'New folder…', run: () => void this.newFolder() },
           { label: 'Download', disabled: s?.kind !== 'file', run: () => void this.download() },
           { label: 'Rename…', disabled: !s, run: () => void this.rename() },
@@ -272,7 +285,7 @@ export class FilesView {
     });
     const s = this.selected;
     const bar = el('div', { className: 'files-toolbar' }, crumbs, el('span', { className: 'files-spacer' }),
-      button('Import…', () => void this.importPicked(), { className: 'sm-btn sm-btn--primary files-btn', dataset: { key: 'import' } }),
+      button('Import…', () => this.importPicked(), { className: 'sm-btn sm-btn--primary files-btn', dataset: { key: 'import' } }),
       button('New folder…', () => void this.newFolder(), { dataset: { key: 'mkdir' } }),
       button('Download', () => void this.download(), { disabled: s?.kind !== 'file', dataset: { key: 'download' } }),
       button('Rename…', () => void this.rename(), { disabled: !s, dataset: { key: 'rename' } }),

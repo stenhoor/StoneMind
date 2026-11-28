@@ -8,6 +8,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # A hung browser test fails the run instead of holding it for GitHub's six hours. Each browser test also has its
+    # own 60 s limit (the e2e scripts' --test-timeout).
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
         with:
@@ -46,4 +49,5 @@ jobs:
         env:
           BROWSERS: chromium,firefox,webkit
           E2E: ${{ steps.affected.outputs.e2e }}
+        timeout-minutes: 15
         run: for p in $E2E; do npm run e2e -w "$p" || exit 1; done

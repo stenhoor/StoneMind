@@ -3,7 +3,11 @@
 import type { FileStore } from '@stonemind/storage';
 import { join } from './paths.js';
 
-/** Opens the browser's file picker. Resolves with the chosen files, or none if the player cancels. */
+/**
+ * Opens the browser's file picker. Resolves with the chosen files, or none if the player cancels. It settles on the
+ * input's first `change` or `cancel`: Firefox under Playwright fires `cancel` and then `change` for one pick, which
+ * reads here as a cancel. An app that keeps a picker open for its life can listen for `change` alone instead.
+ */
 export function pickFiles(options: { accept?: string; multiple?: boolean } = {}): Promise<File[]> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
