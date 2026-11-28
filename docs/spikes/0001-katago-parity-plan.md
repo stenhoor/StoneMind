@@ -1,6 +1,6 @@
 # Spike 0001: plan for functionality equivalent to native KataGo
 
-Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111. Step 12 (the protocol check): https://github.com/stenhoor/StoneMind/pull/112. Step 13a (the rules engine: territory scoring, the encore and no-result cycles): https://github.com/stenhoor/StoneMind/pull/114. Step 13b (the network's inputs in the encore): https://github.com/stenhoor/StoneMind/pull/117. Step 13c (the search and the analysis engine under territory scoring and the group taxes): https://github.com/stenhoor/StoneMind/pull/126. Step 14 (the button): in review.
+Status: **approved** 2026-11-26, in progress. Part A step 1 (LCB move selection): https://github.com/stenhoor/StoneMind/pull/96. Step 2 (value weighting): https://github.com/stenhoor/StoneMind/pull/97. Step 3 (uncertainty weighting): https://github.com/stenhoor/StoneMind/pull/98. Step 4 (subtree value bias): https://github.com/stenhoor/StoneMind/pull/99. Step 5 (noise pruning): https://github.com/stenhoor/StoneMind/pull/100. Step 6 (policy optimism): https://github.com/stenhoor/StoneMind/pull/101. Step 7 (passing hacks and root ending bonus): https://github.com/stenhoor/StoneMind/pull/102. Step 7b (root pruning of useless moves): https://github.com/stenhoor/StoneMind/pull/103. Step 8 (root symmetry pruning): https://github.com/stenhoor/StoneMind/pull/104. Step 9 (graph search): https://github.com/stenhoor/StoneMind/pull/105. Step 10 (wide root noise): https://github.com/stenhoor/StoneMind/pull/106. Review check after part A: `docs/spikes/results/2026-11-b18-part-a-review.md` (https://github.com/stenhoor/StoneMind/pull/107). Step 11a (the search's output fields): https://github.com/stenhoor/StoneMind/pull/108. Step 11b (the position hashes): https://github.com/stenhoor/StoneMind/pull/109. Step 11c (the query fields that change the search): https://github.com/stenhoor/StoneMind/pull/110. Step 11d (the engine): https://github.com/stenhoor/StoneMind/pull/111. Step 12 (the protocol check): https://github.com/stenhoor/StoneMind/pull/112. Step 13a (the rules engine: territory scoring, the encore and no-result cycles): https://github.com/stenhoor/StoneMind/pull/114. Step 13b (the network's inputs in the encore): https://github.com/stenhoor/StoneMind/pull/117. Step 13c (the search and the analysis engine under territory scoring and the group taxes): https://github.com/stenhoor/StoneMind/pull/126. Step 14 (the button): https://github.com/stenhoor/StoneMind/pull/127. Step 15a (the transformer reference): in review.
 
 ## The goal
 
@@ -177,6 +177,18 @@ rules.
 15. **RMSNorm, RoPE, attention and SwiGLU** kernels, and the loader changes for tf2-b10c384.
 
 Checked against native's `kata-raw-nn` outputs, as the convolutional networks were. Speed is reported against b18.
+
+Changed 2026-11-28, agreed in the session: the network is kata1-tf3-b11c768, the transformer network already on this
+machine, in place of tf2-b10c384, which isn't (it would need a download). tf3's 11 blocks are nested bottleneck blocks
+(768 channels in, 384 inside), each with three attention and three SwiGLU feed-forward layers, 12 heads of 32
+dimensions and learnable RoPE. The step is split in three, each its own PR:
+   - **15a. The loader and the reference forward pass:** transformer attention and feed-forward blocks, ported from
+     KataGo's `desc.cpp` and its CPU (Eigen) backend. Checked against native's `kata-raw-nn` outputs from the CPU build,
+     all goldens positions under all 8 symmetries. What tf3 doesn't use can't be checked, so it stays refused by name:
+     fixed RoPE, attention without RoPE, grouped key/value heads, feed-forward without SwiGLU, and RMSNorm trunks.
+   - **15b. The WebGPU kernels** for the same layers, checked against native's outputs as the convolutional networks'
+     kernels were (the GPU check page, in the throwaway test Edge).
+   - **15c. Speed:** a result run with tf3 against b18 (evaluations per second and a search), with a results doc.
 
 ## Not in this plan
 

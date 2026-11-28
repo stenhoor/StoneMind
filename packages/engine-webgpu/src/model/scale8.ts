@@ -81,6 +81,9 @@ function block(b: Block): Block {
         blocks: b.blocks.map(block),
         postBN: bn(b.postBN), postActivation: act(b.postActivation),
       };
+    case 'transformer_attention':
+    case 'transformer_ffn':
+      throw new Error(`${b.name}: scale8 is not defined for transformer blocks (as in KataGo)`);
   }
 }
 

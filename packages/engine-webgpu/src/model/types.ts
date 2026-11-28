@@ -93,7 +93,53 @@ export interface NestedBottleneckBlock {
   postConv: ConvLayer;
 }
 
-export type Block = OrdinaryBlock | GlobalPoolingBlock | NestedBottleneckBlock;
+/** KataGo `TransformerRMSNormDesc`: RMSNorm over the channels at each point, scaled by `weight`, with no bias. */
+export interface TransformerRMSNorm {
+  name: string;
+  numChannels: number;
+  epsilon: number;
+  weight: Float32Array;
+}
+
+/**
+ * KataGo `TransformerAttentionDesc`: pre-norm multi-head attention over the board's points, with grouped key/value
+ * heads (`numHeads` a multiple of `numKVHeads`) and optional 2D rotary position embedding (RoPE), fixed from a theta or
+ * learned per key/value head.
+ */
+export interface TransformerAttentionBlock {
+  kind: 'transformer_attention';
+  name: string;
+  numHeads: number;
+  numKVHeads: number;
+  qHeadDim: number;
+  vHeadDim: number;
+  useRope: boolean;
+  learnableRope: boolean;
+  preLN: TransformerRMSNorm;
+  qProj: MatMulLayer;
+  kProj: MatMulLayer;
+  vProj: MatMulLayer;
+  outProj: MatMulLayer;
+  /** Learnable RoPE: [kvHead][pair][x, y] frequencies; empty otherwise. */
+  ropeFreqs: Float32Array;
+  /** Fixed RoPE: its theta; 0 otherwise. */
+  ropeTheta: number;
+}
+
+/** KataGo `TransformerFFNDesc`: pre-norm feed-forward block, SwiGLU when `useSwiGLU` (silu(linear1) × linearGate). */
+export interface TransformerFFNBlock {
+  kind: 'transformer_ffn';
+  name: string;
+  numChannels: number;
+  ffnChannels: number;
+  useSwiGLU: boolean;
+  preLN: TransformerRMSNorm;
+  linear1: MatMulLayer;
+  linearGate: MatMulLayer | null;
+  linear2: MatMulLayer;
+}
+
+export type Block = OrdinaryBlock | GlobalPoolingBlock | NestedBottleneckBlock | TransformerAttentionBlock | TransformerFFNBlock;
 
 export interface SGFMetadataEncoder {
   name: string;
