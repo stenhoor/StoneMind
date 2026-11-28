@@ -55,15 +55,9 @@ function setBar(bar: BarId | null): void {
 
 // ------------------------------------------------------------------ menus
 
+// Theme and backdrop are set in one place, the Settings app (StoneMind › Settings…), not in these menus.
 function frameMenus(): Menu[] {
   return [
-    {
-      label: 'View',
-      items: [
-        ...BACKDROPS.map((b) => ({ label: `Backdrop: ${BACKDROP_NAMES[b]}`, checked: () => state.backdrop === b, run: () => setBackdrop(b) })),
-        ...THEMES.map((t) => ({ label: `Theme: ${THEME_NAMES[t]}`, checked: () => state.theme === t, run: () => setTheme(t) })),
-      ],
-    },
     {
       label: 'Window',
       items: [
@@ -117,6 +111,8 @@ function closeSheet(): void {
   state.focused = null;
   renderSheet();
   renderMenuBar();
+  // The screen is empty again (no workspace exists yet), so the Apps bar shows.
+  setBar('apps');
   if (opener?.isConnected) opener.focus();
 }
 
@@ -170,6 +166,8 @@ function renderSheet(): void {
     if (tile.dataset['singleton'] === id) tile.setAttribute('aria-current', 'true');
     else tile.removeAttribute('aria-current');
   }
+  // The empty-desk note shows only while nothing is open.
+  $<HTMLElement>('.desk-empty').hidden = id !== null;
   if (!id) {
     sheetHost.replaceChildren();
     sheetHost.hidden = true;
@@ -240,6 +238,7 @@ new ResizeObserver(onResize).observe(document.documentElement);
 
 menuBar.addEventListener('sm-bar-toggle', (e) => setBar(toggleBar(state.bar, (e as CustomEvent<{ bar: BarId }>).detail.bar)));
 applyBackdrop(state.backdrop);
-setBar(null);
+// Nothing is open at startup, so the Apps bar shows.
+setBar('apps');
 renderMenuBar();
 onResize();

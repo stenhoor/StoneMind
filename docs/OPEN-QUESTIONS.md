@@ -242,3 +242,18 @@ only transformer network on hand, kata1-tf3-b11c768, has learnable RoPE, equal h
 trunk tip, so only those are checked against native. The rest are refused by name (`unsupportedAttention` in
 `src/reference/forward.ts`, and the loader for RMSNorm trunks) rather than ported unchecked (parity plan, step 15a,
 2026-11-28). A network that has them would be the check that lets them in.
+
+## 20. Where the Files app keeps each file's kind (apps/web)
+
+A file's kind (game, problem, KataGo network, KataGo config) is worked out from its name and content when it is
+imported, and the player can change a game to a problem and back. The specs don't say where that is kept. Until the
+materials kit exists, the Files app keeps it in a JSON catalog beside the files, `/.stonemind/catalog.json` in this
+browser's OPFS (a folder the player doesn't see), with whether the kind was worked out or chosen by the player. Every
+change to it runs under one Web Lock, so tabs never write it from different snapshots. Files the catalog doesn't know
+are worked out when first seen.
+
+How an SGF becomes a game or a problem is also a decision here: players (PB, PW) or a result (RE) make it a game;
+otherwise setup stones (AB, AW) make it a problem; otherwise a game. The SGF kit may refine this once real problem
+collections have been studied (see the design doc, Problems).
+
+Interim: `apps/web/src/files/catalog.ts`, `apps/web/src/files/kinds.ts`.
