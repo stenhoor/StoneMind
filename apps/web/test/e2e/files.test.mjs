@@ -67,6 +67,8 @@ for (const name of BROWSERS) {
     const count = async (page, plural) => Number((await filter(page, plural).getAttribute('aria-label')).split(', ')[1].split(' ')[0]);
     const names = (page) => sheet(page).locator('tbody .files-name').allTextContents();
     const status = (page) => sheet(page).getByRole('status').first();
+    const trail = (page) => sheet(page).getByRole('navigation', { name: 'Breadcrumb' });
+    const here = (page) => trail(page).locator('[aria-current="location"]');
 
     test('folders hold files and always show; filters narrow the files, any number at once', async () => {
       const context = await newContext();
@@ -78,10 +80,11 @@ for (const name of BROWSERS) {
         await w.write('(;GM[1]PB[a]PW[b])');
         await w.close();
       });
-      const folders = sheet(page).getByRole('navigation', { name: 'Folders' });
-      await folders.getByRole('button', { name: 'This browser' }).waitFor();
+      // The breadcrumb trail starts at This browser; there is no folder list in the sidebar.
+      assert.equal(await trail(page).locator('[aria-current="location"]').textContent(), 'This browser');
+      assert.equal(await sheet(page).getByRole('navigation', { name: 'Folders' }).count(), 0);
       await row(page, 'Folder games').waitFor();
-      assert.equal(await folders.getByRole('button', { name: /problems|weights|configs/ }).count(), 0);
+      for (const gone of ['problems', 'weights', 'configs']) assert.equal(await row(page, `Folder ${gone}`).count(), 0, gone);
 
       // A folder of the player's own, then files of every kind beside it.
       await sheet(page).getByRole('button', { name: 'New folder…' }).click();
@@ -180,13 +183,13 @@ for (const name of BROWSERS) {
       await page.getByRole('dialog').getByLabel('Name').fill('Club');
       await page.getByRole('dialog').getByRole('button', { name: 'Create' }).click();
       await row(page, 'Folder Club').waitFor();
-      await sheet(page).getByRole('navigation', { name: 'Folders' }).getByRole('button', { name: 'Club' }).click();
+      await row(page, 'Folder Club').dblclick();
       await importFiles(page, [problem]);
       await row(page, 'File corner.sgf').waitFor();
       assert.match(await sheet(page).locator('tbody').textContent(), /Problem/);
 
       // A file in This browser moved into Club.
-      await sheet(page).getByRole('navigation', { name: 'Folder', exact: true }).getByRole('button', { name: 'This browser' }).click();
+      await trail(page).getByRole('button', { name: 'This browser' }).click();
       await importFiles(page, [game]);
       await row(page, 'File final.sgf').click();
       await sheet(page).getByRole('button', { name: 'Move to…' }).click();
@@ -194,7 +197,7 @@ for (const name of BROWSERS) {
       await page.getByRole('dialog').getByRole('button', { name: 'Move' }).click();
       await row(page, 'File final.sgf').waitFor({ state: 'detached' });
       // Still a game, now in Club.
-      await sheet(page).getByRole('navigation', { name: 'Folders' }).getByRole('button', { name: 'Club' }).click();
+      await row(page, 'Folder Club').dblclick();
       await row(page, 'File final.sgf').waitFor();
       assert.equal(await count(page, 'Games'), 1);
 
@@ -253,9 +256,9 @@ for (const name of BROWSERS) {
       assert.equal(await sheet(page).count(), 1);
       await row(page, 'Folder Tsumego').focus();
       await page.keyboard.press('Enter');
-      await sheet(page).getByRole('navigation', { name: 'Folder', exact: true }).getByRole('button', { name: 'Tsumego' }).waitFor();
+      await here(page).getByText('Tsumego').waitFor();
       assert.match(await sheet(page).textContent(), /This folder is empty/);
-      await sheet(page).getByRole('navigation', { name: 'Folder', exact: true }).getByRole('button', { name: 'This browser' }).focus();
+      await trail(page).getByRole('button', { name: 'This browser' }).focus();
       await page.keyboard.press('Enter');
       await row(page, 'File long.sgf').waitFor();
       // Escape outside a dialog closes Files, and the Apps bar shows again.
@@ -263,6 +266,36 @@ for (const name of BROWSERS) {
       await page.keyboard.press('Escape');
       await sheet(page).waitFor({ state: 'detached' });
       assert.equal(await page.$eval('#bar-apps', (b) => b.hidden), false);
+      assert.deepEqual(errors, []);
+      await context.close();
+    });
+
+    test('the breadcrumb trail leads back up any number of folders, and Up goes one folder up', async () => {
+      const context = await newContext();
+      const { page, errors } = await openFiles(context);
+      assert.ok(await trail(page).getByRole('button', { name: 'Up one folder' }).isDisabled(), 'no folder above This browser');
+      for (const name of ['Club', '2026', 'Spring']) {
+        await sheet(page).getByRole('button', { name: 'New folder…' }).click();
+        await page.getByRole('dialog').getByLabel('Name').fill(name);
+        await page.getByRole('dialog').getByRole('button', { name: 'Create' }).click();
+        await row(page, `Folder ${name}`).dblclick();
+        await here(page).getByText(name).waitFor();
+      }
+      // This browser › Club › 2026 › Spring: the three above are links, the open one is not.
+      assert.deepEqual(await trail(page).locator('li').allTextContents(), ['This browser', 'Club', '2026', 'Spring']);
+      assert.deepEqual(await trail(page).locator('li button').allTextContents(), ['This browser', 'Club', '2026']);
+      await trail(page).getByRole('button', { name: 'Club' }).click();
+      await here(page).getByText('Club').waitFor();
+      await row(page, 'Folder 2026').waitFor();
+      await trail(page).getByRole('button', { name: 'Up one folder' }).click();
+      await here(page).getByText('This browser').waitFor();
+      await row(page, 'Folder Club').waitFor();
+      // Go › Up one folder does the same from the menu bar.
+      await row(page, 'Folder Club').dblclick();
+      await here(page).getByText('Club').waitFor();
+      await page.locator('sm-menu-bar').getByRole('button', { name: 'Go', exact: true }).click();
+      await page.getByRole('menu').getByRole('menuitem', { name: 'Up one folder' }).click();
+      await here(page).getByText('This browser').waitFor();
       assert.deepEqual(errors, []);
       await context.close();
     });
@@ -293,7 +326,7 @@ for (const name of BROWSERS) {
       await page.getByRole('menu').getByRole('menuitemradio', { name: 'Show Configs' }).click();
       assert.equal(await filter(page, 'Configs').getAttribute('aria-pressed'), 'true');
       await page.locator('sm-menu-bar').getByRole('button', { name: 'Go', exact: true }).click();
-      await page.getByRole('menu').getByRole('menuitemradio', { name: 'This browser' }).waitFor();
+      await page.getByRole('menu').getByRole('menuitem', { name: 'This browser' }).waitFor();
       assert.deepEqual(errors, []);
       await context.close();
     });

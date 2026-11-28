@@ -272,10 +272,15 @@ sm-menu-bar { display: block; }
 .files-spacer { flex: 1 1 auto; }
 .files-btn { min-height: 44px; }
 .files-path { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
-.files-crumb-root { color: var(--text-2); }
-.files-crumb-sep { color: var(--text-3); }
-.files-crumb { background: none; border: 0; padding: 0 var(--space-1); min-height: 44px; color: var(--text); font: inherit; cursor: pointer; border-radius: var(--radius-sm); }
-.files-crumb[aria-current] { font-weight: 700; }
+/* The breadcrumb trail: folders above the open one are links (underlined, in the link colour); the open one ends it. */
+.files-path { flex-wrap: nowrap; gap: var(--space-2); }
+.files-up { flex: none; font-size: 18px; font-weight: 700; }
+.files-trail { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; min-width: 0; }
+.files-trail-item { display: flex; align-items: center; }
+.files-trail-item + .files-trail-item::before { content: "›"; color: var(--text-3); padding: 0 var(--space-1); }
+.files-crumb { background: none; border: 0; padding: 0 var(--space-1); min-height: 44px; color: var(--link); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; border-radius: var(--radius-sm); }
+.files-crumb:hover { background: var(--glass-well); }
+.files-crumb-here { padding: 0 var(--space-1); font-weight: 700; }
 .files-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr); gap: var(--space-4); }
 .files-side, .files-inspector { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow: auto; }
 .files-side-group { display: flex; flex-direction: column; gap: 2px; }

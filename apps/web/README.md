@@ -28,7 +28,9 @@ file kit (`@stonemind/files`), on this browser's origin private file system:
   number at once. With some on, the folder shows only files of those kinds; with none on (Show all files), every file.
   The filters stay on from folder to folder, and each shows how many files of its kind the open folder holds. They are
   also in the View menu.
-- **The sidebar** has the folders, the filters, and this browser's storage: space used of the quota, whether the
+- **A breadcrumb trail** at the top runs from This browser to the open folder; each folder above it is a link back up,
+  and an Up button (and Go › Up one folder) goes one folder up. Folders are opened from the list.
+- **The sidebar** has the filters and this browser's storage: space used of the quota, whether the
   browser keeps the files, and a **Keep my files** button that asks it to.
 - **A file's kind is worked out from its name and content** when it is imported, never from what is on screen: an SGF
   naming players (PB, PW) or a result (RE) is a game, one that only sets up stones (AB, AW) is a problem; a `.bin.gz` or

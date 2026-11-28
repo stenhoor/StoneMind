@@ -385,7 +385,10 @@ export class FilesView {
       },
       {
         label: 'Go',
-        items: this.#topFolders().map((path) => ({ label: folderName(path).replace(/^\//, ''), checked: () => this.#folder === path, run: () => this.openFolder(path) })),
+        items: [
+          { label: 'Up one folder', disabled: this.#folder === '/', run: () => this.openFolder(parentOf(this.#folder)) },
+          { label: 'This browser', disabled: this.#folder === '/', run: () => this.openFolder('/') },
+        ],
       },
     ];
   }
@@ -449,22 +452,27 @@ export class FilesView {
     if (active) this.element.querySelector<HTMLElement>(`[data-key="${CSS.escape(active)}"]`)?.focus({ preventScroll: true });
   }
 
-  /** This browser and the folders at its top. */
-  #topFolders(): string[] {
-    return ['/', ...this.#all.filter((e) => e.kind === 'directory' && parentOf(e.path) === '/').map((e) => e.path).sort()];
-  }
-
   #toolbar(): HTMLElement {
-    const where = el('nav', { className: 'files-path' });
-    where.setAttribute('aria-label', 'Folder');
+    // The breadcrumb trail: every folder from This browser down to the open one. Each one above the open folder is a
+    // link back up to it; the open folder ends the trail. "Up one folder" goes to the folder above.
+    const trail = el('ol', { className: 'files-trail' });
     const parts = this.#folder.split('/').filter(Boolean);
-    const crumb = (label: string, path: string, last: boolean) => {
-      const b = button(label, () => this.openFolder(path), { className: 'files-crumb', dataset: { key: `crumb:${path}` } });
-      if (last) b.setAttribute('aria-current', 'location');
-      return b;
-    };
-    where.append(crumb('This browser', '/', parts.length === 0));
-    parts.forEach((part, i) => where.append(el('span', { className: 'files-crumb-sep' }, '›'), crumb(part, '/' + parts.slice(0, i + 1).join('/'), i === parts.length - 1)));
+    const paths = ['/', ...parts.map((_, i) => '/' + parts.slice(0, i + 1).join('/'))];
+    paths.forEach((path, i) => {
+      const last = i === paths.length - 1;
+      const name = path === '/' ? 'This browser' : nameOf(path);
+      const item = el('li', { className: 'files-trail-item' });
+      if (last) {
+        const here = el('span', { className: 'files-crumb-here' }, name);
+        here.setAttribute('aria-current', 'location');
+        item.append(here);
+      } else item.append(button(name, () => this.openFolder(path), { className: 'files-crumb', dataset: { key: `crumb:${path}` } }));
+      trail.append(item);
+    });
+    const up = button('↑', () => this.openFolder(parentOf(this.#folder)), { className: 'sm-btn sm-icon-btn files-up', disabled: this.#folder === '/', title: 'Up one folder', dataset: { key: 'up' } });
+    up.setAttribute('aria-label', 'Up one folder');
+    const where = el('nav', { className: 'files-path' }, up, trail);
+    where.setAttribute('aria-label', 'Breadcrumb');
     const s = this.selected;
     const bar = el('div', { className: 'files-toolbar' }, where, el('span', { className: 'files-spacer' }),
       button('Import…', () => this.importPicked(), { className: 'sm-btn sm-btn--primary files-btn', dataset: { key: 'import' } }),
@@ -480,16 +488,6 @@ export class FilesView {
 
   #sidebar(): HTMLElement {
     const side = el('div', { className: 'files-side' });
-    const folder = this.#folder;
-
-    const folders = el('nav', { className: 'files-side-group' }, el('p', { className: 'sm-label files-side-label' }, 'Folders'));
-    folders.setAttribute('aria-label', 'Folders');
-    for (const path of this.#topFolders()) {
-      const b = button(`${path === '/' ? '' : '📁︎ '}${path === '/' ? 'This browser' : nameOf(path)}`, () => this.openFolder(path), { className: 'files-place', dataset: { key: `folder:${path}` } });
-      const inside = path === '/' ? folder === '/' : folder === path || folder.startsWith(path + '/');
-      if (inside) b.setAttribute('aria-current', 'true');
-      folders.append(b);
-    }
 
     // Filters: toggles, any number on. Each count is the files of that kind in the open folder.
     const kinds = el('div', { className: 'files-side-group' }, el('p', { className: 'sm-label files-side-label', id: 'files-filters-label' }, 'Filters'));
@@ -522,7 +520,7 @@ export class FilesView {
       el('p', { className: 'files-storage-text' }, info?.persisted ? '✓ Files are kept' : 'The browser may clear these files when space runs low.'),
       info?.persisted ? null : button('Keep my files', () => void this.keepFiles(), { dataset: { key: 'persist' } }));
 
-    side.append(folders, kinds, storage);
+    side.append(kinds, storage);
     return side;
   }
 
