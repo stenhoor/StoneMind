@@ -59,7 +59,12 @@ file kit (`@stonemind/files`), on this browser's origin private file system:
 - The engine loads its weights from this browser's storage (a path from Files) and starts with KataGo's
   `analysis_example.cfg` settings. The host keeps a list of engines, so more can be added (one per GPU, a CPU engine,
   native KataGo next); one runs at a time for now.
-- The Engines app (step 6) is where players start it; until then it has no controls.
+- **The Engines app** (first part of step 6) is, for now, an engine console for running benchmarks by hand: choose a
+  weights file from Files, edit KataGo's settings (`key = value`, starting at KataGo's defaults), start or stop the
+  engine, and see its model, GPU and state. Then send KataGo Analysis Engine queries directly, one JSON line each
+  (a query without an `id` gets one; examples can be inserted), and read every reply. Each final result is timed:
+  milliseconds since its query was sent, visits, and visits per second. Reports during the search are counted and
+  shown on request; long replies open on a click; the log can be copied or downloaded as JSON lines.
 
 **The capability page** (Milestone 1, step 2), at `/capabilities/`, opened from the StoneMind menu (Browser Info), checks what this
 browser offers: WebGPU in the page, a dedicated worker and a shared worker (with the default adapter, the adapter given
@@ -95,7 +100,8 @@ The browser tests need Playwright's browsers (`npx -w @stonemind/web playwright 
   free of the DOM.
 - `src/engines/`: the engine host: `protocol.ts` (messages and query-id rewriting) and `host.ts` (engines and tabs),
   both free of the DOM; `host-worker.ts` (the worker, and the engines it starts); `client.ts` (a tab's side);
-  `fake.ts` (a stand-in engine for the browser tests, never offered to players).
+  `fake.ts` (a stand-in engine for the browser tests, never offered to players); `console.ts` (the Engines app's
+  console).
 - `src/capabilities/`: the capability page: `index.html`, `main.ts` (the probes), `report.ts` (the report and its
   summary, free of the DOM) and `worker-probe.js` (a classic script, run as a dedicated and as a shared worker).
 - `scripts/assemble.mjs`: builds `dist/site`, with the file kit's modules in `vendor/files/` for the page's import map. `scripts/server.mjs`, `scripts/serve.mjs`: the local server.

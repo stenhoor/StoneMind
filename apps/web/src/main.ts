@@ -6,6 +6,7 @@ import { type Backdrop, type BarId, BACKDROPS, BACKDROP_NAMES, BAR_IDS, PROFILE_
 import { type FocusedApp, SmMenuBar } from './frame/menu-bar.js';
 import type { Menu } from './frame/menu.js';
 import { applyBackdrop, applyTheme, loadBackdrop, loadTheme } from './frame/settings.js';
+import { EngineConsole } from './engines/console.js';
 import { FilesView } from './files/view.js';
 
 type SingletonId = 'files' | 'engines' | 'layouts' | 'settings' | 'about';
@@ -95,6 +96,8 @@ menuBar.stoneMindMenu = [
 
 // The Files app keeps its view (folder, selection, an import in progress) while it is open; closing it lets it go.
 let files: FilesView | null = null;
+// The engine console lasts the whole visit, so its log survives closing and reopening Engines.
+let engineConsole: EngineConsole | null = null;
 
 let opener: HTMLElement | null = null;
 
@@ -150,6 +153,9 @@ function sheetBody(id: SingletonId): Node[] {
         if (state.focused === 'files') renderMenuBar();
       });
       return [files.element];
+    case 'engines':
+      engineConsole ??= new EngineConsole();
+      return [engineConsole.element];
     case 'about':
       return [
         el('p', {}, 'StoneMind is a Go coaching companion in early development. This is the app’s first frame: Files, Engines and the gobans are still to come.'),
@@ -186,7 +192,7 @@ function renderSheet(): void {
   sheet.dataset['app'] = id;
   sheetHost.replaceChildren(sheet);
   sheetHost.hidden = false;
-  if (activeKey && id !== 'files') {
+  if (activeKey && id !== 'files' && id !== 'engines') {
     for (const c of sheet.querySelectorAll<HTMLElement>('input, button')) {
       if ((c.getAttribute('value') ?? c.textContent) === activeKey) {
         c.focus();

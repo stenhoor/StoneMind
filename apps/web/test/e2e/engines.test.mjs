@@ -138,6 +138,54 @@ for (const name of BROWSERS) {
       await context.close();
     });
 
+    test('the Engines console starts the engine, sends KataGo queries as typed, and times each result', async () => {
+      const network = readFileSync(join(import.meta.dirname, '..', '..', '..', '..', 'packages', 'engine-webgpu', 'test', 'fixtures', 'g170-b6c96-s175395328-d26788732.bin.gz'));
+      const context = await newContext();
+      const page = await context.newPage();
+      const errors = [];
+      page.on('pageerror', (e) => errors.push(e));
+      await page.goto(url);
+      await page.evaluate(async (b64) => {
+        const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const w = await (await (await navigator.storage.getDirectory()).getFileHandle('b6c96.bin.gz', { create: true })).createWritable();
+        await w.write(bytes);
+        await w.close();
+      }, network.toString('base64'));
+      await page.locator('#bar-apps').getByRole('button', { name: 'Engines' }).click();
+      const weights = page.getByLabel('Weights');
+      await weights.locator('option[value="/b6c96.bin.gz"]').waitFor({ state: 'attached' });
+      const settings = page.getByLabel('KataGo settings (key = value)');
+      // KataGo's defaults are filled in.
+      assert.match(await settings.inputValue(), /numSearchThreadsPerAnalysisThread = 16/);
+      // A line that isn't "key = value" is refused before starting.
+      await settings.fill('numAnalysisThreads 1');
+      await page.getByRole('button', { name: 'Start' }).click();
+      await page.getByText(/Line 1 of the settings is not "key = value"/).waitFor();
+      await settings.fill('numAnalysisThreads = 1\nnumSearchThreadsPerAnalysisThread = 4');
+      await page.getByRole('button', { name: 'Start' }).click();
+      const state = page.locator('.console-state strong');
+      await page.waitForFunction(() => /Running|Did not start/.test(document.querySelector('.console-state strong')?.textContent ?? ''), null, { timeout: 120_000 });
+      const send = page.getByRole('button', { name: 'Send' });
+      if ((await state.textContent()) === 'Running') {
+        const command = page.getByLabel(/Queries: one JSON line each/);
+        await command.fill('{"action":"query_version"}\n{"id":"b8","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"maxVisits":8}');
+        await command.press('Control+Enter');
+        const log = page.getByRole('log', { name: 'Engine log' });
+        await log.getByText(/"version":"1\.\d+/).waitFor();
+        await log.getByText(/^\d+ ms · 8 visits · \d+ visits\/s$/).waitFor({ timeout: 120_000 });
+        // The log is the queries and replies as JSON lines; query_version was given an id.
+        const text = await page.evaluate(() => document.querySelector('.console-log')?.textContent ?? '');
+        assert.match(text, /\{"action":"query_version","id":"c\d+"\}/);
+      } else {
+        // Where there is no WebGPU, it says so, and nothing can be sent.
+        assert.notEqual(name, 'chromium', 'Chromium with WebGPU runs the engine');
+        await page.locator('.console-status').getByText(/WebGPU|adapter/i).first().waitFor();
+        assert.ok(await send.isDisabled());
+      }
+      assert.deepEqual(errors, []);
+      await context.close();
+    });
+
     test('a host for one tab alone, where a shared one can’t run WebGPU, keeps its engine to itself', async () => {
       const context = await newContext();
       const a = await openTab(context, 'dedicated');

@@ -135,6 +135,22 @@ export class EngineHostClient extends EventTarget {
     });
   }
 
+  /**
+   * Sends one raw line of KataGo's protocol to an engine (the console uses this). Its replies come to `onLine`
+   * listeners, with ids as this tab sent them.
+   */
+  sendLine(engineId: string, line: string): void {
+    this.#channel.post({ type: 'line', engineId, line });
+  }
+
+  /** Listens to every line an engine sends this tab (its replies, and general errors). Returns a function to stop. */
+  onLine(engineId: string, receiver: (line: string) => void): () => void {
+    let lines = this.#lines.get(engineId);
+    if (!lines) this.#lines.set(engineId, (lines = new Set()));
+    lines.add(receiver);
+    return () => void lines.delete(receiver);
+  }
+
   /** Stops an engine. Every tab's queries to it end. */
   stop(engineId: string): void {
     this.#channel.post({ type: 'stop', engineId });
@@ -149,13 +165,18 @@ export class EngineHostClient extends EventTarget {
     if (existing) return existing;
     const lines = new Set<(line: string) => void>();
     const closers = new Set<(reason: string) => void>();
-    this.#lines.set(engineId, lines);
+    // The session's own listeners sit beside any console's, in the set for this engine.
+    let all = this.#lines.get(engineId);
+    if (!all) this.#lines.set(engineId, (all = new Set()));
+    const relay = (line: string) => { for (const r of lines) r(line); };
+    all.add(relay);
     this.#closers.set(engineId, closers);
     const transport: LineTransport = {
       send: (line) => this.#channel.post({ type: 'line', engineId, line }),
       onLine: (r) => void lines.add(r),
       onClose: (r) => void closers.add(r),
       close: () => {
+        all?.delete(relay);
         lines.clear();
         closers.clear();
         this.#sessions.delete(engineId);
