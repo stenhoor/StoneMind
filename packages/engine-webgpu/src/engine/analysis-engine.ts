@@ -9,8 +9,8 @@
  *   (`SharedEvaluator`); each search's `numSearchThreads` is its batch of playouts per network call.
  * - Reports during a search are written at the first batch boundary after they fall due, where KataGo's report thread
  *   writes them at the time.
- * - Rules with a button, which this engine's search doesn't support yet, are refused with an
- *   error, as is an initial stone on a stone of the other colour, and config settings for search features not ported.
+ * - An initial stone on a stone of the other colour is refused with an error, as are config settings for search
+ *   features not ported.
  * - Messages that come from C++ libraries differ: JSON syntax errors, and config value errors (no file name).
  * - The evaluation cache isn't limited in size (KataGo's holds 2^`nnCacheSizePowerOfTwo` entries).
  */
@@ -821,10 +821,6 @@ export class KataGoAnalysisLines implements LineTransport {
     if (!supported.supported) {
       this.#reportWarningForId(id, 'rules', `Rules ${rulesToString(rules)} not supported by neural net, using ${rulesToString(supported.rules)} instead`);
       rules = supported.rules;
-    }
-    if (rules.hasButton) {
-      // Not yet ported (the parity plan's step 14).
-      return void err('rules', `Rules ${rulesToString(rules)} are not supported by this engine yet: it supports no button`);
     }
 
     if (this.#warnUnusedFields) {

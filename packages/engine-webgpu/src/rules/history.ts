@@ -11,11 +11,11 @@
  * - scoring at the end of the game: area or territory scoring, with no tax, the seki tax or the tax on all groups,
  * - no-result long cycles: a position repeated three times, under simple ko or in the encore, ends the game with no
  *   result,
- * - the white handicap bonus.
+ * - the white handicap bonus,
+ * - the button: under rule sets with one, the first pass in the main phase takes it, worth half a point.
  *
- * Not supported yet, and refused rather than approximated: rule sets with a button. Not kept, as only KataGo's older
- * network input versions or its self-play read them: `numConsecValidTurnsThisGame`, `numTurnsThisPhase`, resignation,
- * and the initial turn number.
+ * Not kept, as only KataGo's older network input versions or its self-play read them: `numConsecValidTurnsThisGame`,
+ * `numTurnsThisPhase`, resignation, and the initial turn number.
  */
 import { calculateArea, calculateIndependentLifeArea } from './area.js';
 import { BLACK, Board, EMPTY, NULL_LOC, PASS_LOC, WHITE, opp, type Stone } from './board.js';
@@ -120,6 +120,8 @@ export class GameHistory {
    * the same phase.
    */
   isPastNormalPhaseEnd = false;
+  /** KataGo `hasButton`: whether there's a button to take (rule sets with a button, in the main phase, until a pass). */
+  hasButton = false;
   /** True once the game has ended (KataGo `isGameFinished`). */
   isGameFinished = false;
   /** The final score, White minus Black, once the game has ended by scoring. */
@@ -171,7 +173,6 @@ export class GameHistory {
       this._wasEverOccupiedOrPlayed = source._wasEverOccupiedOrPlayed.slice();
       return;
     }
-    if (rules.hasButton) throw new UnsupportedPositionError('rule sets with a button are not supported yet');
     if (!(encorePhase === 0 || encorePhase === 1 || encorePhase === 2)) throw new RangeError(`encore phase ${encorePhase}: must be 0, 1 or 2`);
     if (encorePhase > 0 && rules.scoringRule !== 'TERRITORY') throw new RangeError('only territory scoring has an encore');
     this.rules = rules;
@@ -182,6 +183,9 @@ export class GameHistory {
     this.board = board.clone();
     this.nextPla = nextPla;
     this.encorePhase = encorePhase;
+    // In the main phase only. (KataGo's BoardHistory::clear reads the phase before setting it, so its constructor gives a
+    // history started in the encore a button too; its analysis engine never starts one there.)
+    this.hasButton = rules.hasButton && encorePhase === 0;
     this.superKoBanned = new Uint8Array(board.arraySize);
     this.koRecapBlocked = new Uint8Array(board.arraySize);
     this.secondEncoreStartColors = encorePhase === 2 ? board.colors.slice() : new Uint8Array(board.arraySize);
@@ -375,12 +379,26 @@ export class GameHistory {
     const { score, area } = this.rules.scoringRule === 'AREA' ? this.countAreaScoreWhiteMinusBlack() : this.countTerritoryAreaScoreWhiteMinusBlack();
     // In C++ floats, as KataGo: int + float + float + float.
     const f = Math.fround;
+    // A button not yet taken goes to the player to move.
+    if (this.hasButton) {
+      this.hasButton = false;
+      this.whiteBonusScore = f(this.whiteBonusScore + (this.nextPla === WHITE ? 0.5 : -0.5));
+    }
     this._setFinalScoreAndWinner(f(f(f(score + this.whiteBonusScore) + this.whiteHandicapBonusScore) + f(this.komi)));
     this.isScored = true;
     this.isNoResult = false;
     this.isGameFinished = true;
     this.isPastNormalPhaseEnd = false;
     return area;
+  }
+
+  /**
+   * KataGo `whiteKomiAdjustmentForDraws`: the value of a draw for White, less half a win, when the game can end in one
+   * (KataGo `gameResultWillBeInteger`: an integer komi without a button, or a half-integer one with), else 0. A C++
+   * float, as KataGo's.
+   */
+  whiteKomiAdjustmentForDraws(drawEquivalentWinsForWhite: number): number {
+    return Number.isInteger(this.komi) !== this.rules.hasButton ? Math.fround(drawEquivalentWinsForWhite - 0.5) : 0;
   }
 
   /** KataGo `setFinalScoreAndWinner`. */
@@ -478,6 +496,14 @@ export class GameHistory {
     let isSpightlikeEndingPass = false;
     if (loc !== PASS_LOC) {
       this.consecutiveEndingPasses = 0;
+    } else if (this.hasButton) {
+      // The pass takes the button, worth half a point, and isn't an ending pass. Taking it clears the ko histories (as if
+      // positions with and without the button were different).
+      this.hasButton = false;
+      this.whiteBonusScore = Math.fround(this.whiteBonusScore + (pla === WHITE ? 0.5 : -0.5));
+      this.consecutiveEndingPasses = 0;
+      this._keysBeforePass = { [BLACK]: new Set<string>(), [WHITE]: new Set<string>() } as Record<Stone, Set<string>>;
+      this._koKeys = [];
     } else {
       // Under simple ko and in the encore, passes clear the ko history (for no-result cycles, and in the encore its
       // three-fold repetition check), but not the positions passed in, which end the phase on a repeat.
@@ -653,12 +679,11 @@ export class GameHistory {
 
   /**
    * KataGo `currentSelfKomi`: the komi for `pla`, with White's bonus points, and with the value of a draw folded in when
-   * the game can end in one (an integer komi: KataGo `whiteKomiAdjustmentForDraws`). Computed in C++ floats, as KataGo
-   * does.
+   * the game can end in one (`whiteKomiAdjustmentForDraws`). Computed in C++ floats, as KataGo does.
    */
   currentSelfKomi(pla: Stone, drawEquivalentWinsForWhite = 0.5): number {
     const f = Math.fround;
-    const drawAdjustment = Number.isInteger(this.komi) ? f(drawEquivalentWinsForWhite - 0.5) : 0;
+    const drawAdjustment = this.whiteKomiAdjustmentForDraws(drawEquivalentWinsForWhite);
     const white = f(f(f(this.whiteBonusScore + this.whiteHandicapBonusScore) + f(this.komi)) + drawAdjustment);
     return pla === WHITE ? white : -white;
   }

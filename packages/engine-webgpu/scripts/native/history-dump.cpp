@@ -53,6 +53,7 @@ static json state(const BoardHistory& hist, const Board& board, const json& spec
   j["encorePhase"] = hist.encorePhase;
   j["isGameFinished"] = hist.isGameFinished;
   j["isPastNormalPhaseEnd"] = hist.isPastNormalPhaseEnd;
+  j["hasButton"] = hist.hasButton;
   j["isScored"] = hist.isScored;
   j["isNoResult"] = hist.isNoResult;
   j["winner"] = (int)hist.winner;
@@ -137,9 +138,9 @@ int main() {
     rules.scoringRule = spec["scoringRule"];
     rules.taxRule = spec["taxRule"];
     rules.multiStoneSuicideLegal = spec["multiStoneSuicideLegal"];
-    rules.hasButton = false;
+    rules.hasButton = spec.value("hasButton", false);
     rules.whiteHandicapBonusRule = spec["whiteHandicapBonusRule"];
-    rules.friendlyPassOk = false;
+    rules.friendlyPassOk = spec.value("friendlyPassOk", false);
     rules.komi = spec["komi"];
     Board board(xSize, ySize);
     string init = spec["initial"];

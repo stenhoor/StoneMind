@@ -58,7 +58,7 @@ test('thisHash and symHash match native KataGo on every search golden position',
       checked++;
     }
   }
-  assert.equal(checked, 47, 'positions checked');
+  assert.equal(checked, 55, 'positions checked');
 });
 
 test('thisHash and symHash match native KataGo with a ko and on rectangular boards', async () => {

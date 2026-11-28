@@ -9,7 +9,7 @@ export const STATE_FIELDS = [
   'finalWhiteMinusBlackScore', 'whiteBonusScore', 'whiteHandicapBonusScore', 'consecutiveEndingPasses',
   'numApproxValidTurnsThisPhase', 'koRecapBlocked', 'superKoBanned', 'secondEncoreStartColors', 'nextPla',
   'passWouldEndPhase', 'passWouldEndGame', 'isFinalPhase', 'legal', 'passForKo', 'scoreNow', 'areaNow', 'getAreaNow',
-  'independentLife',
+  'independentLife', 'hasButton',
 ];
 
 /** The first 16 hex digits of the SHA-256 of the state's fields, in STATE_FIELDS order. */

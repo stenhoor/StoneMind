@@ -124,8 +124,14 @@ cycles, and rule sets with a button.
 Since part C, step 13a of the parity plan (2026-11-27), the rules engine has all of these but the button, as KataGo's
 `BoardHistory` has them: territory scoring with its encore, scoring with every tax rule, and no-result long cycles. The
 search ends a no-result game as KataGo does. Since step 13b, the network's inputs have the encore and every tax rule
-too, and since step 13c the search and the analysis engine have territory scoring and every tax rule. Only rule sets
-with a button are still refused, until step 14.
+too, and since step 13c the search and the analysis engine have territory scoring and every tax rule. Since step 14,
+rule sets with a button are supported too, and nothing is refused.
+
+One difference from KataGo, in a case its analysis engine never reaches: KataGo's `BoardHistory::clear` sets
+`hasButton` from the encore phase before it sets the phase, so a history constructed in the encore under a rule set
+with a button has a button, and its first pass then fails an assertion. The port gives the button in the main phase
+only. The analysis engine reaches neither: it starts histories in the main phase, and drops the button under territory
+scoring (the only scoring with an encore) as the network doesn't support it.
 
 ## 13. Browser engine: network calls in flight (spike 0001)
 
@@ -190,9 +196,9 @@ KataGo's `analysis.cpp` at v1.18.2. Decided in code, with no spec covering it:
   batch: the leaves it keeps in flight with virtual losses, which is what KataGo's search threads amount to.
 - **Reports during the search are written between batches**, at the first batch boundary after each is due. KataGo's
   reporting thread writes them on time, mid-batch.
-- **Rules the search doesn't support are refused** with an error on the `rules` field: territory scoring, a group tax
-  and the button (`Rules ... are not supported by this engine yet`). KataGo would search them. **An initial stone on a
-  point holding the other colour is refused** on `initialStones` (section 15).
+- **An initial stone on a point holding the other colour is refused** on `initialStones` (section 15). (Until part C
+  of the parity plan, rules the search didn't support were refused too: territory scoring, a group tax and the button.
+  Since step 14 there are none.)
 - **Startup config keys for native's machinery are read and ignored:** logging, the network server's batch, cache and
   mutex sizes, threads per model, `useFP16`, `useNHWC` and `homeDataDir`. They aren't reported as unused.
 - **The evaluation cache has no size limit** (KataGo's is `nnCacheSizePowerOfTwo` entries). `clear_cache` empties it.

@@ -205,6 +205,17 @@ const SCENARIOS = [
       ],
     }],
   },
+  {
+    name: 'button',
+    note: 'Rule sets with a button (part C, step 14), late in a 9x9 game: several turns of one query, before the first pass (which takes the button), after it and after the game ends, share the evaluation cache; the button as a rules object; and a button under territory scoring, which the network doesn\'t support, so it is dropped with a warning.',
+    steps: [{
+      lines: [
+        q({ id: 'b-turns', ...base, rules: 'aga-button', moves: LATE_9, analyzeTurns: [48, 49, 51, 52], maxVisits: 40, includePVVisits: true }),
+        q({ id: 'b-object', ...base, rules: { ko: 'POSITIONAL', scoring: 'AREA', tax: 'NONE', suicide: false, hasButton: true, whiteHandicapBonus: '0' }, moves: LATE_9.slice(0, 48), maxVisits: 40 }),
+        q({ id: 'b-territory', ...base, rules: 'koSIMPLEscoreTERRITORYtaxSEKIsui0button1', moves: LATE_9.slice(0, 48), maxVisits: 40 }),
+      ],
+    }],
+  },
 ];
 
 const logDir = mkdtempSync(join(tmpdir(), 'katago-logs-'));

@@ -10,7 +10,8 @@
 // encore phase and KataGo's history modes vary between games. Up to 10 more games come from a pool of 1500 random games:
 // those in which the encore repeats a position three times, but not with the same player to move (repeatsWithOtherPlayer).
 // Up to 5 pairs of games more come from a pool of 2000 on tiny boards: pairs that reach the same position in the second
-// encore from different starting stones (tinySpecs). Each game's inputs are made with its own options (the draw value, conservativePassAndIsRoot, enablePassingHacks,
+// encore from different starting stones (tinySpecs), and up to 5 pairs from a pool of 1500 under area scoring that reach
+// the same situation with and without a button rule set (buttonSpecs). Each game's inputs are made with its own options (the draw value, conservativePassAndIsRoot, enablePassingHacks,
 // maxHistory), drawn from a generator of their own so the games don't change with them.
 //
 // The source tree must be KataGo's v1.18.2 tag, the version ported. For example, from a clone of KataGo:
@@ -100,6 +101,8 @@ function specs(count, seed, fromBoards) {
   const pick = (a) => a[Math.floor(rnd() * a.length)];
   const inputRnd = generator(seed + 1000);
   const inputPick = (a) => a[Math.floor(inputRnd() * a.length)];
+  // The button and friendly passes, from a generator of their own, as the input options.
+  const ruleRnd = generator(seed + 2000);
   const out = [];
   for (let i = 0; i < count; i++) {
     let xSize = pick([2, 3, 3, 4, 4, 5, 5, 6, 7]);
@@ -117,6 +120,11 @@ function specs(count, seed, fromBoards) {
       seed: `g${i}-${seed}`, passProb: pick([0.05, 0.15, 0.3, 0.5]), preventEncoreProb: pick([0, 0, 0.2, 0.5]),
       tolerantProb: pick([0, 0.1, 0.3]), numMoves: pick([30, 60, 120]), movesAfterEnd: pick([0, 2, 6]),
       koBias: pick([0, 0.5, 0.8, 0.95]),
+      // Not when starting in the encore: KataGo's constructor would give a button there (BoardHistory::clear reads the
+      // phase before setting it), and its first pass would then fail an assertion. Its analysis engine never starts a
+      // history in the encore; the port gives the button in the main phase only.
+      hasButton: ruleRnd() < 0.25 && encorePhase === 0,
+      friendlyPassOk: ruleRnd() < 0.25,
       inputParams: {
         drawEquivalentWinsForWhite: inputPick([0.5, 0.5, 0.25, 1]), conservativePassAndIsRoot: inputRnd() < 0.2,
         enablePassingHacks: inputRnd() < 0.3, maxHistory: inputPick([1000, 1000, 1000, 3, 1, 0]),
@@ -175,6 +183,7 @@ function tinySpecs(count, seed) {
     const [xSize, ySize] = pick([[2, 2], [2, 3], [3, 3]]);
     return {
       xSize, ySize, koRule: 0, scoringRule: 1, taxRule: 0, multiStoneSuicideLegal: false, whiteHandicapBonusRule: 0, komi: 0,
+      hasButton: false, friendlyPassOk: false,
       initial: '0'.repeat(xSize * ySize), nextPla: 1, encorePhase: pick([0, 1, 2]), alwaysPassAlive: false, excludeAdjAtari: false,
       assumeHandicap: true, seed: `t${i}-${seed}`, passProb: pick([0.3, 0.5]), preventEncoreProb: 0, tolerantProb: 0, numMoves: 40,
       movesAfterEnd: 0, koBias: 0,
@@ -202,17 +211,60 @@ tinyPool.games.forEach((g, gi) => {
 const tinyPicked = pairs.flat();
 console.log(`${pairs.length} pairs of games picked from the tiny-board pool for the second encore's starting stones`);
 
-const games = [...main.games, ...picked.map(([g]) => g), ...tinyPicked.map((i) => tinyPool.games[i])];
+/**
+ * Games on tiny boards under area scoring, a third with a button and komi 7, the others without one and komi 6.5 or
+ * 7.5, from which to pick pairs that KataGo's situation hash holds the same, one under a rule set with a button (taken)
+ * and one without: the hash holds the history's button, not the rule's, so the search's keys must too.
+ */
+function buttonSpecs(count, seed) {
+  const rnd = generator(seed);
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  return Array.from({ length: count }, (_, i) => {
+    const [xSize, ySize] = pick([[2, 2], [2, 3], [3, 3]]);
+    const [hasButton, komi] = [[true, 7], [false, 6.5], [false, 7.5]][i % 3];
+    return {
+      xSize, ySize, koRule: 0, scoringRule: 0, taxRule: 0, multiStoneSuicideLegal: false, whiteHandicapBonusRule: 0, komi,
+      hasButton, friendlyPassOk: false, initial: '0'.repeat(xSize * ySize), nextPla: 1, encorePhase: 0, alwaysPassAlive: false,
+      excludeAdjAtari: false, assumeHandicap: true, seed: `b${i}-${seed}`, passProb: pick([0.2, 0.4]), preventEncoreProb: 0,
+      tolerantProb: 0, numMoves: 30, movesAfterEnd: 0, koBias: 0,
+      inputParams: { drawEquivalentWinsForWhite: 0.5, conservativePassAndIsRoot: false, enablePassingHacks: false, maxHistory: 1000 },
+    };
+  });
+}
+const buttonPool = play(buttonSpecs(1500, 25));
+const firstWithButtonRule = new Map();
+const buttonPairs = [];
+const inButtonPairs = new Set();
+buttonPool.games.forEach((g, gi) => {
+  for (const st of g.states) {
+    if (buttonPairs.length >= 5 || inButtonPairs.has(gi)) break;
+    const key = `${g.xSize}x${g.ySize}|${st.situationHash}`;
+    const seen = firstWithButtonRule.get(key) ?? {};
+    firstWithButtonRule.set(key, seen);
+    const other = seen[!g.hasButton];
+    if (other !== undefined && !inButtonPairs.has(other)) {
+      buttonPairs.push([other, gi]);
+      inButtonPairs.add(other).add(gi);
+    } else if (seen[g.hasButton] === undefined) seen[g.hasButton] = gi;
+  }
+});
+const buttonPicked = buttonPairs.flat();
+console.log(`${buttonPairs.length} pairs of games picked from the button pool for the same situation with and without a button rule`);
+
+const games = [...main.games, ...picked.map(([g]) => g), ...tinyPicked.map((i) => tinyPool.games[i]), ...buttonPicked.map((i) => buttonPool.games[i])];
 if (values.full) {
-  writeFileSync(values.full, [...main.lines, ...picked.map(([, i]) => pool.lines[i]), ...tinyPicked.map((i) => tinyPool.lines[i])].join('\n') + '\n');
+  writeFileSync(values.full, [
+    ...main.lines, ...picked.map(([, i]) => pool.lines[i]), ...tinyPicked.map((i) => tinyPool.lines[i]), ...buttonPicked.map((i) => buttonPool.lines[i]),
+  ].join('\n') + '\n');
 }
 
 const RULE_FIELDS = ['xSize', 'ySize', 'koRule', 'scoringRule', 'taxRule', 'multiStoneSuicideLegal', 'whiteHandicapBonusRule',
-  'komi', 'initial', 'nextPla', 'encorePhase', 'alwaysPassAlive', 'excludeAdjAtari', 'assumeHandicap', 'inputParams'];
+  'hasButton', 'friendlyPassOk', 'komi', 'initial', 'nextPla', 'encorePhase', 'alwaysPassAlive', 'excludeAdjAtari',
+  'assumeHandicap', 'inputParams'];
 const out = {
   source: `KataGo ${version}'s BoardHistory, through scripts/native/history-dump.cpp (scripts/capture-history-goldens.mjs)`,
   format: {
-    rules: 'koRule 0 simple, 1 positional, 2 situational; scoringRule 0 area, 1 territory; taxRule 0 none, 1 seki, 2 all; whiteHandicapBonusRule 0 zero, 1 N, 2 N-1',
+    rules: 'koRule 0 simple, 1 positional, 2 situational; scoringRule 0 area, 1 territory; taxRule 0 none, 1 seki, 2 all; whiteHandicapBonusRule 0 zero, 1 N, 2 N-1; hasButton and friendlyPassOk booleans',
     initial: 'one character per point, row by row from the top: 0 empty, 1 black, 2 white (stones that would have no liberties are left off, as KataGo setStoneFailIfNoLibs)',
     moves: '[x, y, player (1 black, 2 white), flags]: x and y -1 for a pass; flags bit 0 preventEncore, bit 1 played with makeBoardMoveTolerant',
     digests: 'one 16-character digest per state (test/history-state.mjs), the start and after each move, concatenated',
