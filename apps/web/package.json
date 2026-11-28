@@ -12,7 +12,7 @@
     "build": "npm run build -w @stonemind/files && tsc -p tsconfig.build.json && node scripts/assemble.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
-    "e2e": "npm run build && node --test --test-timeout=60000 test/e2e/*.test.mjs",
+    "e2e": "npm run build && node --test --test-timeout=300000 test/e2e/*.test.mjs",
     "check": "npm run typecheck && npm run test",
     "serve": "npm run build && node scripts/serve.mjs",
     "clean": "rm -rf dist"

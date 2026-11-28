@@ -159,8 +159,9 @@ CI runs only the checks a change needs (`scripts/ci-affected.mjs`):
   counts as a change to those workspaces; any other change, such as an outside package's version, runs everything.
 - **CI's own files** (`.github/`, `scripts/ci-affected.mjs`) run everything only when nothing else changed; alongside
   a workspace change they are tested by that change's run.
-- **Time limits:** each browser test has 60 s (`--test-timeout` in the `e2e` scripts), the browser-test step 15
-  minutes, and the job 30, so a hang fails the run.
+- **Time limits:** each browser test file has 5 minutes (`--test-timeout` in the `e2e` scripts: `node --test` applies
+  it to each file, not to each test inside one), the browser-test step 15 minutes, and the job 30, so a hang fails the
+  run. Playwright's own waits fail after 30 s.
 - **Before pushing,** run what CI will run for the change in all three browsers
   (`BROWSERS=chromium,firefox,webkit npm run e2e -w <package>`).
   Playwright's browsers download from `cdn.playwright.dev`.

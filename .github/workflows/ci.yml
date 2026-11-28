@@ -8,8 +8,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # A hung browser test fails the run instead of holding it for GitHub's six hours. Each browser test also has its
-    # own 60 s limit (the e2e scripts' --test-timeout).
+    # A hung browser test fails the run instead of holding it for GitHub's six hours. Each browser test file also has
+    # 5 minutes (the e2e scripts' --test-timeout).
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
