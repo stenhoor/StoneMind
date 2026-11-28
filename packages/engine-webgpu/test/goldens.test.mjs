@@ -2,8 +2,9 @@
 // every position in test/goldens/positions.json, all 8 symmetries.
 //
 // Inputs come from the full V7 encoder (rules engine: captures, ko and superko, ladders, pass-alive area). A network
-// whose model file isn't present locally is skipped by name: b18c384nbt (98 MB) is not downloaded in CI; set
-// STONEMIND_B18_MODEL to its path to run it.
+// whose model file isn't present locally is skipped by name: b18c384nbt (98 MB) and the transformer tf3-b11c768
+// (262 MB) are not downloaded in CI; set STONEMIND_B18_MODEL or STONEMIND_TF3_MODEL to their paths to run them. tf3 takes
+// about 40 s per 19×19 evaluation in the reference forward pass, about an hour for all its goldens.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
@@ -19,12 +20,13 @@ const TOL = { prob: 2e-4, lead: 2e-3, policy: 2e-4, ownership: 2e-4 };
 const NETS = [
   { golden: './goldens/g170-b6c96-s175395328-d26788732.json', model: here('./fixtures/g170-b6c96-s175395328-d26788732.bin.gz') },
   { golden: './goldens/kata1-b18c384nbt-s9996604416-d4316597426.json', model: process.env.STONEMIND_B18_MODEL ?? '' },
+  { golden: './goldens/kata1-tf3-b11c768-s12382M-d6533M.json', model: process.env.STONEMIND_TF3_MODEL ?? '' },
 ];
 
 for (const net of NETS) {
   if (!existsSync(here(net.golden))) continue;
   if (!net.model || !existsSync(net.model)) {
-    test(`${net.golden}`, { skip: 'model file not present (set STONEMIND_B18_MODEL for b18c384nbt)' }, () => {});
+    test(`${net.golden}`, { skip: 'model file not present (set STONEMIND_B18_MODEL for b18c384nbt, STONEMIND_TF3_MODEL for tf3-b11c768)' }, () => {});
     continue;
   }
   const golden = JSON.parse(readFileSync(here(net.golden), 'utf8'));

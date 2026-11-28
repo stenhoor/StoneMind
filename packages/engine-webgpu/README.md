@@ -7,9 +7,14 @@ browser), a game review took about 1.4 to 1.9 times as long as native KataGo, de
 
 The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser-katago-webgpu.md). **Phases 2 to 4** (phase 4 in progress):
 
-- **Model loader** (`src/model/`): parses official KataGo `.bin.gz` / `.txt.gz` files (model versions 8–17;
-  convolutional nets), using the platform `DecompressionStream`. It follows the reading order of KataGo's `desc.cpp`.
-  Transformer blocks and RMSNorm trunks are refused clearly; they come in phase 6.
+- **Model loader** (`src/model/`): parses official KataGo `.bin.gz` / `.txt.gz` files (model versions 8–17), using
+  the platform `DecompressionStream`. It follows the reading order of KataGo's `desc.cpp`, transformer attention and
+  feed-forward blocks included (phase 6). RMSNorm trunks are refused clearly.
+- **Transformer networks** (phase 6, parity plan step 15a): the reference forward pass runs the tf3-b11c768 network,
+  whose nested bottleneck blocks hold attention and SwiGLU feed-forward layers, ported from KataGo's CPU backend.
+  Attention variants no network here has (fixed RoPE, attention without RoPE, grouped key/value heads) and
+  feed-forward without SwiGLU are refused by name, as nothing has checked them. The WebGPU network refuses transformer
+  networks until step 15b.
 - **Reference network** (`src/reference/`): a plain fp32 TypeScript forward pass, post-processing and the 8 symmetries,
   following KataGo's CPU (Eigen) backend and `nneval.cpp`. It is slow on purpose: it is the correctness reference for
   the WGSL kernels in phase 4.
@@ -198,7 +203,9 @@ symmetries exactly against mirrored boards.
 build, fp32) on the positions in `test/goldens/positions.json`, under all 8 symmetries: win/loss, lead, score, every
 policy and ownership value. Inputs come from `encodePositionV7`. All 10 positions match for g170-b6c96 and for
 b18c384nbt (all 8 symmetries; the b18c384nbt run was checked on 2026-11-25). The b18c384nbt test runs only when `STONEMIND_B18_MODEL` points at that model file, because the 98 MB model
-is not downloaded in CI; otherwise it is skipped by name.
+is not downloaded in CI; otherwise it is skipped by name. The transformer tf3-b11c768 matches on all 14 positions under
+all 8 symmetries (checked 2026-11-28); its test runs when `STONEMIND_TF3_MODEL` points at the 262 MB model, and takes
+about 45 minutes.
 
 Goldens must come from KataGo's CPU (Eigen) build, which the reference follows. KataGo's CUDA and Eigen backends differ
 on b18c384nbt by more than the test's tolerances (up to about 2e-3 in ownership; see

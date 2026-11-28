@@ -5,7 +5,9 @@
  * - every batch norm is followed by its activation and then multiplied by the board mask (off-board points become 0),
  * - global pooling gives [mean, mean · (√area − 14) / 10, max over on-board points],
  * - the value head pools [mean, mean · (√area − 14) / 10, mean · ((√area − 14)² / 100 − 0.1)],
- * - convolutions pad with zeros.
+ * - convolutions pad with zeros,
+ * - transformer blocks (`TransformerAttentionBlock`, `TransformerFFNBlock`): pre-norm RMSNorm (off-board points 0),
+ *   then attention over the on-board points or a SwiGLU feed-forward, added to the trunk on the board.
  * Tensors are channel-major: [channel][y][x], one position at a time.
  */
 import type {
@@ -16,6 +18,9 @@ import type {
   MatBiasLayer,
   MatMulLayer,
   ModelDesc,
+  TransformerAttentionBlock,
+  TransformerFFNBlock,
+  TransformerRMSNorm,
 } from '../model/types.js';
 
 /** The network's raw outputs for one position, before post-processing. */
@@ -201,8 +206,181 @@ class Context {
         this.addInPlace(trunk, this.conv(block.postConv, b));
         return;
       }
+      case 'transformer_attention':
+        this.addMasked(trunk, this.attention(block, this.rmsNorm(block.preLN, trunk)));
+        return;
+      case 'transformer_ffn':
+        this.addMasked(trunk, this.ffn(block, this.rmsNorm(block.preLN, trunk)));
+        return;
     }
   }
+
+  /** KataGo `TransformerRMSNormLayer::apply`: x · weight / √(mean(x²) + ε) over the channels at each point; 0 off the board. */
+  rmsNorm(layer: TransformerRMSNorm, input: Float32Array): Float32Array {
+    const { area, mask } = this;
+    const C = layer.numChannels;
+    const out = new Float32Array(C * area);
+    for (let i = 0; i < area; i++) {
+      if (mask[i] === 0) continue;
+      let sumSq = 0;
+      for (let c = 0; c < C; c++) {
+        const v = input[c * area + i]!;
+        sumSq += v * v;
+      }
+      const rms = f(1 / Math.sqrt(f(f(sumSq) / C + layer.epsilon)));
+      for (let c = 0; c < C; c++) out[c * area + i] = f(input[c * area + i]! * rms) * layer.weight[c]!;
+    }
+    return out;
+  }
+
+  /** A matmul at every point (KataGo's matmuls over the flattened board): [ic][area] → [oc][area]. */
+  pointMatMul(layer: MatMulLayer, input: Float32Array): Float32Array {
+    const { area } = this;
+    const { inChannels: IC, outChannels: OC, weights } = layer;
+    const acc = new Float64Array(OC * area);
+    for (let ic = 0; ic < IC; ic++) {
+      const src = ic * area;
+      for (let oc = 0; oc < OC; oc++) {
+        const w = weights[ic * OC + oc]!;
+        if (w === 0) continue;
+        const dst = oc * area;
+        for (let i = 0; i < area; i++) acc[dst + i]! += w * input[src + i]!;
+      }
+    }
+    return Float32Array.from(acc);
+  }
+
+  /** The residual add of a transformer block, on the board only. */
+  addMasked(trunk: Float32Array, add: Float32Array): void {
+    const { area, mask } = this;
+    for (let i = 0; i < trunk.length; i++) trunk[i]! += add[i]! * mask[i % area]!;
+  }
+
+  /**
+   * KataGo `TransformerAttentionDesc::computeRopeCosSin` for learnable RoPE: the rotation angle x · freqX + y · freqY of
+   * each pair of each key/value head at each point, as [kvHead · pairs + pair][point].
+   */
+  ropeTables(block: TransformerAttentionBlock): { cos: Float32Array; sin: Float32Array } {
+    const { xSize, ySize, area } = this;
+    const tables = block.numKVHeads * (block.qHeadDim / 2);
+    const cos = new Float32Array(tables * area);
+    const sin = new Float32Array(tables * area);
+    for (let t = 0; t < tables; t++) {
+      const freqX = block.ropeFreqs[t * 2]!;
+      const freqY = block.ropeFreqs[t * 2 + 1]!;
+      for (let y = 0; y < ySize; y++) {
+        for (let x = 0; x < xSize; x++) {
+          const angle = f(f(x * freqX) + f(y * freqY));
+          cos[t * area + y * xSize + x] = Math.cos(angle);
+          sin[t * area + y * xSize + x] = Math.sin(angle);
+        }
+      }
+    }
+    return { cos, sin };
+  }
+
+  /** KataGo's RoPE on Q or K, [numBufHeads · qHeadDim][area], in place: each pair (2p, 2p + 1) of a head rotated. */
+  applyRope(block: TransformerAttentionBlock, data: Float32Array, numBufHeads: number, tables: { cos: Float32Array; sin: Float32Array }): void {
+    const { area } = this;
+    const numPairs = block.qHeadDim / 2;
+    for (let h = 0; h < numBufHeads; h++) {
+      // A query head uses its key/value head's table.
+      const table = Math.trunc((h * block.numKVHeads) / numBufHeads) * numPairs;
+      for (let p = 0; p < numPairs; p++) {
+        const c0 = (h * block.qHeadDim + 2 * p) * area;
+        const c1 = c0 + area;
+        const t = (table + p) * area;
+        for (let i = 0; i < area; i++) {
+          const cosV = tables.cos[t + i]!;
+          const sinV = tables.sin[t + i]!;
+          const x0 = data[c0 + i]!;
+          const x1 = data[c1 + i]!;
+          data[c0 + i] = f(x0 * cosV) - f(x1 * sinV);
+          data[c1 + i] = f(x0 * sinV) + f(x1 * cosV);
+        }
+      }
+    }
+  }
+
+  /**
+   * KataGo `TransformerAttentionBlock::apply` from its normed input: Q, K and V projections, RoPE, then for each head
+   * a softmax over the on-board keys of Q·K / √qHeadDim (a query off the board gets 0), weighting V, and the output
+   * projection.
+   */
+  attention(block: TransformerAttentionBlock, normed: Float32Array): Float32Array {
+    const unsupported = unsupportedAttention(block);
+    if (unsupported) throw new Error(`${block.name}: ${unsupported}`);
+    const { area, mask } = this;
+    const { numHeads, numKVHeads, qHeadDim, vHeadDim } = block;
+    const q = this.pointMatMul(block.qProj, normed);
+    const k = this.pointMatMul(block.kProj, normed);
+    const v = this.pointMatMul(block.vProj, normed);
+    if (block.useRope) {
+      const tables = this.ropeTables(block);
+      this.applyRope(block, q, numHeads, tables);
+      this.applyRope(block, k, numKVHeads, tables);
+    }
+    const scale = f(1 / Math.sqrt(qHeadDim));
+    const kvGroupSize = numHeads / numKVHeads;
+    const out = new Float32Array(numHeads * vHeadDim * area);
+    const weights = new Float64Array(area);
+    for (let h = 0; h < numHeads; h++) {
+      const kvh = Math.trunc(h / kvGroupSize);
+      for (let qi = 0; qi < area; qi++) {
+        if (mask[qi] === 0) continue;
+        let max = -Infinity;
+        for (let ki = 0; ki < area; ki++) {
+          if (mask[ki] === 0) continue;
+          let s = 0;
+          for (let d = 0; d < qHeadDim; d++) s += q[(h * qHeadDim + d) * area + qi]! * k[(kvh * qHeadDim + d) * area + ki]!;
+          const score = f(f(s) * scale);
+          weights[ki] = score;
+          if (score > max) max = score;
+        }
+        let sumExp = 0;
+        for (let ki = 0; ki < area; ki++) {
+          if (mask[ki] === 0) {
+            weights[ki] = 0;
+            continue;
+          }
+          const e = f(Math.exp(weights[ki]! - max));
+          weights[ki] = e;
+          sumExp += e;
+        }
+        const invSum = f(1 / f(sumExp));
+        for (let d = 0; d < vHeadDim; d++) {
+          let s = 0;
+          for (let ki = 0; ki < area; ki++) s += f(weights[ki]! * invSum) * v[(kvh * vHeadDim + d) * area + ki]!;
+          out[(h * vHeadDim + d) * area + qi] = s;
+        }
+      }
+    }
+    return this.pointMatMul(block.outProj, out);
+  }
+
+  /** KataGo `TransformerFFNBlock::apply` from its normed input: linear2(silu(linear1(x)) × linearGate(x)). */
+  ffn(block: TransformerFFNBlock, normed: Float32Array): Float32Array {
+    if (!block.linearGate) throw new Error(`${block.name}: transformer feed-forward blocks without SwiGLU are not supported (as in KataGo's CPU backend)`);
+    const a = this.pointMatMul(block.linear1, normed);
+    const gate = this.pointMatMul(block.linearGate, normed);
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i]!;
+      a[i] = f(f(x / f(1 + f(Math.exp(-x)))) * gate[i]!);
+    }
+    return this.pointMatMul(block.linear2, a);
+  }
+}
+
+/**
+ * Why this reference can't run an attention block, or null: the variants KataGo's model format allows but no network
+ * here has, so nothing has checked them against native (the tf3-b11c768 network has learnable RoPE and as many
+ * key/value heads as query heads).
+ */
+export function unsupportedAttention(block: TransformerAttentionBlock): string | null {
+  if (!block.useRope) return 'attention without RoPE is not supported yet';
+  if (!block.learnableRope) return 'fixed RoPE (from a theta) is not supported yet, only learnable RoPE';
+  if (block.numKVHeads !== block.numHeads) return 'grouped key/value heads (fewer than the query heads) are not supported yet';
+  return null;
 }
 
 function matMul(layer: MatMulLayer, input: Float32Array): Float32Array {

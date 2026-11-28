@@ -232,3 +232,13 @@ says storage goes through `@stonemind/storage` ports, so a fourth port, `FileSto
 if its OPFS layer covers them.
 
 Interim: `packages/storage/src/ports.ts` (`FileStore`), `packages/files/src/opfs.ts` (`OpfsFileStore`).
+
+## 19. Browser engine: transformer variants no network here has (spike 0001)
+
+KataGo's model format allows transformer attention with fixed RoPE (from a theta), with learnable RoPE or without
+RoPE, with as many key/value heads as query heads or fewer, and feed-forward blocks with or without SwiGLU; trunks may
+end in RMSNorm instead of batch norm. KataGo's CPU backend runs all of these except feed-forward without SwiGLU. The
+only transformer network on hand, kata1-tf3-b11c768, has learnable RoPE, equal head counts, SwiGLU and a batch-norm
+trunk tip, so only those are checked against native. The rest are refused by name (`unsupportedAttention` in
+`src/reference/forward.ts`, and the loader for RMSNorm trunks) rather than ported unchecked (parity plan, step 15a,
+2026-11-28). A network that has them would be the check that lets them in.

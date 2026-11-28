@@ -17,6 +17,9 @@ import type {
   PolicyHead,
   PostProcessParams,
   SGFMetadataEncoder,
+  TransformerAttentionBlock,
+  TransformerFFNBlock,
+  TransformerRMSNorm,
   Trunk,
   ValueHead,
 } from './types.js';
@@ -185,6 +188,79 @@ function expect(cond: boolean, message: string): void {
   if (!cond) throw new ModelFormatError(message);
 }
 
+/** KataGo `TransformerRMSNormDesc`. */
+function readTransformerRMSNorm(r: Reader): TransformerRMSNorm {
+  const name = r.token('transformer rmsnorm name');
+  const numChannels = r.int(`${name}: numChannels`);
+  const epsilon = r.float(`${name}: epsilon`);
+  expect(numChannels >= 1, `${name}: transformer rmsnorm numChannels (${numChannels}) < 1`);
+  expect(epsilon > 0 && epsilon <= 1, `${name}: transformer rmsnorm epsilon (${epsilon}) is not positive or is too large`);
+  return { name, numChannels, epsilon, weight: r.floats(numChannels, name) };
+}
+
+/** KataGo `TransformerAttentionDesc`. */
+function readTransformerAttention(r: Reader): TransformerAttentionBlock {
+  const name = r.token('transformer attention block name');
+  const numHeads = r.int(`${name}: numHeads`);
+  const numKVHeads = r.int(`${name}: numKVHeads`);
+  const qHeadDim = r.int(`${name}: qHeadDim`);
+  const vHeadDim = r.int(`${name}: vHeadDim`);
+  const useRope = r.int(`${name}: useRope`) !== 0;
+  const learnableRope = r.int(`${name}: learnableRope`) !== 0;
+  expect(numHeads >= 1 && numKVHeads >= 1, `${name}: transformer attention numHeads and numKVHeads must be positive`);
+  expect(numHeads % numKVHeads === 0, `${name}: numHeads must be divisible by numKVHeads`);
+  expect(qHeadDim >= 1 && vHeadDim >= 1, `${name}: head dims must be positive`);
+  expect(!useRope || qHeadDim % 2 === 0, `${name}: qHeadDim (${qHeadDim}) must be even when RoPE is used`);
+  const preLN = readTransformerRMSNorm(r);
+  const qProj = readMatMul(r);
+  const kProj = readMatMul(r);
+  const vProj = readMatMul(r);
+  const outProj = readMatMul(r);
+  expect(qProj.outChannels === numHeads * qHeadDim, `${name}: qProj.outChannels (${qProj.outChannels}) != numHeads*qHeadDim (${numHeads * qHeadDim})`);
+  expect(kProj.outChannels === numKVHeads * qHeadDim, `${name}: kProj.outChannels (${kProj.outChannels}) != numKVHeads*qHeadDim (${numKVHeads * qHeadDim})`);
+  expect(vProj.outChannels === numKVHeads * vHeadDim, `${name}: vProj.outChannels (${vProj.outChannels}) != numKVHeads*vHeadDim (${numKVHeads * vHeadDim})`);
+  expect(outProj.inChannels === numHeads * vHeadDim, `${name}: outProj.inChannels (${outProj.inChannels}) != numHeads*vHeadDim (${numHeads * vHeadDim})`);
+  let ropeFreqs: Float32Array = new Float32Array(0);
+  let ropeTheta = 0;
+  if (useRope) {
+    if (learnableRope) {
+      r.token(`${name}: rope freqs name`);
+      const ropeNumKVHeads = r.int(`${name}: ropeNumKVHeads`);
+      const ropeNumPairs = r.int(`${name}: ropeNumPairs`);
+      const ropeDim2 = r.int(`${name}: rope freq dim2`);
+      expect(ropeNumKVHeads === numKVHeads, `${name}: ropeNumKVHeads (${ropeNumKVHeads}) != numKVHeads (${numKVHeads})`);
+      expect(ropeNumPairs === qHeadDim / 2, `${name}: ropeNumPairs (${ropeNumPairs}) != qHeadDim/2 (${qHeadDim / 2})`);
+      expect(ropeDim2 === 2, `${name}: rope freq dim2 must be 2`);
+      ropeFreqs = r.floats(ropeNumKVHeads * ropeNumPairs * 2, name);
+    } else {
+      r.token(`${name}: rope theta name`);
+      ropeTheta = r.float(`${name}: rope theta`);
+      expect(ropeTheta > 0 && Number.isFinite(ropeTheta), `${name}: rope theta must be positive and finite`);
+    }
+  }
+  return { kind: 'transformer_attention', name, numHeads, numKVHeads, qHeadDim, vHeadDim, useRope, learnableRope, preLN, qProj, kProj, vProj, outProj, ropeFreqs, ropeTheta };
+}
+
+/** KataGo `TransformerFFNDesc`. */
+function readTransformerFFN(r: Reader): TransformerFFNBlock {
+  const name = r.token('transformer ffn block name');
+  const numChannels = r.int(`${name}: numChannels`);
+  const ffnChannels = r.int(`${name}: ffnChannels`);
+  const useSwiGLU = r.int(`${name}: useSwiGLU`) !== 0;
+  expect(numChannels >= 1 && ffnChannels >= 1, `${name}: transformer ffn channels must be positive`);
+  const preLN = readTransformerRMSNorm(r);
+  const linear1 = readMatMul(r);
+  const linearGate = useSwiGLU ? readMatMul(r) : null;
+  const linear2 = readMatMul(r);
+  expect(linear1.inChannels === numChannels, `${name}: linear1.inChannels (${linear1.inChannels}) != numChannels (${numChannels})`);
+  expect(linear1.outChannels === ffnChannels, `${name}: linear1.outChannels (${linear1.outChannels}) != ffnChannels (${ffnChannels})`);
+  expect(!linearGate || linearGate.inChannels === numChannels, `${name}: linearGate.inChannels (${linearGate?.inChannels}) != numChannels (${numChannels})`);
+  expect(!linearGate || linearGate.outChannels === ffnChannels, `${name}: linearGate.outChannels (${linearGate?.outChannels}) != ffnChannels (${ffnChannels})`);
+  expect(linear2.inChannels === ffnChannels, `${name}: linear2.inChannels (${linear2.inChannels}) != ffnChannels (${ffnChannels})`);
+  expect(linear2.outChannels === numChannels, `${name}: linear2.outChannels (${linear2.outChannels}) != numChannels (${numChannels})`);
+  return { kind: 'transformer_ffn', name, numChannels, ffnChannels, useSwiGLU, preLN, linear1, linearGate, linear2 };
+}
+
 function readBlockStack(r: Reader, modelVersion: number, parent: string, numBlocks: number, channels: number): Block[] {
   const blocks: Block[] = [];
   for (let i = 0; i < numBlocks; i++) {
@@ -246,8 +322,13 @@ function readBlockStack(r: Reader, modelVersion: number, parent: string, numBloc
         postConv: readConv(r),
       };
       expect(block.preBN.numChannels === channels && block.postConv.outChannels === channels, `${name}: trunk channel mismatch`);
-    } else if (kind === 'transformer_attention_block' || kind === 'transformer_ffn_block') {
-      throw new ModelFormatError(`${parent}: transformer blocks are not supported yet (spike 0001, phase 6)`);
+    } else if (kind === 'transformer_attention_block') {
+      block = readTransformerAttention(r);
+      expect(block.qProj.inChannels === channels, `${parent}: ${block.name} qProj.inChannels (${block.qProj.inChannels}) != trunkNumChannels (${channels})`);
+      expect(block.outProj.outChannels === channels, `${parent}: ${block.name} outProj.outChannels (${block.outProj.outChannels}) != trunkNumChannels (${channels})`);
+    } else if (kind === 'transformer_ffn_block') {
+      block = readTransformerFFN(r);
+      expect(block.numChannels === channels, `${parent}: ${block.name} numChannels (${block.numChannels}) != trunkNumChannels (${channels})`);
     } else {
       throw new ModelFormatError(`${parent}: unknown block kind "${kind}"`);
     }
@@ -491,6 +572,13 @@ export function countParameters(model: ModelDesc): number {
         bn(b.preBN), conv(b.regularConv), bn(b.midBN), conv(b.finalConv);
       } else if (b.kind === 'gpool') {
         bn(b.preBN), conv(b.regularConv), conv(b.gpoolConv), bn(b.gpoolBN), mm(b.gpoolToBiasMul), bn(b.midBN), conv(b.finalConv);
+      } else if (b.kind === 'transformer_attention') {
+        n += b.preLN.weight.length + b.ropeFreqs.length;
+        mm(b.qProj), mm(b.kProj), mm(b.vProj), mm(b.outProj);
+      } else if (b.kind === 'transformer_ffn') {
+        n += b.preLN.weight.length;
+        mm(b.linear1), mm(b.linear2);
+        if (b.linearGate) mm(b.linearGate);
       } else {
         bn(b.preBN), conv(b.preConv), blocks(b.blocks), bn(b.postBN), conv(b.postConv);
       }

@@ -183,12 +183,17 @@ function mergedScaleBias(bn: BatchNormLayer): Float32Array {
   return sb;
 }
 
+function hasTransformerBlocks(blocks: readonly Block[]): boolean {
+  return blocks.some((b) => b.kind === 'transformer_attention' || b.kind === 'transformer_ffn' || (b.kind === 'nested_bottleneck' && hasTransformerBlocks(b.blocks)));
+}
+
 function maxChannels(model: ModelDesc): number {
   let m = 0;
   const conv = (c: ConvLayer) => (m = Math.max(m, c.inChannels, c.outChannels));
   const block = (b: Block): void => {
     if (b.kind === 'ordinary') [b.regularConv, b.finalConv].forEach(conv);
     else if (b.kind === 'gpool') [b.regularConv, b.gpoolConv, b.finalConv].forEach(conv);
+    else if (b.kind === 'transformer_attention' || b.kind === 'transformer_ffn') throw new Error(`${b.name}: transformer blocks are not supported on the GPU yet`);
     else {
       [b.preConv, b.postConv].forEach(conv);
       b.blocks.forEach(block);
@@ -352,6 +357,7 @@ export class GpuNetwork {
    * @throws Error for models the GPU path doesn't support yet (SGF metadata input), or if WebGPU reports an error.
    */
   static async create(engine: EngineDevice, model: ModelDesc, options: GpuNetworkOptions = {}): Promise<GpuNetwork> {
+    if (hasTransformerBlocks(model.trunk.blocks)) throw new Error(`${model.name}: transformer networks are not supported on the GPU yet (spike 0001, phase 6)`);
     if (model.trunk.sgfMetadataEncoder) throw new Error('models with an SGF metadata encoder are not supported yet');
     const maxInFlight = options.maxInFlight ?? 2;
     if (!Number.isInteger(maxInFlight) || maxInFlight < 1) throw new Error(`maxInFlight must be a whole number ≥ 1, not ${maxInFlight}`);
@@ -561,6 +567,9 @@ export class GpuNetwork {
           this.#matvec(blk.gpoolToBiasMul, s.pooled, 3 * blk.gpoolConv.outChannels, s.vec, blk.regularConv.outChannels, 0);
           this.#bnActConv(blk.midBN, blk.midActivation.activation, s.m, blk.finalConv, target, s.b, { accumulate: true, pre: s.vec });
           return;
+        case 'transformer_attention':
+        case 'transformer_ffn':
+          throw new Error(`${blk.name}: transformer blocks are not supported on the GPU yet`);
         case 'nested_bottleneck': {
           const mid = inner[depth]!;
           this.#bnAct(blk.preBN, blk.preActivation.activation, target, s.a);
