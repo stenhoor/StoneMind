@@ -60,13 +60,13 @@ from the root builds dependencies before dependents.
 | `@stonemind/brand` | Brand (CSS, JSON, SVG) | npm package; files copied unchanged by apps | none | engine-bench, web; planned: site |
 | `@stonemind/domain` | Library (types) | npm package | none | ontology, provider-sdk |
 | `@stonemind/storage` | Library (ports) | npm package | none | files; planned: Smaltworks adapter, engines |
-| `@stonemind/files` | Library (the file kit) | npm package; loaded in pages without a bundler | storage (types only); dev only: playwright 1.65.0 | none yet (planned: web) |
+| `@stonemind/files` | Library (the file kit) | npm package; loaded in pages without a bundler | storage (types only); dev only: playwright 1.65.0 | web |
 | `@stonemind/ontology` | Library (data + logic) | npm package; `seed.json` is also a standalone data artifact | domain | none yet (future ontology engine, web app) |
 | `@stonemind/provider-sdk` | Library (contracts + registry) | npm package for third-party plugin authors | domain | none yet (future providers, engines, web app) |
 | `@stonemind/engine` | Library (contract + bridge client) | npm package; loaded in pages through an import map | none | katago-bridge, engine-webgpu, engine-bench |
 | `@stonemind/engine-webgpu` | Library (experimental engine) | npm package; loaded in pages without a bundler | engine (the `AnalysisEngine` contract; only the `./session` entry point loads it when run) | engine-bench (its site build publishes the GPU check page) |
 | `@stonemind/katago-bridge` | Local tool (Node CLI) | Run from a checkout on the player's computer | engine | players running native KataGo |
-| `@stonemind/web` | App (static pages) | Not deployed yet: runs locally (`npm run serve -w @stonemind/web`); planned at **stonemind.app** | brand; dev only: playwright 1.65.0 (Apache-2.0, approved 2026-11-27, browser tests) | none |
+| `@stonemind/web` | App (static pages) | Not deployed yet: runs locally (`npm run serve -w @stonemind/web`); planned at **stonemind.app** | brand, files; dev only: playwright 1.65.0 (Apache-2.0, approved 2026-11-27, browser tests) | none |
 | `@stonemind/engine-bench` | App (static page) | GitHub Pages at https://stonemind.org/ (a placeholder home page), /engine-bench/, /gpu-check/ and /ort-bench/ | engine, brand, engine-webgpu; outside: onnxruntime-web 1.31.1 (MIT, benchmark-only, approved 2026-11-25), copied into /ort-bench/ only | none |
 
 ```text
@@ -84,6 +84,7 @@ from the root builds dependencies before dependents.
 | apps → brand (planned) | `tokens.css` custom properties, `components.css` classes (`sm-*`), logo file names | Renaming a token or class breaks every app; change brand first, then each app, in the same release |
 | katago-bridge → engine | `BRIDGE_PROTOCOL` (the WebSocket subprotocol) and the pairing link format read by `parsePairingFragment` | Changing either breaks pairing between a bridge and a page of a different version |
 | files → storage | The `FileStore` port and its types (`FileEntry`, `FileData`, `FileWriteOptions`) | Typecheck catches breaks; the file kit's browser tests exercise the port |
+| web → files | `OpfsFileStore`, `importFiles`, `pickFiles`, `filesFromDrop`, `downloadBlob`, `storageInfo`, `requestPersistence` and the path helpers; the layout of the package's `dist/` (all its `.js` files, the sync writer among them), copied to `vendor/files/` and named in the page's import map | Typecheck catches API breaks; the Files app's browser tests run on the copied modules |
 | web → brand | `tokens/tokens.css`, `styles/components.css` and `logos/`, copied unchanged by the app's build; the theme key `stonemind.theme` | Moving those files breaks the build; the browser tests load the page |
 | engine-bench → engine | `connectBridge`, `parsePairingFragment`, the `AnalysisEngine` API and protocol types | Typecheck catches breaks; the site test checks the import map |
 | engine-webgpu → engine | `LineTransport`, `EngineDescriptor` and `JsonLineSession`, which `createAnalysisEngine` (`@stonemind/engine-webgpu/session`) puts the browser engine behind | Typecheck catches breaks; `test/engine.test.mjs` runs the engine through `JsonLineSession`. The main entry point imports engine for types only, so pages loading it need no import map |
@@ -153,7 +154,16 @@ CI runs only the checks a change needs (`scripts/ci-affected.mjs`):
   Markdown.
 - **Browser tests** (an `e2e` script) run in Chromium, Firefox and WebKit for each affected sub-project that has one,
   when it, or something it depends on, changed in a file other than Markdown.
-- **Shared files** (the root package files, `tsconfig.base.json`, `.nvmrc`, `.github/`) run everything.
+- **Shared files** (the root `package.json`, `tsconfig.base.json`, `.nvmrc`) run everything.
+- **`package-lock.json`:** a change only to our own workspaces' entries (one workspace adding another as a dependency)
+  counts as a change to those workspaces; any other change, such as an outside package's version, runs everything.
+- **CI's own files** (`.github/`, `scripts/ci-affected.mjs`) run everything only when nothing else changed; alongside
+  a workspace change they are tested by that change's run.
+- **Time limits:** each browser test has 60 s (`--test-timeout` in the `e2e` scripts), the browser-test step 15
+  minutes, and the job 30, so a hang fails the run.
+- **Before pushing,** run what CI will run for the change in all three browsers
+  (`BROWSERS=chromium,firefox,webkit npm run e2e -w <package>`).
+  Playwright's browsers download from `cdn.playwright.dev`.
 - **Files only under `docs/`, or Markdown at the root,** run nothing.
 
 ## Versioning

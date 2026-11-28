@@ -209,7 +209,11 @@ export class OpfsFileStore extends EventTarget implements FileStore {
     let written = 0;
     try {
       for await (const chunk of chunks(stream, options.signal)) {
-        await w.write(chunk as Uint8Array<ArrayBuffer>);
+        // A chunk that is a view into a larger buffer is copied first: WebKit's writable writes the view's whole
+        // buffer, ignoring its offset and length (seen in Playwright's WebKit in CI: a 48 MB stream became exactly
+        // the sum of its 3 MB pieces once per 1 MB view, 198,180,969 bytes).
+        const whole = chunk.byteOffset === 0 && chunk.byteLength === chunk.buffer.byteLength;
+        await w.write((whole ? chunk : chunk.slice()) as Uint8Array<ArrayBuffer>);
         written += chunk.byteLength;
         options.onProgress?.(written);
       }

@@ -2,7 +2,7 @@
   "name": "@stonemind/web",
   "version": "0.0.1",
   "private": true,
-  "description": "The StoneMind app (stonemind.app): the frame, and later the Files and Engines apps, the gobans and their panels. Runs locally for now.",
+  "description": "The StoneMind app (stonemind.app): the frame, the Files app, and later the Engines app, the gobans and their panels. Runs locally for now.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -12,13 +12,14 @@
     "build": "tsc -p tsconfig.build.json && node scripts/assemble.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
-    "e2e": "npm run build && node --test test/e2e/*.test.mjs",
+    "e2e": "npm run build && node --test --test-timeout=60000 test/e2e/*.test.mjs",
     "check": "npm run typecheck && npm run test",
     "serve": "npm run build && node scripts/serve.mjs",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@stonemind/brand": "0.0.1"
+    "@stonemind/brand": "0.0.1",
+    "@stonemind/files": "0.0.1"
   },
   "devDependencies": {
     "playwright": "1.65.0",

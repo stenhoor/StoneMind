@@ -9,6 +9,7 @@ Reports from the app's capability page (`apps/web`, `/capabilities/`), one JSON 
 | `2026-11-27-nvidia-laptop-firefox.json` | Firefox 161 | Same laptop | Firefox does not name the adapter (vendor and architecture are empty) |
 | `2026-11-27-nvidia-laptop-edge-high-performance-flag-not-applied.json` | Edge 158 | Same laptop | Meant to be Edge in high-performance mode, but the launch flag did not take effect (an Edge was most likely already running, so the new launch only opened a window in it). Both the default and the `high-performance` request gave the Intel iGPU |
 | `2026-11-27-nvidia-laptop-edge-nvidia.json` | Edge 158 | Same laptop | Edge started so that WebGPU uses the NVIDIA GPU: the default and `high-performance` requests, the dedicated worker and the shared worker all got `nvidia` / `ampere` |
+| `2026-11-27-nvidia-laptop-firefox-2.json` | Firefox 161 | Same laptop | With the high-performance row: Firefox gives an adapter for both requests and names neither, so the page cannot say which GPU it is. In spike 0001, `nvidia-smi` showed Firefox using the NVIDIA GPU with no flags |
 
 What they show (2026-11-27):
 
