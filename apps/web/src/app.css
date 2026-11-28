@@ -220,7 +220,8 @@ sm-menu-bar { display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 0;
+  /* Never shorter than what it holds: in a short window the empty-desk note would otherwise spill up under the bars. */
+  min-height: max-content;
 }
 
 .desk-empty {
