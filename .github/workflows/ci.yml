@@ -22,9 +22,11 @@ jobs:
       # Which sub-projects this change affects (scripts/ci-affected.mjs): only their checks run. A change to shared
       # files (root package files, the TypeScript base config, .nvmrc, CI) runs everything; one only under docs/ or to
       # root Markdown runs nothing.
+      # A pull request is checked out as its merge into the base branch, so the merge's first parent is the base it was
+      # merged with. (The event's base.sha can be older: then changes merged since look like the PR's own.)
       - id: affected
         env:
-          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before }}
         run: node scripts/ci-affected.mjs "$BASE" HEAD
       - if: steps.affected.outputs.any == 'true'
         run: npm ci
