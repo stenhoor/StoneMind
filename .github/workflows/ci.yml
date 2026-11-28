@@ -38,7 +38,7 @@ jobs:
           PACKAGES: ${{ steps.affected.outputs.packages }}
         run: for p in $PACKAGES; do npm run check --if-present -w "$p" || exit 1; done
       # The WebGPU network on the golden positions, in headless Chromium (software adapter: correctness only). Only when
-      # the engine's code, or something it depends on, changed.
+      # a file changed that only this check tests (GPU_ONLY in scripts/ci-affected.mjs).
       - if: steps.affected.outputs.gpu == 'true'
         run: npx -w @stonemind/engine-webgpu playwright install --with-deps chromium
       - if: steps.affected.outputs.gpu == 'true'

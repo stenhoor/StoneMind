@@ -247,7 +247,8 @@ are. Ten more games, picked from a pool of tiny-board games, reach the same posi
 different starting stones, which the keys must tell apart, and ten more, under area scoring, reach the same situation
 with and without a button rule set, the button taken (the keys hold the history's button, not the rule's).
 
-`test/search.test.mjs` checks the search against native KataGo's analysis engine (CPU build, captured with
+`test/search-goldens.mjs` (run in four shares, `test/search-goldens-1.test.mjs` to `-4`, so `node --test` runs them
+in parallel) checks the search against native KataGo's analysis engine (CPU build, captured with
 `scripts/capture-search-goldens.mjs`): both run one search thread, symmetry 0, and the features this search doesn't
 have yet switched off, on 7×7, 9×9 and 19×19 positions under tromp-taylor, Chinese (friendly passes, simple ko) and AGA
 (situational superko) rules, including a root after a pass, a root after the end of the game, and a triple ko that

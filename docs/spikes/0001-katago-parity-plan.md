@@ -50,7 +50,7 @@ Not done:
 
 Every step uses the same checks, so "done" means the same thing every time:
 
-- **Exact search check** (`test/search.test.mjs`, goldens from `scripts/capture-search-goldens.mjs`). Native KataGo
+- **Exact search check** (`test/search-goldens.mjs`, goldens from `scripts/capture-search-goldens.mjs`). Native KataGo
   runs with one search thread and symmetry 0, on the same positions.
   - **When a feature is ported,** it is switched on in both engines. That means removing its override from the goldens
     script, which is a change to the config native runs with in the test. Approving this plan approves those changes,
