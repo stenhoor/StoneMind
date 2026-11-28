@@ -150,8 +150,10 @@ CI runs only the checks a change needs (`scripts/ci-affected.mjs`):
 - **Affected sub-projects:** the ones whose files changed, plus every sub-project that depends on one of them,
   directly or not. Dependencies are read from each package's `package.json`, so declaring them there (step 3 above)
   is what keeps CI correct.
-- **The GPU check** runs only when `@stonemind/engine-webgpu`, or something it depends on, changed in a file other than
-  Markdown.
+- **The GPU check** runs only when a file changed that no other check tests: the WebGPU network and the code it uses
+  (`src/gpu`, `src/model`, `src/reference`), the check's page and script, its test network and goldens, or the
+  package's build settings (the list is `GPU_ONLY` in `scripts/ci-affected.mjs`). The node tests compare the rest of
+  the engine with native KataGo, and a node test checks that every name the page imports is still exported.
 - **Browser tests** (an `e2e` script) run in Chromium, Firefox and WebKit for each affected sub-project that has one,
   when it, or something it depends on, changed in a file other than Markdown.
 - **Shared files** (the root `package.json`, `tsconfig.base.json`, `.nvmrc`) run everything.

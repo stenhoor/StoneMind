@@ -8,8 +8,13 @@
 // - all: true when a shared file changed (the root package.json, the TypeScript base config, .nvmrc), when CI's own files
 //   changed and no workspace did, or when the base is unknown. Every workspace is then affected.
 // - packages: the affected workspaces' names, in the root `workspaces` order (dependency order).
-// - gpu: whether @stonemind/engine-webgpu's GPU check is needed, i.e. it, or a workspace it depends on, changed in a
-//   file other than Markdown.
+// - gpu: whether @stonemind/engine-webgpu's GPU check is needed: everything is affected, or a file changed that only the
+//   GPU check tests (GPU_ONLY). The check (npm run gpu-check, as CI runs it) runs the WebGPU network on the goldens
+//   positions and compares it with the reference forward pass and native's outputs. The node tests already compare the
+//   loader, the reference pass, the input encoder, the rules and the search with native, so the GPU check is needed for
+//   what they don't run: the WebGPU network and the code it uses (src/gpu, src/model, src/reference), the page and its
+//   script, its test network and goldens, and the package's build settings. The names the page imports from the
+//   package's exports are checked by a node test (test/gpu-page-imports.test.mjs), so src/index.ts isn't in the list.
 // - e2e: the affected workspaces that have an `e2e` script (browser tests), where it, or a workspace it depends on,
 //   changed in a file other than Markdown.
 // A change to package-lock.json that touches only our own workspaces' entries (a workspace adding another as a
@@ -25,6 +30,11 @@ import { join } from 'node:path';
 const root = join(import.meta.dirname, '..');
 const [base, head = 'HEAD'] = process.argv.slice(2);
 const GPU_PACKAGE = '@stonemind/engine-webgpu';
+const GPU_DIR = 'packages/engine-webgpu/';
+const GPU_ONLY = [
+  /^src\/(gpu|model|reference)\//, /^test\/gpu\//, /^scripts\/gpu-check\.mjs$/, /^test\/fixtures\//,
+  /^test\/goldens\/(positions|g170-b6c96-s175395328-d26788732)\.json$/, /^package\.json$/, /^tsconfig[^/]*\.json$/,
+];
 const LOCKFILE = 'package-lock.json';
 const SHARED = [/^package\.json$/, /^tsconfig\.base\.json$/, /^\.nvmrc$/];
 // CI's own files. Changed alongside workspaces, they are tested by that change's run; changed alone, everything runs.
@@ -106,7 +116,7 @@ for (let grew = true; grew; ) {
 }
 
 const packages = workspaces.map((w) => w.name).filter((n) => affected.has(n));
-const gpu = affected.get(GPU_PACKAGE) === true;
+const gpu = all || files.some((f) => f.startsWith(GPU_DIR) && GPU_ONLY.some((re) => re.test(f.slice(GPU_DIR.length))));
 const e2e = workspaces.filter((w) => w.e2e && affected.get(w.name) === true).map((w) => w.name);
 console.log(JSON.stringify({ all, packages, gpu, e2e, files }, null, 2));
 if (process.env.GITHUB_OUTPUT) {
