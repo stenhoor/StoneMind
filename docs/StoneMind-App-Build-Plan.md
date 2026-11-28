@@ -129,7 +129,8 @@ WebGPU anywhere.
 
 **Builds:** the Files singleton app in the design doc's Finder style:
 
-- Library folders, sortable lists and the inspector;
+- kinds of file (Games, Problems, Weights, Configs: what a file is, worked out from its name and content) apart from
+  folders (the player's own grouping), sortable lists and the inspector;
 - streamed weights import with progress;
 - weights metadata: network size and type from the file name, the training samples (`s`) and data rows (`d`), and the
   model version read from the file;

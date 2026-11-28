@@ -23,15 +23,26 @@ The frame:
 **The Files app** (Milestone 1, step 4), from the Apps bar, is a file browser in the style of macOS Finder over the
 file kit (`@stonemind/files`), on this browser's origin private file system:
 
-- A sidebar with the library folders (Games, Problems, Weights, Configs, created on first open) and this browser's
-  storage: space used of the quota, whether the browser keeps the files, and a **Keep my files** button that asks it to.
-- A path, and the folder's contents in columns sorted by name, size or date. In Weights a Network column reads each
-  KataGo network's size from its name.
+- **Kinds and folders are different things.** A kind is what a file is: a game, a problem, a KataGo network or a
+  KataGo config. Folders are the player's own grouping, starting at This browser, and a file of any kind can sit in any
+  folder.
+- **The sidebar** has the kinds (Games, Problems, Weights, Configs, each with a count, each listing every file of that
+  kind wherever it is), the folders, and this browser's storage: space used of the quota, whether the browser keeps the
+  files, and a **Keep my files** button that asks it to.
+- **A file's kind is worked out from its name and content** when it is imported, never from what is on screen: an SGF
+  naming players (PB, PW) or a result (RE) is a game, one that only sets up stones (AB, AW) is a problem; a `.bin.gz` or
+  `.txt.gz` that starts like a KataGo model is a network; a `.cfg` of `key = value` lines with KataGo settings is a
+  config. Anything else is refused, with a message saying which kinds Files takes. The player can change a game to a
+  problem and back in the inspector. Kinds are kept in `/.stonemind/catalog.json` (docs/OPEN-QUESTIONS.md, 20).
+- A path for folders, and columns sorted by name, size or date: a kind lists each file's folder (and, for Weights,
+  the network's size from its name); a folder lists each file's kind.
 - An inspector for the selected file. For KataGo weights: the training run, the network (blocks, channels, kind), the
   training samples (`s`) and rows of training data (`d`) from the name, the format, and the model version read from
   the start of the file; a SHA-256 on request.
-- Import from the file picker or by dropping files on the folder, streamed (a large network never sits whole in
-  memory) with progress and Cancel; new folder, rename, download, and delete after a confirmation.
+- Import from the file picker or by dropping files, streamed (a large network never sits whole in memory) with progress
+  and Cancel, into the open folder (or This browser while a kind is shown); new folder, move to a folder, rename,
+  download, and delete after a confirmation.
+- Files fills the whole desk under the bars.
 - When Files is focused, the menu bar shows its File, View and Go menus. A change in another tab shows at once.
 
 **The capability page** (Milestone 1, step 2), at `/capabilities/`, opened from the StoneMind menu (Browser Info), checks what this
@@ -63,7 +74,8 @@ The browser tests need Playwright's browsers (`npx -w @stonemind/web playwright 
 - `src/frame/settings.ts`: theme and backdrop, in `localStorage` until the materials kit exists
   (docs/OPEN-QUESTIONS.md, 17).
 - `src/main.ts`: the page: bars, the Apps bar, singleton apps, menus.
-- `src/files/view.ts`: the Files app. `src/files/weights.ts`: what a KataGo weights file's name and first bytes say,
+- `src/files/view.ts`: the Files app. `src/files/kinds.ts`: the kinds, and how a file's kind is worked out.
+  `src/files/catalog.ts`: where each file's kind is kept. `src/files/weights.ts`: what a KataGo weights file's name and first bytes say,
   free of the DOM.
 - `src/capabilities/`: the capability page: `index.html`, `main.ts` (the probes), `report.ts` (the report and its
   summary, free of the DOM) and `worker-probe.js` (a classic script, run as a dedicated and as a shared worker).

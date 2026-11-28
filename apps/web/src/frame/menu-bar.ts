@@ -139,7 +139,12 @@ export class SmMenuBar extends HTMLElement {
     p.appName.textContent = this.#app.name;
     p.appName.hidden = !this.#app.name;
     p.allMenusLabel.textContent = this.#app.name || 'Menus';
+    // Rebuilding the menu buttons would drop the focus of the one in use (after choosing from its menu, say), so it is
+    // given back to the new button of the same name.
+    const active = document.activeElement;
+    const focused = active instanceof HTMLElement && p.menus.contains(active) ? active.textContent : null;
     p.menus.replaceChildren(...this.#app.menus.map((m) => menuButton(m.label, m.label, () => ({ items: m.items }))));
+    if (focused !== null) [...p.menus.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === focused)?.focus();
     p.allMenus.hidden = this.#app.menus.length === 0;
     p.status.replaceChildren(
       ...this.#status.map((s) => {

@@ -36,15 +36,15 @@ for (const name of BROWSERS) {
       return { page, errors };
     };
 
-    test('at most one bar is shown, and pressing the lit button hides it', async () => {
+    test('the Apps bar shows at startup; at most one bar is shown, and pressing the lit button hides it', async () => {
       const { page, errors } = await open();
       const shown = () => page.$$eval('.frame-bar', (bars) => bars.filter((b) => !b.hidden).map((b) => b.id));
-      assert.deepEqual(await shown(), []);
-      await page.getByRole('button', { name: 'Workspaces' }).click();
+      assert.deepEqual(await shown(), ['bar-apps']);
+      await page.locator('sm-menu-bar').getByRole('button', { name: 'Workspaces' }).click();
       assert.deepEqual(await shown(), ['bar-workspaces']);
       await page.getByRole('button', { name: 'Apps', exact: true }).click();
       assert.deepEqual(await shown(), ['bar-apps']);
-      assert.equal(await page.getByRole('button', { name: 'Workspaces' }).getAttribute('aria-pressed'), 'false');
+      assert.equal(await page.locator('sm-menu-bar').getByRole('button', { name: 'Workspaces' }).getAttribute('aria-pressed'), 'false');
       await page.getByRole('button', { name: 'Apps', exact: true }).click();
       assert.deepEqual(await shown(), []);
       assert.deepEqual(errors, []);
@@ -73,7 +73,7 @@ for (const name of BROWSERS) {
       await page.getByRole('button', { name: 'Menus' }).click();
       const menu = page.getByRole('menu', { name: 'Menus' });
       assert.ok(await menu.isVisible());
-      assert.ok(await menu.getByRole('group', { name: 'View' }).isVisible());
+      assert.ok(await menu.getByRole('group', { name: 'Window' }).isVisible());
       await page.keyboard.press('Escape');
       assert.equal(await menu.count(), 0);
       await page.close();
@@ -81,23 +81,31 @@ for (const name of BROWSERS) {
 
     test('menus work from the keyboard', async () => {
       const { page } = await open();
-      const view = page.getByRole('button', { name: 'View' });
-      await view.focus();
+      const windowMenu = page.locator('sm-menu-bar').getByRole('button', { name: 'Window', exact: true });
+      await windowMenu.focus();
       await page.keyboard.press('ArrowDown');
-      const menu = page.getByRole('menu', { name: 'View' });
+      const menu = page.getByRole('menu', { name: 'Window' });
       assert.ok(await menu.isVisible());
-      // The first item is focused; move to Wood grain and choose it.
-      await page.keyboard.press('ArrowDown');
+      // The first item (Workspaces bar) is focused; choose it.
       await page.keyboard.press('Enter');
-      assert.equal(await page.evaluate(() => document.documentElement.dataset.backdrop), 'wood');
+      assert.equal(await page.$eval('#bar-workspaces', (b) => b.hidden), false);
       assert.equal(await menu.count(), 0);
-      assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'View');
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Window');
+      await page.close();
+    });
+
+    test('theme and backdrop are set in one place: StoneMind › Settings…, not the View menu', async () => {
+      const { page } = await open();
+      assert.equal(await page.locator('sm-menu-bar').getByRole('button', { name: 'View', exact: true }).count(), 0);
+      await page.getByRole('button', { name: 'StoneMind menu' }).click();
+      await page.getByRole('menuitem', { name: 'Settings…' }).click();
+      assert.equal(await page.locator('.sheet[data-app="settings"]').count(), 1);
       await page.close();
     });
 
     test('bar buttons work from the keyboard', async () => {
       const { page } = await open();
-      await page.getByRole('button', { name: 'Layouts' }).focus();
+      await page.locator('sm-menu-bar').getByRole('button', { name: 'Layouts' }).focus();
       await page.keyboard.press('Enter');
       assert.equal(await page.$eval('#bar-layouts', (b) => b.hidden), false);
       await page.keyboard.press('Space');
@@ -107,7 +115,6 @@ for (const name of BROWSERS) {
 
     test('singleton apps open once, and Settings changes the theme and backdrop', async () => {
       const { page } = await open();
-      await page.getByRole('button', { name: 'Apps', exact: true }).click();
       const settings = page.locator('#bar-apps').getByRole('button', { name: 'Settings' });
       await settings.click();
       await settings.click();
@@ -120,6 +127,13 @@ for (const name of BROWSERS) {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('.sheet').count(), 0);
       assert.equal(await page.locator('.sm-menubar-app').isVisible(), false);
+      // The screen is empty again, so the Apps bar shows, even if it was hidden while the app was open.
+      assert.equal(await page.$eval('#bar-apps', (b) => b.hidden), false);
+      await settings.click();
+      await page.getByRole('button', { name: 'Apps', exact: true }).click();
+      assert.equal(await page.$eval('#bar-apps', (b) => b.hidden), true);
+      await page.getByRole('button', { name: 'Close Settings' }).click();
+      assert.equal(await page.$eval('#bar-apps', (b) => b.hidden), false);
       // Settings last across a reload.
       await page.reload();
       assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'night');
@@ -129,7 +143,6 @@ for (const name of BROWSERS) {
 
     test('gobans and panels say they are not built yet, and cannot be pressed', async () => {
       const { page } = await open();
-      await page.getByRole('button', { name: 'Apps', exact: true }).click();
       for (const n of ['Review', 'Play', 'Problems', 'Game tree', 'Analysis', 'Notes']) {
         assert.ok(await page.locator('#bar-apps').getByRole('button', { name: n }).isDisabled(), n);
       }
