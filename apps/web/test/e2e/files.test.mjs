@@ -39,7 +39,9 @@ for (const name of BROWSERS) {
     // WebKit (like Safari in a private window) has no OPFS in an ephemeral one (microsoft/playwright#18235).
     const newContext = (options = {}) => {
       const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
-      return playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-web-')), { ...options, ...(executablePath ? { executablePath } : {}) });
+      // A short window: the list must still reach every row (it once clipped them below about 560px, and CI's fonts,
+      // taller than the fallback ones, showed it first).
+      return playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-web-')), { viewport: { width: 1280, height: 560 }, ...options, ...(executablePath ? { executablePath } : {}) });
     };
 
     const openFiles = async (context, before) => {

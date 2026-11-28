@@ -305,7 +305,8 @@ sm-menu-bar { display: block; }
 .files-task { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--glass-well); }
 .files-task p { flex: 1 1 100%; }
 .files-task .files-meter { flex: 1 1 200px; width: auto; }
-.files-table-wrap { overflow-x: auto; }
+/* The list never shrinks to fit: in a short window it would clip its own rows. The pane around it scrolls instead. */
+.files-table-wrap { overflow-x: auto; flex: none; }
 .files-table { width: 100%; border-collapse: collapse; }
 .files-caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .files-table th { text-align: left; font-weight: 600; color: var(--text-2); border-bottom: 1px solid var(--glass-edge); padding: var(--space-1) var(--space-2); white-space: nowrap; }
