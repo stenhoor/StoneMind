@@ -8,7 +8,7 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize } from 'node:path';
@@ -41,7 +41,13 @@ after(() => server?.close());
 for (const name of BROWSERS) {
   describe(name, () => {
     let context;
-    after(() => context?.close());
+    let profile;
+    // Each profile is deleted once its browser closes, so test runs don't fill the disk.
+    const closeProfile = async () => {
+      await context?.close().catch(() => {});
+      if (profile) rmSync(profile, { recursive: true, force: true });
+    };
+    after(closeProfile);
 
     const open = async () => {
       const page = await context.newPage();
@@ -56,9 +62,10 @@ for (const name of BROWSERS) {
     // default contexts are ephemeral, and WebKit (like Safari in a private window) has no OPFS in an ephemeral one
     // (microsoft/playwright#18235).
     const fresh = async () => {
-      await context?.close();
+      await closeProfile();
       const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
-      context = await playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-opfs-')), { acceptDownloads: true, ...(executablePath ? { executablePath } : {}) });
+      profile = mkdtempSync(join(tmpdir(), 'stonemind-opfs-'));
+      context = await playwright[name].launchPersistentContext(profile, { acceptDownloads: true, ...(executablePath ? { executablePath } : {}) });
     };
 
     for (const method of ['writable', 'worker']) {

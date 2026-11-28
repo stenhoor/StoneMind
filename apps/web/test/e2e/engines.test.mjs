@@ -6,7 +6,7 @@
 //   BROWSERS=chromium,firefox,webkit npm run e2e -w @stonemind/web   # as CI runs it
 import { after, afterEach, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as playwright from 'playwright';
@@ -29,12 +29,16 @@ for (const name of BROWSERS) {
     // Every browser a test opens is closed afterwards, even if the test fails before its own close, so a failure can't
     // leave a browser running and hold the test file open.
     const opened = [];
-    afterEach(() => Promise.all(opened.splice(0).map((c) => c.close().catch(() => {}))));
+    afterEach(() => Promise.all(opened.splice(0).map(async ({ context, profile }) => {
+      await context.close().catch(() => {});
+      rmSync(profile, { recursive: true, force: true });
+    })));
     const newContext = async () => {
       const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
       const args = name === 'chromium' ? ['--enable-unsafe-webgpu'] : [];
-      const context = await playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-engines-')), { args, ...(executablePath ? { executablePath } : {}) });
-      opened.push(context);
+      const profile = mkdtempSync(join(tmpdir(), 'stonemind-engines-'));
+      const context = await playwright[name].launchPersistentContext(profile, { args, ...(executablePath ? { executablePath } : {}) });
+      opened.push({ context, profile });
       return context;
     };
 
