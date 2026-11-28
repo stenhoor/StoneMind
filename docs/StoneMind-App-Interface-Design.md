@@ -294,10 +294,11 @@ sources, so they are researched from real files before the SGF kit reads them.
 
 **Proposed:** a file browser in the style of macOS Finder.
 
-- A sidebar with the kinds of file (Games, Problems, Weights, Configs), smart lists (for example "Not yet reviewed"),
-  the player's folders, and places (this browser's storage with its quota, the bridge computer). **A kind is not a
-  folder:** it is what a file is, worked out from its name and content (the player can correct it), and lists every
-  file of that kind wherever it is kept. Folders are the player's own grouping, and any kind can sit in any folder.
+- A sidebar with the player's folders, filters for the kinds of file (Games, Problems, Weights, Configs), smart
+  filters (for example "Not yet reviewed"), and places (this browser's storage with its quota, the bridge computer).
+  **Folders hold files; filters narrow what shows.** A kind is what a file is, worked out from its name and content
+  (the player can correct it). Any number of filters can be on; the open folder then shows its folders and only the
+  files of those kinds.
 - A path, list views and sortable columns.
 - **Columns depend on the kind.** Games show the SGF's own fields: players and ranks (PB, BR, PW, WR), result (RE),
   date (DT), time (TM, OT), rules (RU), komi (KM), handicap (HA), event (EV) and place (PC). Weights show the network's

@@ -209,8 +209,10 @@ sheetHost.addEventListener('keydown', (e) => {
     closeSheet();
   }
 });
-$<HTMLElement>('#desk').addEventListener('pointerdown', () => {
-  if (state.focused) {
+// A press on the desk outside the open app unfocuses it. A press inside the app keeps it focused, even when what was
+// pressed is replaced (opening a folder in Files redraws its list, so focus never comes back to the sheet).
+$<HTMLElement>('#desk').addEventListener('pointerdown', (e) => {
+  if (state.focused && !(e.target instanceof Node && sheetHost.contains(e.target))) {
     state.focused = null;
     renderMenuBar();
   }
