@@ -410,6 +410,9 @@ without a bundler (the GPU check) need no import map. Dev only: Playwright (Apac
 
 ## Used by
 
+`apps/web`: its engine host worker runs `KataGoAnalysisLines` with `GpuNetwork`, loading the model with `loadModel`
+from the browser's storage; its browser tests use the test network from `npm run fixtures`.
+
 `apps/engine-bench`: its site build publishes the GPU check page (`test/gpu/`) with this package's compiled modules
 and goldens at https://stenhoor.github.io/StoneMind/gpu-check/. There, a model is picked with the page's file input,
 and the report can be downloaded. The page works the same served by `scripts/gpu-check.mjs`.

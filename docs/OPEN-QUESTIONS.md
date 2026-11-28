@@ -257,3 +257,18 @@ otherwise setup stones (AB, AW) make it a problem; otherwise a game. The SGF kit
 collections have been studied (see the design doc, Problems).
 
 Interim: `apps/web/src/files/catalog.ts`, `apps/web/src/files/kinds.ts`.
+
+## 21. The engine host: one engine, shared by tabs (apps/web)
+
+The design doc's engine pool is to run several engines (the owner's end state: multiple GPUs and the CPU). Step 5
+starts with one, the browser engine, in a shared worker that every tab of the app uses (owner, 2026-11-28). Three
+decisions the specs leave open:
+
+- **Where a shared worker can't run WebGPU** but the page can, the host runs as a dedicated worker for that one tab;
+  other tabs see no engine. There is no hand-over between tabs (Web Locks and a leader tab), which the build plan once
+  proposed; it can come later if a target browser needs it.
+- **`terminate_all`** from a tab is refused with an error, since on a shared engine it would stop every tab's queries;
+  a tab stops its own queries with `terminate` (which `JsonLineSession` uses).
+- **One engine at a time**: a start for a second engine is refused with a message until more are supported.
+
+Interim: `apps/web/src/engines/`.

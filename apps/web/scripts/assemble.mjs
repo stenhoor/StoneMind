@@ -1,6 +1,6 @@
 // Assemble the app in dist/site: the app page, the capability page, the stylesheet, the compiled modules, the file kit's
 // modules, and verbatim copies of the brand files. The page loads plain ES modules; there is no bundler.
-import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +22,26 @@ cpSync(join(app, 'src', 'capabilities', 'worker-probe.js'), join(site, 'js', 'ca
 const files = join(repo, 'packages', 'files', 'dist');
 mkdirSync(join(site, 'vendor', 'files'), { recursive: true });
 for (const f of readdirSync(files)) if (f.endsWith('.js')) cpSync(join(files, f), join(site, 'vendor', 'files', f));
+
+// The engine contract (@stonemind/engine), for the page's import map; and the browser engine
+// (@stonemind/engine-webgpu), which only the engine host worker loads. Workers don't take a page's import map, so the
+// worker's bare (dynamic) import of the browser engine is rewritten to its copy here.
+const copyJs = (from, to) => {
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    if (entry.isDirectory()) copyJs(join(from, entry.name), join(to, entry.name));
+    else if (entry.name.endsWith('.js')) {
+      mkdirSync(to, { recursive: true });
+      cpSync(join(from, entry.name), join(to, entry.name));
+    }
+  }
+};
+copyJs(join(repo, 'packages', 'engine', 'dist'), join(site, 'vendor', 'engine'));
+copyJs(join(repo, 'packages', 'engine-webgpu', 'dist'), join(site, 'vendor', 'engine-webgpu'));
+const hostWorker = join(site, 'js', 'engines', 'host-worker.js');
+const source = readFileSync(hostWorker, 'utf8');
+const rewritten = source.replace(/import\('@stonemind\/engine-webgpu'\)/g, "import('../../vendor/engine-webgpu/index.js')");
+if (rewritten === source) throw new Error('assemble: the engine host worker no longer imports @stonemind/engine-webgpu as expected');
+writeFileSync(hostWorker, rewritten);
 
 const brand = join(repo, 'packages', 'brand');
 cpSync(join(brand, 'tokens', 'tokens.css'), join(site, 'brand', 'tokens.css'));

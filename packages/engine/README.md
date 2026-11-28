@@ -23,7 +23,7 @@ None.
 ## Used by
 
 `@stonemind/katago-bridge` (the subprotocol name), `@stonemind/engine-webgpu` (its browser engine is a `LineTransport`
-behind `JsonLineSession`) and `apps/engine-bench`. Planned: `@stonemind/provider-katago`.
+behind `JsonLineSession`), `apps/engine-bench`, and `apps/web` (each tab's `JsonLineSession` over the engine host). Planned: `@stonemind/provider-katago`.
 
 ## Deployment
 

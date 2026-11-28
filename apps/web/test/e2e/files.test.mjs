@@ -2,10 +2,10 @@
 //
 //   npm run e2e -w @stonemind/web                      # Chromium
 //   BROWSERS=chromium,firefox,webkit npm run e2e -w @stonemind/web   # as CI runs it
-import { after, before, describe, test } from 'node:test';
+import { after, afterEach, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -31,17 +31,31 @@ const notes = file('notes.txt', 'hello');
 let server;
 let url;
 before(async () => ({ server, url } = await serve()));
-after(() => server?.close());
+after(() => {
+  server?.close();
+  rmSync(dir, { recursive: true, force: true });
+});
 
 for (const name of BROWSERS) {
   describe(name, () => {
     // Each test gets a fresh, persistent profile, as a player's is. Playwright's default contexts are ephemeral, and
     // WebKit (like Safari in a private window) has no OPFS in an ephemeral one (microsoft/playwright#18235).
+    // Every browser a test opens is closed afterwards, even if the test fails before its own close, so a failure can't
+    // leave a browser running and hold the test file open.
+    const opened = [];
+    afterEach(() => Promise.all(opened.splice(0).map(async ({ context, profile }) => {
+      await context.close().catch(() => {});
+      rmSync(profile, { recursive: true, force: true });
+    })));
     const newContext = (options = {}) => {
       const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
       // A short window: the list must still reach every row (it once clipped them below about 560px, and CI's fonts,
       // taller than the fallback ones, showed it first).
-      return playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-web-')), { viewport: { width: 1280, height: 560 }, ...options, ...(executablePath ? { executablePath } : {}) });
+      const profile = mkdtempSync(join(tmpdir(), 'stonemind-web-'));
+      return playwright[name].launchPersistentContext(profile, { viewport: { width: 1280, height: 560 }, ...options, ...(executablePath ? { executablePath } : {}) }).then((context) => {
+        opened.push({ context, profile });
+        return context;
+      });
     };
 
     const openFiles = async (context, before) => {

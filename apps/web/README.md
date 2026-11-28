@@ -4,7 +4,7 @@ The StoneMind app, planned for **stonemind.app**. It is built in the steps of
 [docs/StoneMind-App-Build-Plan.md](../../docs/StoneMind-App-Build-Plan.md), from the
 [App Interface Design](../../docs/StoneMind-App-Interface-Design.md). It runs locally for now.
 
-So far it is the frame (Milestone 1, step 1), the capability page (step 2) and the Files app (step 4).
+So far it is the frame (Milestone 1, step 1), the capability page (step 2), the Files app (step 4) and the engine host (step 5).
 
 The frame:
 
@@ -48,6 +48,24 @@ file kit (`@stonemind/files`), on this browser's origin private file system:
 - Files fills the whole desk under the bars.
 - When Files is focused, the menu bar shows its File, View and Go menus. A change in another tab shows at once.
 
+**The engine host** (Milestone 1, step 5) runs the browser engine (`@stonemind/engine-webgpu`) for every tab of the app:
+
+- One engine, in a shared worker: every tab in this browser connects and sends it KataGo analysis queries, and it runs
+  while any tab is open. Where a shared worker can't run WebGPU but the page can, the host runs for that one tab and
+  says so.
+- Each tab gets an ordinary `AnalysisEngine` (`engines/client.ts`), the same contract as native KataGo through the
+  bridge. The host prefixes each tab's query ids, so replies reach only the tab that asked (two tabs can both use
+  `q1`), and terminates a closed tab's queries. `terminate_all` is refused, as it would stop other tabs' work.
+- The engine loads its weights from this browser's storage (a path from Files) and starts with KataGo's
+  `analysis_example.cfg` settings. The host keeps a list of engines, so more can be added (one per GPU, a CPU engine,
+  native KataGo next); one runs at a time for now.
+- **The Engines app** (first part of step 6) is, for now, an engine console for running benchmarks by hand: choose a
+  weights file from Files, edit KataGo's settings (`key = value`, starting at KataGo's defaults), start or stop the
+  engine, and see its model, GPU and state. Then send KataGo Analysis Engine queries directly, one JSON line each
+  (a query without an `id` gets one; examples can be inserted), and read every reply. Each final result is timed:
+  milliseconds since its query was sent, visits, and visits per second. Reports during the search are counted and
+  shown on request; long replies open on a click; the log can be copied or downloaded as JSON lines.
+
 **The capability page** (Milestone 1, step 2), at `/capabilities/`, opened from the StoneMind menu (Browser Info), checks what this
 browser offers: WebGPU in the page, a dedicated worker and a shared worker (with the default adapter, the adapter given
 for `high-performance`, `shader-f16` and buffer limits); OPFS with `createWritable` and, in a worker, `createSyncAccessHandle`; the storage quota and persistence; Web
@@ -80,6 +98,10 @@ The browser tests need Playwright's browsers (`npx -w @stonemind/web playwright 
 - `src/files/view.ts`: the Files app. `src/files/kinds.ts`: the kinds, and how a file's kind is worked out.
   `src/files/catalog.ts`: where each file's kind is kept. `src/files/weights.ts`: what a KataGo weights file's name and first bytes say,
   free of the DOM.
+- `src/engines/`: the engine host: `protocol.ts` (messages and query-id rewriting) and `host.ts` (engines and tabs),
+  both free of the DOM; `host-worker.ts` (the worker, and the engines it starts); `client.ts` (a tab's side);
+  `fake.ts` (a stand-in engine for the browser tests, never offered to players); `console.ts` (the Engines app's
+  console).
 - `src/capabilities/`: the capability page: `index.html`, `main.ts` (the probes), `report.ts` (the report and its
   summary, free of the DOM) and `worker-probe.js` (a classic script, run as a dedicated and as a shared worker).
 - `scripts/assemble.mjs`: builds `dist/site`, with the file kit's modules in `vendor/files/` for the page's import map. `scripts/server.mjs`, `scripts/serve.mjs`: the local server.
@@ -88,6 +110,12 @@ The browser tests need Playwright's browsers (`npx -w @stonemind/web playwright 
 ## Depends on
 
 - `@stonemind/brand`: `tokens.css`, `components.css` and the logos, copied unchanged into `dist/site/brand/`.
+- `@stonemind/engine`: `JsonLineSession` and the `AnalysisEngine` contract, for the tabs, copied into
+  `dist/site/vendor/engine/` and named in the page's import map.
+- `@stonemind/engine-webgpu`: the browser engine (`KataGoAnalysisLines`, `loadModel`, `GpuNetwork`,
+  `requestEngineDevice`, `loadPositionHashes`), loaded only by the host worker from `dist/site/vendor/engine-webgpu/`
+  (workers don't take import maps, so the build rewrites the worker's import). The browser tests use KataGo's test
+  network that its `npm run fixtures` fetches.
 - `@stonemind/files`: the file kit (`OpfsFileStore`, import, download, storage), its compiled modules copied into
   `dist/site/vendor/files/` and loaded through an import map.
 - Dev only: `playwright` 1.65.0 (Apache-2.0), for the browser tests; never shipped.
