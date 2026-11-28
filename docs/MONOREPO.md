@@ -154,7 +154,16 @@ CI runs only the checks a change needs (`scripts/ci-affected.mjs`):
   Markdown.
 - **Browser tests** (an `e2e` script) run in Chromium, Firefox and WebKit for each affected sub-project that has one,
   when it, or something it depends on, changed in a file other than Markdown.
-- **Shared files** (the root package files, `tsconfig.base.json`, `.nvmrc`, `.github/`) run everything.
+- **Shared files** (the root `package.json`, `tsconfig.base.json`, `.nvmrc`) run everything.
+- **`package-lock.json`:** a change only to our own workspaces' entries (one workspace adding another as a dependency)
+  counts as a change to those workspaces; any other change, such as an outside package's version, runs everything.
+- **CI's own files** (`.github/`, `scripts/ci-affected.mjs`) run everything only when nothing else changed; alongside
+  a workspace change they are tested by that change's run.
+- **Time limits:** each browser test has 60 s (`--test-timeout` in the `e2e` scripts), the browser-test step 15
+  minutes, and the job 30, so a hang fails the run.
+- **Before pushing,** run what CI will run for the change in all three browsers
+  (`BROWSERS=chromium,firefox,webkit npm run e2e -w <package>`).
+  Playwright's browsers download from `cdn.playwright.dev`.
 - **Files only under `docs/`, or Markdown at the root,** run nothing.
 
 ## Versioning

@@ -5,13 +5,16 @@
 //   node scripts/ci-affected.mjs <base> [<head>]   (default head: HEAD)
 //
 // Prints JSON: { all, packages, gpu, e2e, files }.
-// - all: true when a shared file changed (root package files, the TypeScript base config, .nvmrc, CI itself) or the base
-//   is unknown. Every workspace is then affected.
+// - all: true when a shared file changed (the root package.json, the TypeScript base config, .nvmrc), when CI's own files
+//   changed and no workspace did, or when the base is unknown. Every workspace is then affected.
 // - packages: the affected workspaces' names, in the root `workspaces` order (dependency order).
 // - gpu: whether @stonemind/engine-webgpu's GPU check is needed, i.e. it, or a workspace it depends on, changed in a
 //   file other than Markdown.
 // - e2e: the affected workspaces that have an `e2e` script (browser tests), where it, or a workspace it depends on,
 //   changed in a file other than Markdown.
+// A change to package-lock.json that touches only our own workspaces' entries (a workspace adding another as a
+// dependency, say) counts as a change to those workspaces; any other lockfile change, such as an outside package's
+// version, still affects everything.
 // Files under docs/ and Markdown files at the root affect nothing. Inside a workspace every file counts, Markdown
 // included (some tests read their package's Markdown).
 // With GITHUB_OUTPUT set, also writes `any`, `packages` (space-separated) and `gpu` there.
@@ -22,7 +25,10 @@ import { join } from 'node:path';
 const root = join(import.meta.dirname, '..');
 const [base, head = 'HEAD'] = process.argv.slice(2);
 const GPU_PACKAGE = '@stonemind/engine-webgpu';
-const SHARED = [/^package\.json$/, /^package-lock\.json$/, /^tsconfig\.base\.json$/, /^\.nvmrc$/, /^\.github\//, /^scripts\/ci-affected\.mjs$/];
+const LOCKFILE = 'package-lock.json';
+const SHARED = [/^package\.json$/, /^tsconfig\.base\.json$/, /^\.nvmrc$/];
+// CI's own files. Changed alongside workspaces, they are tested by that change's run; changed alone, everything runs.
+const CI = [/^\.github\//, /^scripts\/ci-affected\.mjs$/];
 
 const rootPkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const workspaces = rootPkg.workspaces.map((dir) => {
@@ -37,7 +43,40 @@ let files = [];
 if (!unknownBase) {
   files = execFileSync('git', ['diff', '--name-only', `${base}...${head}`], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
 }
-const all = unknownBase || files.some((f) => SHARED.some((re) => re.test(f)));
+
+// The workspaces whose lockfile entries changed, or null if anything else in the lockfile changed.
+function lockfileWorkspaces() {
+  const read = (rev) => {
+    try {
+      return JSON.parse(execFileSync('git', ['show', `${rev}:${LOCKFILE}`], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+    } catch {
+      return null;
+    }
+  };
+  const before = read(base);
+  const after = read(head);
+  if (!before?.packages || !after?.packages) return null;
+  const { packages: a, ...restA } = before;
+  const { packages: b, ...restB } = after;
+  if (JSON.stringify(restA) !== JSON.stringify(restB)) return null;
+  const touched = new Set();
+  for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (JSON.stringify(a[key]) === JSON.stringify(b[key])) continue;
+    // A workspace's own entry ("apps/web"), or its link in node_modules ("node_modules/@stonemind/web").
+    const w = workspaces.find((w) => key === w.dir || key === `node_modules/${w.name}`);
+    if (!w) return null;
+    touched.add(w.name);
+  }
+  return touched;
+}
+
+let lockfile = new Set();
+let all = unknownBase || files.some((f) => SHARED.some((re) => re.test(f)));
+if (!all && files.includes(LOCKFILE)) {
+  const touched = lockfileWorkspaces();
+  if (touched) lockfile = touched;
+  else all = true;
+}
 
 // Workspaces changed directly, and whether a change in each was more than Markdown.
 const changed = new Map();
@@ -46,6 +85,9 @@ for (const f of files) {
   if (!w) continue;
   changed.set(w.name, (changed.get(w.name) ?? false) || !f.endsWith('.md'));
 }
+
+for (const name of lockfile) changed.set(name, true);
+if (!all && changed.size === 0 && files.some((f) => CI.some((re) => re.test(f)))) all = true;
 
 // Close over dependents: a workspace is affected if it changed or depends on an affected one.
 const affected = new Map(all ? workspaces.map((w) => [w.name, true]) : changed);
