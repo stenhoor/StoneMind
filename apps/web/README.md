@@ -23,24 +23,25 @@ The frame:
 **The Files app** (Milestone 1, step 4), from the Apps bar, is a file browser in the style of macOS Finder over the
 file kit (`@stonemind/files`), on this browser's origin private file system:
 
-- **Kinds and folders are different things.** A kind is what a file is: a game, a problem, a KataGo network or a
-  KataGo config. Folders are the player's own grouping, starting at This browser, and a file of any kind can sit in any
-  folder.
-- **The sidebar** has the kinds (Games, Problems, Weights, Configs, each with a count, each listing every file of that
-  kind wherever it is), the folders, and this browser's storage: space used of the quota, whether the browser keeps the
-  files, and a **Keep my files** button that asks it to.
+- **Folders hold files; filters narrow what shows.** The player always browses a folder, starting at This browser,
+  and its folders always show. Games, Problems, Weights and Configs are filters: kinds of file, toggled on and off, any
+  number at once. With some on, the folder shows only files of those kinds; with none on (Show all files), every file.
+  The filters stay on from folder to folder, and each shows how many files of its kind the open folder holds. They are
+  also in the View menu.
+- **The sidebar** has the folders, the filters, and this browser's storage: space used of the quota, whether the
+  browser keeps the files, and a **Keep my files** button that asks it to.
 - **A file's kind is worked out from its name and content** when it is imported, never from what is on screen: an SGF
   naming players (PB, PW) or a result (RE) is a game, one that only sets up stones (AB, AW) is a problem; a `.bin.gz` or
   `.txt.gz` that starts like a KataGo model is a network; a `.cfg` of `key = value` lines with KataGo settings is a
   config. Anything else is refused, with a message saying which kinds Files takes. The player can change a game to a
   problem and back in the inspector. Kinds are kept in `/.stonemind/catalog.json` (docs/OPEN-QUESTIONS.md, 20).
-- A path for folders, and columns sorted by name, size or date: a kind lists each file's folder (and, for Weights,
-  the network's size from its name); a folder lists each file's kind.
+- A path, and columns sorted by name, size or date: each file's kind, and, when networks are shown, the network's
+  size from its name.
 - An inspector for the selected file. For KataGo weights: the training run, the network (blocks, channels, kind), the
   training samples (`s`) and rows of training data (`d`) from the name, the format, and the model version read from
   the start of the file; a SHA-256 on request.
 - Import from the file picker or by dropping files, streamed (a large network never sits whole in memory) with progress
-  and Cancel, into the open folder (or This browser while a kind is shown); new folder, move to a folder, rename,
+  and Cancel, into the open folder; new folder, move to a folder, rename,
   download, and delete after a confirmation.
 - Files fills the whole desk under the bars.
 - When Files is focused, the menu bar shows its File, View and Go menus. A change in another tab shows at once.

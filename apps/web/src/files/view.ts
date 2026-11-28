@@ -1,11 +1,12 @@
 // The Files app (build plan, Milestone 1, step 4): a file browser in the style of macOS Finder over the file kit
 // (`@stonemind/files`). A singleton app: one instance, belonging to no workspace.
 //
-// Two different things in the sidebar:
-// - Kinds: Games, Problems, Weights and Configs. A kind is what a file is, worked out from its name and content when it
-//   is imported (kinds.ts), and the player can change a game to a problem and back. Each kind lists every file of that
-//   kind, wherever it is kept.
-// - Folders: the player's own grouping, starting at This browser. A file of any kind can sit in any folder.
+// Folders hold files; filters narrow what is shown:
+// - Folders are where files are kept, starting at This browser. The player always browses a folder, and its folders
+//   always show.
+// - Filters (Games, Problems, Weights, Configs) are kinds of file. A file's kind is worked out from its name and
+//   content when it is imported (kinds.ts), and the player can change a game to a problem and back. Any number of
+//   filters can be on; the open folder then shows only files of those kinds. With none on, it shows every file.
 // A file of no kind Files knows is refused. Beside them: this browser's storage; a sortable list; an inspector (for
 // KataGo networks: the network from its name, the model version from its header, a SHA-256 on request); import from the
 // file picker or by dropping files, streamed with progress and a Cancel button; new folder, move, rename, download and
@@ -16,7 +17,6 @@ import { type CatalogData, emptyCatalog, isAppPath, loadCatalog, saveCatalog, wa
 import { ACCEPTED, type FileKind, KINDS, KIND_NAMES, evaluateKind } from './kinds.js';
 import { type WeightsHeader, describeNetwork, formatBytes, grouped, parseWeightsName, readWeightsHeader, sha256 } from './weights.js';
 
-type Place = { readonly type: 'kind'; readonly kind: FileKind } | { readonly type: 'folder'; readonly path: string };
 type SortKey = 'name' | 'size' | 'modified';
 
 interface ImportTask {
@@ -68,7 +68,8 @@ export class FilesView {
   #store: OpfsFileStore | null = null;
   #error = '';
   #messages: { text: string; ok: boolean }[] = [];
-  #place: Place = { type: 'folder', path: '/' };
+  #folder = '/';
+  #filters = new Set<FileKind>();
   #all: FileEntry[] = [];
   #catalog: CatalogData = emptyCatalog();
   #why = new Map<string, string>();
@@ -133,22 +134,18 @@ export class FilesView {
       this.#all = all;
       this.#catalog = catalog;
     });
-    const place = this.#place;
-    if (place.type === 'kind') this.#entries = this.#all.filter((e) => e.kind === 'file' && this.kindOf(e.path) === place.kind);
-    else {
-      try {
-        this.#entries = (await store.list(place.path)).filter((e) => !isAppPath(e.path));
-      } catch (e) {
-        if (!(e instanceof NotFoundError)) throw e;
-        this.#place = { type: 'folder', path: '/' };
-        this.#entries = (await store.list('/')).filter((e) => !isAppPath(e.path));
-      }
+    try {
+      this.#entries = (await store.list(this.#folder)).filter((e) => !isAppPath(e.path));
+    } catch (e) {
+      if (!(e instanceof NotFoundError)) throw e;
+      this.#folder = '/';
+      this.#entries = (await store.list('/')).filter((e) => !isAppPath(e.path));
     }
-    if (this.#selected && !this.#entries.some((e) => e.path === this.#selected)) this.#selected = null;
+    if (this.#selected && !this.#visible().some((e) => e.path === this.#selected)) this.#selected = null;
     this.#storage = await storageInfo().catch(() => null);
     // A refresh that finds nothing new (the change notice that follows the player's own action, say) leaves the page
     // alone: re-rendering would replace the controls under the player's hand, and a press in flight could be lost.
-    const shown = JSON.stringify([this.#place, this.#selected, this.#all, this.#catalog, this.#entries, this.#storage, this.#messages, this.#error]);
+    const shown = JSON.stringify([this.#folder, [...this.#filters], this.#selected, this.#all, this.#catalog, this.#entries, this.#storage, this.#messages, this.#error]);
     if (shown === this.#shown) return;
     this.#shown = shown;
     this.render();
@@ -157,29 +154,47 @@ export class FilesView {
 
   // ---------------------------------------------------------- actions
 
-  /** Shows every file of a kind. */
-  showKind(kind: FileKind): void {
-    this.#place = { type: 'kind', kind };
-    this.#selected = null;
-    this.#messages = [];
-    void this.refresh();
+  /** Turns a filter on or off. */
+  toggleFilter(kind: FileKind): void {
+    if (this.#filters.has(kind)) this.#filters.delete(kind);
+    else this.#filters.add(kind);
+    if (this.#selected && !this.#visible().some((e) => e.path === this.#selected)) this.#selected = null;
+    this.render();
+    this.#onChange();
+  }
+
+  /** Turns every filter off, so every file in the folder shows. */
+  clearFilters(): void {
+    this.#filters.clear();
+    this.render();
+    this.#onChange();
+  }
+
+  /** The open folder's contents that the filters let through: every folder, and the files of the kinds that are on. */
+  #visible(): FileEntry[] {
+    if (!this.#filters.size) return this.#entries;
+    return this.#entries.filter((e) => {
+      if (e.kind === 'directory') return true;
+      const k = this.kindOf(e.path);
+      return k !== undefined && this.#filters.has(k);
+    });
   }
 
   /** Shows a folder's contents. */
   openFolder(path: string): void {
-    this.#place = { type: 'folder', path: normalize(path) };
+    this.#folder = normalize(path);
     this.#selected = null;
     this.#messages = [];
     void this.refresh();
   }
 
   get selected(): FileEntry | null {
-    return this.#entries.find((e) => e.path === this.#selected) ?? null;
+    return this.#visible().find((e) => e.path === this.#selected) ?? null;
   }
 
-  /** Where imported files and new folders go: the open folder, or This browser while a kind is shown. */
+  /** Where imported files and new folders go: the open folder. */
   get #target(): string {
-    return this.#place.type === 'folder' ? this.#place.path : '/';
+    return this.#folder;
   }
 
   // One file input for the app's life. Whatever files it is given are imported when it fires `change`; `cancel` is
@@ -256,7 +271,6 @@ export class FilesView {
   }
 
   async newFolder(): Promise<void> {
-    if (this.#place.type !== 'folder') return;
     const name = await this.#ask('New folder', 'Name', '', 'Create');
     if (!name || !this.#store) return;
     await this.#run(() => this.#store?.mkdir(join(this.#target, name)));
@@ -321,14 +335,15 @@ export class FilesView {
 
   async computeChecksum(path: string): Promise<void> {
     if (!this.#store) return;
+    const redraw = () => this.element.querySelector('.files-inspector')?.replaceWith(this.#inspector());
     this.#checksums.set(path, 'Computing…');
-    this.render();
+    redraw();
     try {
       this.#checksums.set(path, await sha256(await this.#store.read(path)));
     } catch (e) {
       this.#checksums.set(path, `Could not compute it: ${e instanceof Error ? e.message : String(e)}`);
     }
-    this.render();
+    redraw();
   }
 
   async #run(action: () => Promise<unknown> | undefined): Promise<void> {
@@ -345,27 +360,32 @@ export class FilesView {
   /** The Files app's menus, for the menu bar while it is focused. */
   menus(): Menu[] {
     const s = this.selected;
-    const place = this.#place;
     const sortItem = (key: SortKey, label: string) => ({ label: `Sort by ${label}`, checked: () => this.#sort.key === key, run: () => this.sortBy(key) });
     return [
       {
         label: 'File',
         items: [
           { label: 'Import…', run: () => this.importPicked() },
-          { label: 'New folder…', disabled: place.type !== 'folder', run: () => void this.newFolder() },
+          { label: 'New folder…', run: () => void this.newFolder() },
           { label: 'Move to…', disabled: !s, run: () => void this.move() },
           { label: 'Download', disabled: s?.kind !== 'file', run: () => void this.download() },
           { label: 'Rename…', disabled: !s, run: () => void this.rename() },
           { label: 'Delete…', disabled: !s, run: () => void this.remove() },
         ],
       },
-      { label: 'View', items: [sortItem('name', 'name'), sortItem('size', 'size'), sortItem('modified', 'date modified')] },
+      {
+        label: 'View',
+        items: [
+          ...KINDS.map((k) => ({ label: `Show ${KIND_NAMES[k].plural}`, checked: () => this.#filters.has(k), run: () => this.toggleFilter(k) })),
+          { label: 'Show all files', disabled: !this.#filters.size, run: () => this.clearFilters() },
+          sortItem('name', 'name'),
+          sortItem('size', 'size'),
+          sortItem('modified', 'date modified'),
+        ],
+      },
       {
         label: 'Go',
-        items: [
-          ...KINDS.map((k) => ({ label: KIND_NAMES[k].plural, checked: () => place.type === 'kind' && place.kind === k, run: () => this.showKind(k) })),
-          { label: 'This browser', checked: () => place.type === 'folder' && place.path === '/', run: () => this.openFolder('/') },
-        ],
+        items: this.#topFolders().map((path) => ({ label: folderName(path).replace(/^\//, ''), checked: () => this.#folder === path, run: () => this.openFolder(path) })),
       },
     ];
   }
@@ -417,31 +437,38 @@ export class FilesView {
       this.element.replaceChildren(el('p', { className: 'files-note' }, this.#error ? `Files can’t open this browser’s storage: ${this.#error}` : 'Opening this browser’s storage…'));
       return;
     }
+    // Keep where each pane is scrolled: a re-render would otherwise jump a long list back to the top under the player's
+    // pointer (and a double-click's second click would land on whatever moved there).
+    const panes = ['.files-body', '.files-side', '.files-main', '.files-inspector'];
+    const scroll = panes.map((sel) => this.element.querySelector(sel)?.scrollTop ?? 0);
     this.element.replaceChildren(this.#toolbar(), el('div', { className: 'files-body' }, this.#sidebar(), this.#main(), this.#inspector()));
-    if (active) this.element.querySelector<HTMLElement>(`[data-key="${CSS.escape(active)}"]`)?.focus();
+    panes.forEach((sel, i) => {
+      const pane = this.element.querySelector(sel);
+      if (pane) pane.scrollTop = scroll[i] ?? 0;
+    });
+    if (active) this.element.querySelector<HTMLElement>(`[data-key="${CSS.escape(active)}"]`)?.focus({ preventScroll: true });
+  }
+
+  /** This browser and the folders at its top. */
+  #topFolders(): string[] {
+    return ['/', ...this.#all.filter((e) => e.kind === 'directory' && parentOf(e.path) === '/').map((e) => e.path).sort()];
   }
 
   #toolbar(): HTMLElement {
-    const place = this.#place;
-    let where: HTMLElement;
-    if (place.type === 'kind') {
-      where = el('h3', { className: 'files-place-title' }, KIND_NAMES[place.kind].plural);
-    } else {
-      where = el('nav', { className: 'files-path' });
-      where.setAttribute('aria-label', 'Folder');
-      const parts = place.path.split('/').filter(Boolean);
-      const crumb = (label: string, path: string, last: boolean) => {
-        const b = button(label, () => this.openFolder(path), { className: 'files-crumb', dataset: { key: `crumb:${path}` } });
-        if (last) b.setAttribute('aria-current', 'location');
-        return b;
-      };
-      where.append(crumb('This browser', '/', parts.length === 0));
-      parts.forEach((part, i) => where.append(el('span', { className: 'files-crumb-sep' }, '›'), crumb(part, '/' + parts.slice(0, i + 1).join('/'), i === parts.length - 1)));
-    }
+    const where = el('nav', { className: 'files-path' });
+    where.setAttribute('aria-label', 'Folder');
+    const parts = this.#folder.split('/').filter(Boolean);
+    const crumb = (label: string, path: string, last: boolean) => {
+      const b = button(label, () => this.openFolder(path), { className: 'files-crumb', dataset: { key: `crumb:${path}` } });
+      if (last) b.setAttribute('aria-current', 'location');
+      return b;
+    };
+    where.append(crumb('This browser', '/', parts.length === 0));
+    parts.forEach((part, i) => where.append(el('span', { className: 'files-crumb-sep' }, '›'), crumb(part, '/' + parts.slice(0, i + 1).join('/'), i === parts.length - 1)));
     const s = this.selected;
     const bar = el('div', { className: 'files-toolbar' }, where, el('span', { className: 'files-spacer' }),
       button('Import…', () => this.importPicked(), { className: 'sm-btn sm-btn--primary files-btn', dataset: { key: 'import' } }),
-      button('New folder…', () => void this.newFolder(), { disabled: place.type !== 'folder', dataset: { key: 'mkdir' } }),
+      button('New folder…', () => void this.newFolder(), { dataset: { key: 'mkdir' } }),
       button('Move to…', () => void this.move(), { disabled: !s, dataset: { key: 'move' } }),
       button('Download', () => void this.download(), { disabled: s?.kind !== 'file', dataset: { key: 'download' } }),
       button('Rename…', () => void this.rename(), { disabled: !s, dataset: { key: 'rename' } }),
@@ -453,28 +480,30 @@ export class FilesView {
 
   #sidebar(): HTMLElement {
     const side = el('div', { className: 'files-side' });
-    const place = this.#place;
-
-    const kinds = el('nav', { className: 'files-side-group' }, el('p', { className: 'sm-label files-side-label' }, 'Kinds'));
-    kinds.setAttribute('aria-label', 'Kinds');
-    for (const k of KINDS) {
-      const count = this.#all.filter((e) => e.kind === 'file' && this.kindOf(e.path) === k).length;
-      const b = button('', () => this.showKind(k), { className: 'files-place', dataset: { key: `kind:${k}` } });
-      b.append(el('span', {}, KIND_NAMES[k].plural), el('span', { className: 'files-count' }, String(count)));
-      b.setAttribute('aria-label', `${KIND_NAMES[k].plural}, ${count}`);
-      if (place.type === 'kind' && place.kind === k) b.setAttribute('aria-current', 'true');
-      kinds.append(b);
-    }
+    const folder = this.#folder;
 
     const folders = el('nav', { className: 'files-side-group' }, el('p', { className: 'sm-label files-side-label' }, 'Folders'));
     folders.setAttribute('aria-label', 'Folders');
-    const tops = ['/', ...this.#all.filter((e) => e.kind === 'directory' && parentOf(e.path) === '/').map((e) => e.path).sort()];
-    for (const path of tops) {
+    for (const path of this.#topFolders()) {
       const b = button(`${path === '/' ? '' : '📁︎ '}${path === '/' ? 'This browser' : nameOf(path)}`, () => this.openFolder(path), { className: 'files-place', dataset: { key: `folder:${path}` } });
-      const inside = place.type === 'folder' && (path === '/' ? place.path === '/' : place.path === path || place.path.startsWith(path + '/'));
+      const inside = path === '/' ? folder === '/' : folder === path || folder.startsWith(path + '/');
       if (inside) b.setAttribute('aria-current', 'true');
       folders.append(b);
     }
+
+    // Filters: toggles, any number on. Each count is the files of that kind in the open folder.
+    const kinds = el('div', { className: 'files-side-group' }, el('p', { className: 'sm-label files-side-label', id: 'files-filters-label' }, 'Filters'));
+    kinds.setAttribute('role', 'group');
+    kinds.setAttribute('aria-labelledby', 'files-filters-label');
+    for (const k of KINDS) {
+      const count = this.#entries.filter((e) => e.kind === 'file' && this.kindOf(e.path) === k).length;
+      const b = button('', () => this.toggleFilter(k), { className: 'files-place files-filter', dataset: { key: `filter:${k}` } });
+      b.append(el('span', { className: 'files-check' }, this.#filters.has(k) ? '✓' : ''), el('span', { className: 'files-filter-name' }, KIND_NAMES[k].plural), el('span', { className: 'files-count' }, String(count)));
+      b.setAttribute('aria-pressed', String(this.#filters.has(k)));
+      b.setAttribute('aria-label', `${KIND_NAMES[k].plural}, ${count} here`);
+      kinds.append(b);
+    }
+    kinds.append(button('Show all files', () => this.clearFilters(), { className: 'files-place', disabled: !this.#filters.size, dataset: { key: 'filter:none' } }));
 
     const info = this.#storage;
     const used = info?.usage ?? 0;
@@ -493,7 +522,7 @@ export class FilesView {
       el('p', { className: 'files-storage-text' }, info?.persisted ? '✓ Files are kept' : 'The browser may clear these files when space runs low.'),
       info?.persisted ? null : button('Keep my files', () => void this.keepFiles(), { dataset: { key: 'persist' } }));
 
-    side.append(kinds, folders, storage);
+    side.append(folders, kinds, storage);
     return side;
   }
 
@@ -501,23 +530,19 @@ export class FilesView {
     const name: Column = { label: 'Name', key: 'name', cell: (e) => e.name };
     const size: Column = { label: 'Size', key: 'size', numeric: true, cell: (e) => (e.kind === 'file' ? formatBytes(e.size) : '—') };
     const modified: Column = { label: 'Modified', key: 'modified', cell: (e) => (e.lastModified ? dateFormat.format(e.lastModified) : '—') };
-    const place = this.#place;
-    if (place.type === 'folder') {
-      const kind: Column = { label: 'Kind', cell: (e) => (e.kind === 'directory' ? 'Folder' : (() => { const k = this.kindOf(e.path); return k ? KIND_NAMES[k].one : 'Not recognised'; })()) };
-      return [name, kind, size, modified];
+    const kind: Column = { label: 'Kind', cell: (e) => (e.kind === 'directory' ? 'Folder' : (() => { const k = this.kindOf(e.path); return k ? KIND_NAMES[k].one : 'Not recognised'; })()) };
+    // A Network column whenever networks are shown.
+    if (this.#visible().some((e) => this.kindOf(e.path) === 'weights')) {
+      const network: Column = { label: 'Network', cell: (e) => { if (this.kindOf(e.path) !== 'weights') return ''; const w = parseWeightsName(e.name); return w ? `b${w.blocks}c${w.channels}${w.kind}` : '—'; } };
+      return [name, kind, network, size, modified];
     }
-    const folder: Column = { label: 'Folder', cell: (e) => folderName(parentOf(e.path)) };
-    if (place.kind === 'weights') {
-      const network: Column = { label: 'Network', cell: (e) => { const w = parseWeightsName(e.name); return w ? `b${w.blocks}c${w.channels}${w.kind}` : '—'; } };
-      return [name, network, folder, size, modified];
-    }
-    return [name, folder, size, modified];
+    return [name, kind, size, modified];
   }
 
   #sorted(): FileEntry[] {
     const { key, descending } = this.#sort;
     const value = (e: FileEntry) => (key === 'size' ? e.size ?? -1 : key === 'modified' ? e.lastModified ?? 0 : e.name.toLowerCase());
-    return [...this.#entries].sort((a, b) => {
+    return [...this.#visible()].sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
       const x = value(a);
       const y = value(b);
@@ -563,7 +588,7 @@ export class FilesView {
     const body = el('tbody');
     for (const e of this.#sorted()) {
       const selected = e.path === this.#selected;
-      const tr = el('tr', { className: selected ? 'files-row files-selected' : 'files-row' });
+      const tr = el('tr', { className: selected ? 'files-row files-selected' : 'files-row', dataset: { path: e.path } });
       tr.setAttribute('aria-selected', String(selected));
       cols.forEach((c, i) => {
         const td = el('td', { className: c.numeric ? 'files-num' : '' });
@@ -571,9 +596,7 @@ export class FilesView {
           const name = button(`${e.kind === 'directory' ? '📁︎ ' : ''}${e.name}`, () => {
             if (e.kind === 'directory' && this.#selected === e.path) this.openFolder(e.path);
             else {
-              this.#selected = e.path;
-              this.render();
-              this.#onChange();
+              this.#select(e.path);
               void this.#loadHeader(e);
             }
           }, { className: 'files-name', dataset: { key: `row:${e.path}` } });
@@ -591,19 +614,31 @@ export class FilesView {
       });
       body.append(tr);
     }
-    const place = this.#place;
-    const caption = place.type === 'kind' ? `All ${KIND_NAMES[place.kind].plural.toLowerCase()}` : `Contents of ${folderName(place.path)}`;
+    const on = KINDS.filter((k) => this.#filters.has(k)).map((k) => KIND_NAMES[k].plural.toLowerCase());
+    const caption = `Contents of ${folderName(this.#folder)}${on.length ? `, showing ${on.join(' and ')}` : ''}`;
     const table = el('table', { className: 'files-table' }, el('caption', { className: 'files-caption' }, caption), el('thead', {}, head), body);
     main.append(el('div', { className: 'files-table-wrap' }, table));
-    if (place.type === 'kind') {
-      if (!this.#entries.length) main.append(el('p', { className: 'files-note' }, `No ${KIND_NAMES[place.kind].plural.toLowerCase()} yet.`));
-      main.append(el('p', { className: 'files-note' }, `Import files, or drop them here: each is listed under its own kind and goes into This browser, where Move to… can put it in a folder. ${ACCEPTED}`));
-    } else {
-      if (!this.#entries.length) main.append(el('p', { className: 'files-note' }, 'This folder is empty.'));
-      main.append(el('p', { className: 'files-note' }, `Import files, or drop them here, to put them in this folder: each is listed under its own kind. ${ACCEPTED}`));
-    }
+    if (!this.#entries.length) main.append(el('p', { className: 'files-note' }, 'This folder is empty.'));
+    else if (!this.#visible().length) main.append(el('p', { className: 'files-note' }, `Nothing here matches the filters (${on.join(', ')}).`));
+    main.append(el('p', { className: 'files-note' }, `Import files, or drop them here, to put them in this folder. Each file’s kind is worked out from the file. ${ACCEPTED}`));
     queueMicrotask(() => this.#renderTask());
     return main;
+  }
+
+  /**
+   * Selects a row without rebuilding the list: only the highlight, the toolbar and the inspector change, so the rows
+   * stay exactly where they are under the pointer (a double-click's second click lands on the same row).
+   */
+  #select(path: string): void {
+    this.#selected = path;
+    for (const tr of this.element.querySelectorAll<HTMLTableRowElement>('tbody tr')) {
+      const on = tr.dataset['path'] === path;
+      tr.classList.toggle('files-selected', on);
+      tr.setAttribute('aria-selected', String(on));
+    }
+    this.element.querySelector('.files-toolbar')?.replaceWith(this.#toolbar());
+    this.element.querySelector('.files-inspector')?.replaceWith(this.#inspector());
+    this.#onChange();
   }
 
   #renderTask(): void {
@@ -637,7 +672,7 @@ export class FilesView {
     } catch (err) {
       this.#header.set(e.path, err instanceof Error ? err.message : String(err));
     }
-    if (this.#selected === e.path) this.render();
+    if (this.#selected === e.path) this.element.querySelector('.files-inspector')?.replaceWith(this.#inspector());
   }
 
   #kindControl(e: FileEntry): Node {

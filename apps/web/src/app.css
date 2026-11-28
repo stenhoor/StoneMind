@@ -280,6 +280,12 @@ sm-menu-bar { display: block; }
 .files-side, .files-inspector { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow: auto; }
 .files-side-group { display: flex; flex-direction: column; gap: 2px; }
 .files-count { color: var(--text-2); font-variant-numeric: tabular-nums; font-weight: 400; }
+/* A filter is a toggle: a tick when on, the kind, and how many files of it are in the open folder. */
+.files-filter { justify-content: flex-start; }
+.files-check { flex: none; width: 1.2em; font-weight: 700; color: var(--accent); }
+.files-filter-name { flex: 1 1 auto; }
+.files-filter[aria-pressed="true"] { background: var(--glass-active); font-weight: 700; }
+.files-place[disabled] { color: var(--text-3); cursor: default; }
 .files-place-title { margin: 0; font: 700 18px/1.3 var(--font-brand); }
 .files-messages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-1); }
 .files-ok { color: var(--text); }
