@@ -78,7 +78,7 @@ export class EngineHostClient extends EventTarget {
   static async #open(channel: Channel): Promise<EngineHostClient> {
     const client = new EngineHostClient(channel);
     const first = new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('The engine host did not answer.')), 10_000);
+      const timer = setTimeout(() => reject(new Error('The engine host did not answer.')), 20_000);
       client.addEventListener('status', () => {
         clearTimeout(timer);
         resolve();

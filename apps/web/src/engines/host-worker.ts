@@ -2,9 +2,9 @@
 // every tab of the app in this browser talks to the one engine; or, where a shared worker can't run WebGPU, as a
 // dedicated worker for one tab. The logic is engines/host.ts; this file wires it to the worker and to the engines.
 //
-// Workers don't take a page's import map, so the app's build rewrites the `@stonemind/engine-webgpu` import below to
-// the copy in vendor/ (scripts/assemble.mjs).
-import { GpuNetwork, KataGoAnalysisLines, loadModel, loadPositionHashes, requestEngineDevice } from '@stonemind/engine-webgpu';
+// The browser engine's code is loaded only when an engine starts, so the host answers tabs at once. Workers don't take
+// a page's import map, so the app's build rewrites the `@stonemind/engine-webgpu` import below to the copy in vendor/
+// (scripts/assemble.mjs).
 import { fakeEngine } from './fake.js';
 import { type EngineFactory, EngineHost, type TabPort } from './host.js';
 import type { FromHost, ToHost } from './protocol.js';
@@ -34,6 +34,7 @@ async function readWeights(path: string): Promise<File> {
 
 const webgpu: EngineFactory = async (request, config) => {
   const file = await readWeights(request.weightsPath);
+  const { GpuNetwork, KataGoAnalysisLines, loadModel, loadPositionHashes, requestEngineDevice } = await import('@stonemind/engine-webgpu');
   const model = await loadModel(new Uint8Array(await file.arrayBuffer()));
   await loadPositionHashes();
   const device = await requestEngineDevice();

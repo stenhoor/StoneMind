@@ -4,7 +4,7 @@
 //
 //   npm run e2e -w @stonemind/web                      # Chromium
 //   BROWSERS=chromium,firefox,webkit npm run e2e -w @stonemind/web   # as CI runs it
-import { after, before, describe, test } from 'node:test';
+import { after, afterEach, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -26,10 +26,16 @@ for (const name of BROWSERS) {
     // A persistent profile, as a player's is: Playwright's default contexts are ephemeral, and WebKit has no OPFS in
     // one (microsoft/playwright#18235).
     // Chromium is given WebGPU as the engine's GPU check gives it (a software adapter where there is no GPU).
-    const newContext = () => {
+    // Every browser a test opens is closed afterwards, even if the test fails before its own close, so a failure can't
+    // leave a browser running and hold the test file open.
+    const opened = [];
+    afterEach(() => Promise.all(opened.splice(0).map((c) => c.close().catch(() => {}))));
+    const newContext = async () => {
       const executablePath = name === 'chromium' ? process.env.STONEMIND_CHROMIUM : undefined;
       const args = name === 'chromium' ? ['--enable-unsafe-webgpu'] : [];
-      return playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-engines-')), { args, ...(executablePath ? { executablePath } : {}) });
+      const context = await playwright[name].launchPersistentContext(mkdtempSync(join(tmpdir(), 'stonemind-engines-')), { args, ...(executablePath ? { executablePath } : {}) });
+      opened.push(context);
+      return context;
     };
 
     /** A tab of the app connected to the engine host, with a weights file in storage for the fake engine to "load". */
