@@ -9,7 +9,7 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/assemble.mjs",
+    "build": "npm run build -w @stonemind/files && tsc -p tsconfig.build.json && node scripts/assemble.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
     "e2e": "npm run build && node --test --test-timeout=60000 test/e2e/*.test.mjs",
