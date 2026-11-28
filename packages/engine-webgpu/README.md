@@ -21,7 +21,7 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   area or territory with every tax rule, and long cycles under simple ko or in the encore end with no result. Moves are
   played, recorded and undone with KataGo's own chain bookkeeping (`Board::playMoveRecorded` and `Board::undo`), and
   pass-alive area uses KataGo's arrays and linked lists (`docs/spikes/results/2026-11-b18-search-js.md`). Rule sets
-  with a button are refused with `UnsupportedPositionError` rather than approximated.
+  with a button have it: the first pass in the main phase takes it, worth half a point.
   `rules/hash.ts` ports KataGo's position hashes (`thisHash` and `symHash` in its analysis output): its random number
   generator (MD5 and SHA-256 seeding, xorshift1024* and PCG32) and the hash tables `Board::initHash` builds from it.
   SHA-256 comes from the platform's Web Crypto, so `loadPositionHashes()` builds the tables once, asynchronously, and
@@ -91,8 +91,8 @@ The experimental browser engine from [spike 0001](../../docs/spikes/0001-browser
   values are for; KataGo's rounding of results; one evaluation cache shared by all queries; and the actions
   `query_version`, `query_models`, `clear_cache`, `terminate` and `terminate_all`. Different from native: the analysis
   threads are concurrent searches on one JavaScript thread, sharing network calls through `SharedEvaluator`;
-  `numSearchThreads` is the search's batch; reports during the search are written between batches; rules with a
-  button, and settings for search features not ported (among them `fillDameBeforePass`), are refused with an error
+  `numSearchThreads` is the search's batch; reports during the search are written between batches; settings for search
+  features not ported (among them `fillDameBeforePass`) are refused with an error
   (`docs/OPEN-QUESTIONS.md`, sections 15 and 16). Not ported: focus moves (`focusMoves`, `set_focus`), added to KataGo
   after v1.18.2.
 - **WebGPU network** (`src/gpu/`), fp32, first version:
@@ -223,20 +223,22 @@ fill after every move and undo. `test/passes.test.mjs` checks passes: the end an
 start of the territory encore, and the pass inputs. The goldens include four positions with passes.
 
 `test/history.test.mjs` checks the rules engine against KataGo's own `BoardHistory`, move by move. The goldens
-(`scripts/capture-history-goldens.mjs`) are 402 random games played on KataGo's rules engine, built from its v1.18.2
-source with `scripts/native/history-dump.cpp`, with a digest of its state after every move: the board, the encore phase,
+(`scripts/capture-history-goldens.mjs`) are 402 random games, and the picked games below, played on KataGo's rules
+engine, built from its v1.18.2 source with `scripts/native/history-dump.cpp`, with a digest of its state after every move: the board, the encore phase,
 ko recapture blocks, superko and once-only bans, legality and passes for ko at every point, pass endings, the end of the
 game and its score, and the score and area if the game were scored now. The games cover area and territory scoring,
-every tax rule and ko rule, starting in each encore phase, KataGo's history modes, the encore prevented, tolerant moves
-and moves out of turn; many start from the boards of KataGo's own rules tests, which are built around kos, with players
+every tax rule and ko rule, the button and friendly passes, starting in each encore phase, KataGo's history modes, the
+encore prevented, tolerant moves and moves out of turn; many start from the boards of KataGo's own rules tests, which are built around kos, with players
 that prefer ko captures and passes for ko. The test also checks that the games reach the encore's two phases, ko
-recapture blocks, passes for ko, once-only and superko bans, the encore prevented, scored ends and no-result ends. A
+recapture blocks, passes for ko, once-only and superko bans, the encore prevented, the button taken, scored ends and
+no-result ends. A
 second test checks the network's inputs at every state of the same games, exactly: `encodeHistoryV7` against KataGo's
 own `NNInputs::fillRowV7`, built into the same program, with each game's input options (the draw value,
 `conservativePassAndIsRoot`, `enablePassingHacks`, `maxHistory`). A third checks the search's position keys: across all
 states on boards of the same size, two states' keys are equal exactly when KataGo's situation and graph-search hashes
 are. Ten more games, picked from a pool of tiny-board games, reach the same position in the second encore from
-different starting stones, which the keys must tell apart.
+different starting stones, which the keys must tell apart, and ten more, under area scoring, reach the same situation
+with and without a button rule set, the button taken (the keys hold the history's button, not the rule's).
 
 `test/search.test.mjs` checks the search against native KataGo's analysis engine (CPU build, captured with
 `scripts/capture-search-goldens.mjs`): both run one search thread, symmetry 0, and the features this search doesn't
@@ -247,7 +249,10 @@ tax on all groups), stone-scoring (area, tax on all groups) and territory rules 
 and after a pass and past the phase end the query's moves reach with the encore prevented, where the search's lines
 go into the encore and native cuts them where the root's phase would end. Seven more queries have the root in the
 encore, with native's `preventCleanupPhase` set to false for them: in each phase, on symmetric boards, on a symmetric
-board whose recapture blocks or second-encore starting stones aren't, and with a history started again in the encore. The same moves get exactly the same visits, with the same principal
+board whose recapture blocks or second-encore starting stones aren't, and with a history started again in the encore.
+Under AGA's button rules, it covers positions before the first pass (which takes the button), after it, after the
+game's end, with draw values where the button makes a draw possible and where it doesn't, and a 19×19 opening. The
+same moves get exactly the same visits, with the same principal
 variations, and win rates and leads within the network goldens' tolerances. A one-constant change to the search
 (`cpuctExplorationLog` 0.45 → 0.4) makes it fail.
 
@@ -255,7 +260,8 @@ variations, and win rates and leads within the network goldens' tolerances. A on
 from native with `scripts/capture-protocol-goldens.mjs` (one search thread, no randomness), are replayed on
 `KataGoAnalysisLines` with the reference network. They cover about 60 malformed or unusual queries (every error and
 warning must be the same text), results for each reporting side with every optional field, a rectangular board and
-draw values, territory scoring and the group taxes over several turns of a query, the order of queued queries by
+draw values, territory scoring and the group taxes over several turns of a query, the button (over several turns, as
+a rules object, and dropped with a warning under territory scoring), the order of queued queries by
 priority, `terminate` and `terminate_all` on running and queued queries,
 and reports during the search. Results must have the same fields, written as integers or not alike, rounded as KataGo
 rounds them, with values within the search check's tolerances. The native build the goldens come from is v1.18.2 plus

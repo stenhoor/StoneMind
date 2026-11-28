@@ -103,6 +103,16 @@ const FULL = [
   { id: 'encore-1-asym-recapture', moves: [['B', 'pass'], ['W', 'pass'], ['B', 'A9'], ['W', 'pass'], ['B', 'J1'], ['W', 'B9']], rules: 'japanese', size: 9, maxVisits: 60, preventCleanupPhase: false, extra: { initialStones: [
     ['W', 'B9'], ['W', 'A8'], ['B', 'C9'], ['B', 'B8'], ['W', 'H1'], ['W', 'J2'], ['B', 'G1'], ['B', 'H2'],
   ] } },
+  // The button (AGA's button rules, area scoring): before the first pass, which takes it and the half point (the root
+  // pass slightly discouraged), after it, and at the end of the game. Komi 7.5 with the button makes a draw possible,
+  // so the draw value counts; komi 7 makes it impossible.
+  { id: 'late-9-button', moves: LATE_9.slice(0, 48), rules: 'aga-button', size: 9, maxVisits: 100 },
+  { id: 'late-9-button-after-pass', moves: LATE_9.slice(0, 49), rules: 'aga-button', size: 9, maxVisits: 100 },
+  { id: 'late-9-button-after-passes', moves: LATE_9.slice(0, 51), rules: 'aga-button', size: 9, maxVisits: 100 },
+  { id: 'late-9-button-game-over', moves: LATE_9, rules: 'aga-button', size: 9, maxVisits: 60 },
+  { id: 'late-9-button-draw', moves: LATE_9.slice(0, 48), rules: 'aga-button', size: 9, maxVisits: 100, extra: { overrideSettings: { drawEquivalentWinsForWhite: 0.25 } } },
+  { id: 'late-9-button-komi-7-draw', moves: LATE_9.slice(0, 48), rules: 'aga-button', komi: 7, size: 9, maxVisits: 100, extra: { overrideSettings: { drawEquivalentWinsForWhite: 0.25 } } },
+  { id: 'opening-19-button', moves: [['B', 'Q16'], ['W', 'D4'], ['B', 'Q4']], rules: 'aga-button', size: 19, maxVisits: 30 },
   // Black avoids moves at the root, White its usual replies until depth 4.
   { id: 'avoid-9', moves: [['B', 'E5'], ['W', 'C3']], rules: 'tromp-taylor', size: 9, maxVisits: 80, extra: { avoidMoves: [{ player: 'B', moves: ['D3', 'C4', 'D4'], untilDepth: 1 }, { player: 'W', moves: ['C6', 'F3', 'D3', 'pass'], untilDepth: 4 }] } },
   // An avoid list turns off enableMorePassingHacks for that player at every depth: here both players avoid an empty
@@ -121,6 +131,7 @@ const SHORT = [
   { id: 'turn-33-9', moves: LATE_9.slice(0, 33), rules: 'tromp-taylor', size: 9, maxVisits: 25 },
   { id: 'late-9-after-pass', moves: LATE_9.slice(0, 51), rules: 'tromp-taylor', size: 9, maxVisits: 25 },
   { id: 'late-9-japanese-after-pass', moves: LATE_9.slice(0, 51), rules: 'japanese', size: 9, maxVisits: 25 },
+  { id: 'late-9-button', moves: LATE_9.slice(0, 48), rules: 'aga-button', size: 9, maxVisits: 25 },
 ];
 const queries = { full: FULL, short: SHORT }[values.set];
 if (!queries) throw new Error(`--set must be full or short, not ${values.set}`);
@@ -133,7 +144,7 @@ const logDir = mkdtempSync(join(tmpdir(), 'katago-logs-'));
 // queries would hand one query evaluations made for another query's history.
 const byId = new Map();
 for (const q of queries) {
-  const query = { id: q.id, moves: q.moves, rules: q.rules, komi: 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6, ...INCLUDE, ...q.extra };
+  const query = { id: q.id, moves: q.moves, rules: q.rules, komi: q.komi ?? 7.5, boardXSize: q.size, boardYSize: q.size, maxVisits: q.maxVisits, analysisPVLen: 6, ...INCLUDE, ...q.extra };
   const overrides = [`logDir=${logDir}`, ...OVERRIDES, ...(q.preventCleanupPhase === false ? ['preventCleanupPhase=false'] : [])];
   const run = spawnSync(values.katago, ['analysis', '-config', values.config, '-model', values.model, '-override-config', overrides.join(',')], { input: JSON.stringify(query) + '\n', encoding: 'utf8', maxBuffer: 1 << 28 });
   if (run.status !== 0) {
@@ -162,7 +173,7 @@ const out = {
     const r = byId.get(q.id);
     if (!r || r.error) throw new Error(`${q.id}: ${r?.error ?? 'no response'}`);
     const { id, turnNumber, isDuringSearch, ...response } = r;
-    return { ...q, komi: 7.5, response };
+    return { ...q, komi: q.komi ?? 7.5, response };
   }),
 };
 const outFile = values.out ?? join(here, '..', 'test', 'goldens', `search-${basename(values.model).replace(/\.bin\.gz$/, '')}.json`);

@@ -336,6 +336,11 @@ class SearchNode {
     readonly terminal: boolean,
     /** KataGo's graph hash, as a key (graph search). */
     readonly graphKey: string,
+    /**
+     * Whether `hist` is the creator's own history and the move: false when the path that created this node reached the
+     * creator another way (graph search), so that the path's history differed from the creator's.
+     */
+    readonly histFromCreator: boolean,
   ) {}
 
   get nextPla(): Stone {
@@ -521,7 +526,7 @@ export function situationKey(h: GameHistory, pla: Stone, drawEquivalentWinsForWh
   // The self komi discretized as KataGo does, (int64_t)(selfKomi * 256.0f), and the rules.
   const selfKomi = h.currentSelfKomi(pla, drawEquivalentWinsForWhite);
   const r = h.rules;
-  key += `|k${Math.trunc(Math.fround(selfKomi * 256))}|${r.koRule}${r.scoringRule}${r.taxRule}${+r.multiStoneSuicideLegal}${+r.hasButton}${+r.friendlyPassOk}`;
+  key += `|k${Math.trunc(Math.fround(selfKomi * 256))}|${r.koRule}${r.scoringRule}${r.taxRule}${+r.multiStoneSuicideLegal}${+h.hasButton}${+r.friendlyPassOk}`;
   if (h.modes.alwaysComputePassAliveUnderSuicideRules && !r.multiStoneSuicideLegal) key += 's';
   if (h.modes.excludeTerritoryAdjacentToAtari && r.scoringRule === 'TERRITORY' && r.taxRule === 'NONE') key += 'x';
   return key;
@@ -657,7 +662,7 @@ export class Search {
       alwaysComputePassAliveUnderSuicideRules: model.preferPassAliveUnderSuicideRules,
       excludeTerritoryAdjacentToAtari: model.preferExcludeTerritoryAdjacentToAtari,
     });
-    this.root = new SearchNode(rootHist, null, false, this.params.useGraphSearch ? this.#rootGraphKey(rootHist) : '');
+    this.root = new SearchNode(rootHist, null, false, this.params.useGraphSearch ? this.#rootGraphKey(rootHist) : '', true);
   }
 
   /**
@@ -762,8 +767,10 @@ export class Search {
       }
     };
     if (isAreaIsh) {
-      // (Rules with a button, which add a penalty for passing here, aren't supported.)
       if (moveLoc !== PASS_LOC && b.koLoc === NULL_LOC) ownershipPenalty();
+      // With a button to take, passing is very slightly discouraged, so that with an even number of dame, filling one
+      // is still preferred to passing.
+      if (moveLoc === PASS_LOC && h.hasButton) extraRootPoints -= bonus * 0.5;
     } else if (moveLoc === PASS_LOC) {
       extraRootPoints -= bonus * (2 / 3);
     } else if (b.koLoc === NULL_LOC) {
@@ -823,7 +830,7 @@ export class Search {
    * KataGo `allocateOrFindNode`: with graph search, the node already in the table for this position, if any; otherwise a
    * new node, with its subtree value bias entry.
    */
-  #allocateOrFindNode(parent: SearchNode, hist: GameHistory, moveLoc: number, forceNonTerminal: boolean): SearchNode {
+  #allocateOrFindNode(parent: SearchNode, hist: GameHistory, moveLoc: number, forceNonTerminal: boolean, histFromCreator: boolean): SearchNode {
     const p = this.params;
     let graphKey = '';
     let tableKey = '';
@@ -834,7 +841,7 @@ export class Search {
       const found = this.#nodeTable.get(tableKey);
       if (found) return found;
     }
-    const child = new SearchNode(hist, parent, hist.isGameFinished && !forceNonTerminal, graphKey);
+    const child = new SearchNode(hist, parent, hist.isGameFinished && !forceNonTerminal, graphKey, histFromCreator);
     // The subtree value bias entry: this move, after the move before it, unless it's a pass.
     if (p.subtreeValueBiasFactor !== 0 && hist.moves.length >= 2 && moveLoc !== PASS_LOC) {
       const parentPrevMoveLoc = hist.moves[hist.moves.length - 2]!.loc;
@@ -1094,9 +1101,8 @@ export class Search {
       return;
     }
     const whiteWins = h.winner === WHITE ? 1 : h.winner === BLACK ? 0 : p.drawEquivalentWinsForWhite;
-    // KataGo whiteScoreDrawAdjust: the draw adjustment is zero unless the result can be a draw (integer komi).
-    const drawAdjust = Number.isInteger(h.komi) ? p.drawEquivalentWinsForWhite - 0.5 : 0;
-    const scoreMean = h.finalWhiteMinusBlackScore + drawAdjust;
+    // KataGo whiteScoreDrawAdjust: the draw adjustment is zero unless the result can be a draw.
+    const scoreMean = h.finalWhiteMinusBlackScore + h.whiteKomiAdjustmentForDraws(p.drawEquivalentWinsForWhite);
     const scoreMeanSq = whiteScoreMeanSqOfScoreGridded(h.finalWhiteMinusBlackScore, p.drawEquivalentWinsForWhite);
     this.#addLeafValue(node, 2 * whiteWins - 1, 0, scoreMean, scoreMeanSq, scoreMean, weight, true);
   }
@@ -1457,7 +1463,7 @@ export class Search {
       const hist = parentHist.clone();
       hist.play(newLoc, pla);
       const forceNonTerminal = newLoc === PASS_LOC && hist.isGameFinished && ((p.conservativePass && isRoot) || friendlyPass);
-      const edge = new SearchEdge(this.#allocateOrFindNode(node, hist, newLoc, forceNonTerminal), newLoc);
+      const edge = new SearchEdge(this.#allocateOrFindNode(node, hist, newLoc, forceNonTerminal, parentHist === node.hist), newLoc);
       node.children.push(edge);
       return { edge, countEdgeVisit };
     }
@@ -1486,7 +1492,8 @@ export class Search {
   #descend(): Pending | 'done' | 'collision' {
     const nodes: SearchNode[] = [this.root];
     const edges: SearchEdge[] = [];
-    // The deepest node on the path whose creator chain is the path itself, so its history is the path's.
+    // The deepest node on the path whose history is the path's: each node down to it was created from its creator's own
+    // history on this path. (A node reached another way, by graph search, was created with that way's history.)
     let exactIdx = 0;
     // KataGo's thread.history at nodes[i]: the node's own history if the path created it, otherwise replayed.
     const pathHistory = (i: number): GameHistory => {
@@ -1505,7 +1512,7 @@ export class Search {
       const child = sel.edge.node;
       nodes.push(child);
       edges.push(sel.edge);
-      if (exactIdx === depth && child.creator === node) exactIdx = depth + 1;
+      if (exactIdx === depth && child.creator === node && child.histFromCreator) exactIdx = depth + 1;
       if (!sel.countEdgeVisit) uncountedIdx = depth;
       // KataGo maybeCatchUpEdgeVisits: while the parent has counted fewer visits to a child than the child has, a visit
       // just counts one more, without descending.

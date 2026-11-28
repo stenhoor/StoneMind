@@ -1,7 +1,7 @@
 /**
  * KataGo's V7 network inputs (22 spatial planes, 19 globals), ported from `NNInputs::fillRowV7` and `iterLadders` in
- * KataGo's `cpp/neuralnet/nninputs.cpp` (KataGo 1.18, MIT, © David J Wu): passes, territory scoring's encore and every
- * tax rule included.
+ * KataGo's `cpp/neuralnet/nninputs.cpp` (KataGo 1.18, MIT, © David J Wu): passes, territory scoring's encore, every
+ * tax rule and the button included.
  * Defaults match `MiscNNInputParams` as `kata-raw-nn` uses them: no playout-doubling advantage, draws worth half a win,
  * no conservative-pass or passing hacks.
  */
@@ -319,6 +319,8 @@ export function encodeHistoryV7(hist: GameHistory, options: InputOptions = {}): 
   }
   if (hist.encorePhase > 0) global[12] = 1;
   if (hist.encorePhase > 1) global[13] = 1;
+  // (15–16, the playout doubling advantage, stay 0, as in kata-raw-nn and the analysis engine.)
+  if (hist.hasButton) global[17] = 1;
   if (rules.scoringRule === 'AREA' || hist.encorePhase >= 2) {
     const even = area % 2 === 0;
     const komiFloor = even ? Math.floor(selfKomi / 2) * 2 : Math.floor((selfKomi - 1) / 2) * 2 + 1;

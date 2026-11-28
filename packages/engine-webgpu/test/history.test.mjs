@@ -3,7 +3,7 @@
 // state after every move: the board, the encore phase and its ko recapture blocks and once-only bans, superko bans,
 // legality and passes for ko for every point, pass endings, the end of the game and its score, the score and area if the
 // game were scored now, and the independent life area. Area and territory scoring, every tax rule and ko rule, the
-// encore, the encore prevented, no-result cycles, tolerant moves and moves out of turn, as the games happen to reach
+// encore, the encore prevented, no-result cycles, the button, tolerant moves and moves out of turn, as the games happen to reach
 // them; the test counts what they reached. A second test checks the network's inputs for the player to move at every
 // state (encodeHistoryV7 against KataGo's NNInputs::fillRowV7), exactly, with each game's input options. A third checks
 // the search's position keys (situationKey, graphStateKey): across all states on boards of the same size, two states' keys
@@ -52,6 +52,7 @@ function historyState(h) {
     encorePhase: h.encorePhase,
     isGameFinished: h.isGameFinished,
     isPastNormalPhaseEnd: h.isPastNormalPhaseEnd,
+    hasButton: h.hasButton,
     isScored: h.isScored,
     isNoResult: h.isNoResult,
     winner: h.winner ?? 0,
@@ -87,7 +88,7 @@ function replay(g, gi, onState) {
   }
   const rules = {
     koRule: KO[g.koRule], scoringRule: SCORING[g.scoringRule], taxRule: TAX[g.taxRule], multiStoneSuicideLegal: g.multiStoneSuicideLegal,
-    hasButton: false, whiteHandicapBonusRule: WHB[g.whiteHandicapBonusRule], friendlyPassOk: false,
+    hasButton: g.hasButton, whiteHandicapBonusRule: WHB[g.whiteHandicapBonusRule], friendlyPassOk: g.friendlyPassOk,
   };
   const modes = { alwaysComputePassAliveUnderSuicideRules: g.alwaysPassAlive, excludeTerritoryAdjacentToAtari: g.excludeAdjAtari };
   const h = new GameHistory(board, g.nextPla, rules, g.komi, g.encorePhase, modes);
@@ -104,9 +105,12 @@ function replay(g, gi, onState) {
 }
 
 test('the rules engine matches KataGo 1.18.2 move by move', () => {
-  const reached = { states: 0, encore1: 0, encore2: 0, recapBlocks: 0, passesForKo: 0, encoreBans: 0, superkoBans: 0, noResults: 0, encorePrevented: 0, scored: 0 };
+  const reached = { states: 0, encore1: 0, encore2: 0, recapBlocks: 0, passesForKo: 0, encoreBans: 0, superkoBans: 0, noResults: 0, encorePrevented: 0, scored: 0, buttonsTaken: 0 };
   for (const [gi, g] of goldens.games.entries()) {
+    let hadButton = false;
     replay(g, gi, (h, i, move) => {
+      if (hadButton && !h.hasButton) reached.buttonsTaken++;
+      hadButton = h.hasButton;
       const state = historyState(h);
       assert.equal(digestState(state), g.digests.slice(16 * i, 16 * i + 16), `game ${gi}, state ${i} (after ${i} moves) differs from KataGo's; rerun the capture with --full to see KataGo's`);
       reached.states++;
@@ -123,7 +127,7 @@ test('the rules engine matches KataGo 1.18.2 move by move', () => {
   }
   // What the games reached, so a recapture that reaches less fails here rather than passing on less.
   assert.ok(reached.encore1 > 1000 && reached.encore2 > 1000, `encore states: ${reached.encore1}, ${reached.encore2}`);
-  for (const k of ['recapBlocks', 'passesForKo', 'encoreBans', 'superkoBans', 'encorePrevented', 'scored']) {
+  for (const k of ['recapBlocks', 'passesForKo', 'encoreBans', 'superkoBans', 'encorePrevented', 'scored', 'buttonsTaken']) {
     assert.ok(reached[k] >= 20, `${k}: ${reached[k]}`);
   }
   assert.ok(reached.noResults >= 3, `no-results: ${reached.noResults}`);
